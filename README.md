@@ -151,3 +151,8 @@ net start winnat
 ```
 
 
+
+#### Pierre
+
+ssh -i /Users/edrlab/.ssh/google_compute_engine dev.edrlab@104.155.79.217
+scp -i /Users/edrlab/.ssh/google_compute_engine dev.edrlab@104.155.79.217:/home/dev.edrlab/studio-paon/ .
