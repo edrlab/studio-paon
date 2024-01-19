@@ -1,0 +1,194 @@
+
+		DO NOT TRANSLATE OR LOCALIZE.
+		Integrated libraries
+		
+
+- [ant-contrib] ant-contrib (v.1.0b3)
+  Unknown License
+  http://ant-contrib.sourceforge.net/tasks/LICENSE.txt
+
+- [bsf] bsf (v.2.4.0)
+  The Apache Software License, Version 2.0
+  http://www.apache.org/licenses/LICENSE-2.0.txt
+
+- [com.fasterxml.jackson.core] jackson-databind (v.2.13.5)
+  The Apache Software License, Version 2.0
+  http://www.apache.org/licenses/LICENSE-2.0.txt
+
+- [com.fasterxml.jackson.core] jackson-core (v.2.13.5)
+  The Apache Software License, Version 2.0
+  http://www.apache.org/licenses/LICENSE-2.0.txt
+
+- [com.fasterxml.jackson.core] jackson-annotations (v.2.13.5)
+  The Apache Software License, Version 2.0
+  http://www.apache.org/licenses/LICENSE-2.0.txt
+
+- [com.fasterxml.woodstox] woodstox-core (v.6.5.1)
+  The Apache License, Version 2.0
+  http://www.apache.org/licenses/LICENSE-2.0.txt
+
+- [com.github.librepdf] openpdf (v.1.3.35)
+  GNU Lesser General Public License (LGPL), Version 2.1
+  https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html
+
+- [com.google.code.findbugs] jsr305 (v.3.0.2)
+  The Apache Software License, Version 2.0
+  http://www.apache.org/licenses/LICENSE-2.0.txt
+
+- [com.google.errorprone] error_prone_annotations (v.2.18.0)
+  Apache 2.0
+  http://www.apache.org/licenses/LICENSE-2.0.txt
+
+- [com.google.guava] guava (v.32.1.2-jre)
+  Apache License, Version 2.0
+  http://www.apache.org/licenses/LICENSE-2.0.txt
+
+- [com.google.guava] listenablefuture (v.9999.0-empty-to-avoid-conflict-with-guava)
+  The Apache Software License, Version 2.0
+  http://www.apache.org/licenses/LICENSE-2.0.txt
+
+- [com.google.guava] failureaccess (v.1.0.1)
+  The Apache Software License, Version 2.0
+  http://www.apache.org/licenses/LICENSE-2.0.txt
+
+- [com.google.j2objc] j2objc-annotations (v.2.8)
+  Apache License, Version 2.0
+  http://www.apache.org/licenses/LICENSE-2.0.txt
+
+- [com.jcraft] jsch (v.0.1.55)
+  Revised BSD
+  http://www.jcraft.com/jsch/LICENSE.txt
+
+- [com.oopsconsultancy] xmltask (v.1.16)
+  The Apache Software License, Version 1.1
+  http://www.apache.org/licenses/LICENSE-1.1.txt
+
+- [com.sun.mail] javax.mail (v.1.6.2)
+  CDDL/GPLv2+CE
+  https://javaee.github.io/javamail/LICENSE
+
+- [commons-codec] commons-codec (v.1.11)
+  Apache License, Version 2.0
+  https://www.apache.org/licenses/LICENSE-2.0.txt
+
+- [commons-logging] commons-logging (v.1.0.4)
+  The Apache Software License, Version 2.0
+  /LICENSE.txt
+
+- [commons-net] commons-net (v.3.10.0)
+  Apache-2.0
+  https://www.apache.org/licenses/LICENSE-2.0.txt
+
+- [javax.activation] activation (v.1.1)
+  Common Development and Distribution License (CDDL) v1.0
+  https://glassfish.dev.java.net/public/CDDLv1.0.html
+
+- [javax.servlet] javax.servlet-api (v.3.1.0)
+  CDDL + GPLv2 with classpath exception
+  https://glassfish.dev.java.net/nonav/public/CDDL+GPL.html
+
+- [javax.websocket] javax.websocket-api (v.1.0)
+                   Dual license consisting of the CDDL v1.1 and GPL v2             
+  https://glassfish.java.net/public/CDDL+GPL_1_1.html
+
+- [net.objecthunter] exp4j (v.0.4.8)
+  Apache License 2.0
+  http://www.apache.org/licenses/LICENSE-2.0
+
+- [org.apache.ant] ant-jsch (v.1.10.14)
+  The Apache Software License, Version 2.0
+  https://www.apache.org/licenses/LICENSE-2.0.txt
+
+- [org.apache.ant] ant-commons-net (v.1.10.14)
+  The Apache Software License, Version 2.0
+  https://www.apache.org/licenses/LICENSE-2.0.txt
+
+- [org.apache.ant] ant-apache-bsf (v.1.10.14)
+  The Apache Software License, Version 2.0
+  https://www.apache.org/licenses/LICENSE-2.0.txt
+
+- [org.apache.ant] ant (v.1.10.14)
+  The Apache Software License, Version 2.0
+  https://www.apache.org/licenses/LICENSE-2.0.txt
+
+- [org.apache.ant] ant-launcher (v.1.10.14)
+  The Apache Software License, Version 2.0
+  https://www.apache.org/licenses/LICENSE-2.0.txt
+
+- [org.apache.commons] commons-imaging (v.1.0-alpha3)
+  Apache License, Version 2.0
+  https://www.apache.org/licenses/LICENSE-2.0.txt
+
+- [org.apache.commons] commons-compress (v.1.24.0)
+  Apache-2.0
+  https://www.apache.org/licenses/LICENSE-2.0.txt
+
+- [org.apache.httpcomponents] httpclient (v.4.5.14)
+  Apache License, Version 2.0
+  http://www.apache.org/licenses/LICENSE-2.0.txt
+
+- [org.apache.httpcomponents] httpcore (v.4.4.16)
+  Apache License, Version 2.0
+  http://www.apache.org/licenses/LICENSE-2.0.txt
+
+- [org.apache.httpcomponents] httpcore-nio (v.4.4.12)
+  Apache License, Version 2.0
+  http://www.apache.org/licenses/LICENSE-2.0.txt
+
+- [org.apache.httpcomponents] httpasyncclient (v.4.1.4)
+  Apache License, Version 2.0
+  http://www.apache.org/licenses/LICENSE-2.0.txt
+
+- [org.apache-extras.beanshell] bsh (v.2.0b6)
+  Apache License, Version 2.0
+  http://www.apache.org/licenses/LICENSE-2.0.txt
+
+- [org.bouncycastle] bcmail-jdk15to18 (v.1.74)
+  Bouncy Castle Licence
+  http://www.bouncycastle.org/licence.html
+
+- [org.bouncycastle] bcpkix-jdk15to18 (v.1.74)
+  Bouncy Castle Licence
+  http://www.bouncycastle.org/licence.html
+
+- [org.bouncycastle] bcutil-jdk15to18 (v.1.74)
+  Bouncy Castle Licence
+  http://www.bouncycastle.org/licence.html
+
+- [org.bouncycastle] bcprov-jdk15to18 (v.1.74)
+  Bouncy Castle Licence
+  http://www.bouncycastle.org/licence.html
+
+- [org.checkerframework] checker-qual (v.3.33.0)
+  The MIT License
+  http://opensource.org/licenses/MIT
+
+- [org.codehaus.woodstox] stax2-api (v.4.2.1)
+  The BSD License
+  http://www.opensource.org/licenses/bsd-license.php
+
+- [org.scenari.core] sc-res-winRegKey (v.6.1.10.202401191026)
+  Apache license 2.0
+  http://www.apache.org/licenses/LICENSE-2.0.html
+
+- [org.scenari.core] sc-res-jing (v.6.1.10.202401191026)
+  Jing Copying Conditions
+  http://www.thaiopensource.com/relaxng/copying.html
+
+- [org.scenari.core] sc-res-ant (v.6.1.10.202401191026)
+  Apache /LICENSE 2.0
+  http://www.apache.org/licenses/LICENSE-2.0.html
+
+- [org.scenari.core] sc-res-orient (v.6.1.10.202401191026)
+  Apache license 2.0
+  http://www.apache.org/licenses/LICENSE-2.0
+
+- [org.scenari.core] sc-wuir-codemirror (v.6.1.10.202401191026)
+  BSD-3-Clause
+  https://raw.githubusercontent.com/codemirror/codemirror.next/master/LICENSE-MIT
+
+- [org.scenari.core] sc-wuir-litHtml (v.6.1.10.202401191026)
+  BSD-3-Clause
+  http://polymer.github.io/LICENSE.txt
+
+- [org.scenari.libs] flying-saucer (v.20211222)

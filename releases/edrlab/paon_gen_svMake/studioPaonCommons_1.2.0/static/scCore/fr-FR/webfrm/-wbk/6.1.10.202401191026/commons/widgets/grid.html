@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<!--
+tags: sc-gridlite, sc-grid
+-->
+ 
+<!-- 
+ 
+ Type de sélection :
+ <sc-grid selType="mono/multi"/>
+ 
+ Entêtes de colonnes avec leurs valeurs par défaut :
+ <sc-grid hideColumnHeader="false" hideSortBtns="false" hideColumnPicker="false"/>
+ 
+ Stylages avec leurs valeurs par défaut :
+ <sc-grid classBody="flex gridBody" classLines="vbox gridLines" classLine="hbox gridLine" classCell="gridCell" 
+ 					classHead="hbox gridHead" classHeaders="hbox gridHeaders" classHeader="hbox gridHeader"
+ 					classSelLine="gridSelLine" classActiveLine="gridActiveLine"/>
+ 
+ Initilaisation statique via les extPoints :
+ <sc-grid colDefList="code d'une liste extPoints" 
+ 		dataHandlerSvc="code d'un svcLazy qui fournit un objet de type GridDataHandler ou une function constructor d'un objet de ce type" />
+-->
+<script>
+(function(){
+	
+var scGridLite = {
+	mixins: [ 'vbox', 'flex' ],
+	
+	lifecycle: {
+		'created:mixins(before)': function() {
+			//init static : les extPoints doivent avoir été configurés avant la construction du noeud.
+			var vColDefList = this.getAttribute("colDefList");
+			if(vColDefList) this.initColumDefs(extPoints.getList(vColDefList));
+			var vDataHendlerSvc = this.getAttribute("dataHandlerSvc");
+			if(vDataHendlerSvc) {
+				extPoints.getSvcLazy(vDataHendlerSvc, function(pSvc){
+					if(typeof pSvc === "function") pSvc = new pSvc();
+					this.initGridDataHandler(pSvc);
+				}, this);
+			}
+			
+			//gestion focus
+			this.tabIndex = 0;
+			this.fActiveRowOffset = -1;
+		}
+	},
+
+	methods : {
+		initColumDefs : function(pColumnDefs){
+			this.fColList = [];
+			for(var i=0; i<pColumnDefs.length; i++) {
+				if(pColumnDefs[i].isAvailable(this)) this.fColList.push(new GridCol(this, pColumnDefs[i]));
+			}
+			this.xTryLoad();
+			return this;
+		},
+		initGridDataHandler : function(pDataHandler){
+			this.fDataHandler = pDataHandler;
+			this.xTryLoad();
+			return this;
+		},
+		
+		getGridDataHandler : function(){
+			return this.fDataHandler;
+		},
+		getGridColList : function(){
+			return this.fColList;
+		},
+		getGridCol : function(pId){
+			for(var i=0; i<this.fColList.length; i++) {
+				if(this.fColList[i].getId()==pId) return this.fColList[i];
+			}
+			return null;
+		},
+		invalidateRows : function(pOffset, pCount){
+			if(!pOffset) pOffset = 0;
+			if(!pCount) pCount = 2140000000;
+			var vLine = this.xGetLine(pOffset);
+			for(var i=0; vLine && i<pCount; i++){
+				this.xRedrawLine(vLine, pOffset + i);
+				vLine = vLine.nextElementSibling;
+			}
+		},
+		rowCountChanged : function(pOffset, pCount) {
+			//Décalage de la sel.
+			this.fSel.rowCountChanged(pOffset, pCount);
+			//Décalage de la row active.
+			if(this.fActiveRowOffset >= pOffset) {
+				if(pCount<0 && this.fActiveRowOffset < pOffset-pCount) {
+					//la ligne active est supprimée => reset.
+					this.fActiveRowOffset = -1;
+				} else {
+					//ajout ou suppression de lignes qui décale la ligne active.
+					this.fActiveRowOffset += pCount;
+				}
+			}
+			if(pCount>0) {
+				//add rows
+				var vInsertPoint = this.xGetLine(pOffset);
+				for(var i = 0; i<pCount; i++) {
+					var vLine = this.xCreateLine();
+					this.fLines.insertBefore(vLine, vInsertPoint);
+					this.xRedrawLine(vLine, pOffset + i);
+				}
+				
+			} else {
+				//delete rows
+				var vLine = this.xGetLine(pOffset);
+				while(vLine && (pCount++)!=0) {
+					var vLineToDel = vLine;
+					vLine = vLine.nextElementSibling;
+					vLineToDel.parentNode.removeChild(vLineToDel);
+				}
+			}
+		},
+		
+		// activeRow et gestion scroll
+		
+		getActiveRow : function(){
+			return this.fActiveRowOffset;
+		},
+		setActiveRow : function(pOffset) {
+			var vOld = this.fActiveRowOffset;
+			this.fActiveRowOffset = pOffset >= 0 ? Math.min(pOffset, this.fDataHandler.countRows()) : -1;
+			var vClassActive = this.xGetClassActiveLine();
+			if(!vClassActive) return; //pas de gestion graphique d'activeRow en mono.
+			if(vOld>=0) {
+				var vL = this.xGetLine(vOld);
+				if(vL) vL.classList.remove(vClassActive);
+			}
+			vL = this.xGetLine(this.fActiveRowOffset);
+			if(vL) vL.classList.add(vClassActive);
+		},
+		
+		ensureRowVisible : function(pOffset) {
+			var vLine = this.xGetLine(pOffset);
+			if(!vLine) return;
+			var vYLinePos = vLine.offsetTop - this.fBody.scrollTop;
+			if(vYLinePos < 0) {
+				this.fBody.scrollTop += vYLinePos;
+			} else {
+				var vYMax = this.fBody.clientHeight - vLine.offsetHeight;
+				if(vYLinePos > vYMax) this.fBody.scrollTop += vYLinePos - vYMax;
+			}
+		},
+		
+		//Selection
+		getSelType : function(){return this.fSel.getSelType()},
+		isRowSelected : function(pOffset){return this.fSel.isRowSelected(pOffset)},
+		getSelectedRow : function(){return this.fSel.getSelectedRows()[0]},
+		getSelectedRows : function(){return this.fSel.getSelectedRows().concat()},
+		toggleSelectedRow : function(pOffset){
+			if(pOffset==null || pOffset<0) return;
+			var vSel = this.fSel.getSelectedRows();
+			for(var i=vSel.length-1; i>=0; i--) {
+				var vOffset = vSel[i];
+				if(vOffset<0) {
+					//range
+					var vStartRange = vSel[--i];
+					if(pOffset == -vOffset) {//derniere ligne du range
+						vSel[i+1]++;
+						trySimplifySel(vSel, i);
+						this.setSelectedRows(vSel);
+						return;
+					} else if(pOffset == vStartRange){//1ere ligne du range
+						vSel[i]++;
+						trySimplifySel(vSel, i);
+						this.setSelectedRows(vSel);
+						return;
+					} else if(pOffset > vStartRange && pOffset < -vOffset){// ligne dans le range, on split
+						vSel[i+1] = - (pOffset-1);
+						trySimplifySel(vSel, i);
+						vSel.splice(i+2, 0, pOffset+1, vOffset);
+						trySimplifySel(vSel, i+2);
+						this.setSelectedRows(vSel);
+						return;
+					}
+				} else if(vOffset==pOffset){
+					vSel.splice(i, 1); //cette row était selection, on la déselectionne.
+					this.setSelectedRows(vSel);
+					return;
+				}
+			}
+			//Pas trouvé
+			vSel.push(pOffset);
+			this.setSelectedRows(vSel);
+		},
+		removeSelectedRows : function(pStartOffset, pEndOffset){
+			if(pStartOffset > pEndOffset) {
+				this.removeSelectedRows(pEndOffset, pStartOffset);
+				return;
+			}
+			var vSel = this.fSel.getSelectedRows();
+			for(var i=vSel.length-1; i>=0; i--) {
+				var vOffset = vSel[i];
+				if(vOffset<0) {
+					//range
+					var vStartRange = vSel[--i];
+					var vEndRange = -vOffset;
+					if(pStartOffset <= vStartRange) { //la suppr démarre avant ce range
+						if(pEndOffset >= vEndRange) { //tout le range est inclus, on le suppr
+							vSel.splice(i, 2);
+						} else if(pEndOffset>=vStartRange) { //on cut le début du range
+							vSel[i] = pEndOffset + 1;
+							trySimplifySel(vSel, i);
+						}
+					} else if(pStartOffset <= vEndRange) { //la suppr démarre dans ce range
+						if(pEndOffset < vEndRange) { //toute la suppr est incluse dans le range, on le split
+							vSel[i+1] = -(pStartOffset - 1);
+							trySimplifySel(vSel, i);
+							vSel.splice(i+2, 0, pEndOffset+1, -vEndRange);
+							trySimplifySel(vSel, i+2);
+						} else {//la suppr inclus toute la fin de ce range, on cut la fin
+							vSel[i+1] = -(pStartOffset - 1);
+							trySimplifySel(vSel, i);
+						}
+					}
+				} else {
+					//ligne sel isolée
+					if(vOffset >= pStartOffset && vOffset <= pEndOffset) vSel.splice(i, 1);
+				}
+			}
+			this.setSelectedRows(vSel);
+		},
+		addSelectedRows : function(pStartOffset, pEndOffset){
+			if(pStartOffset > pEndOffset) {
+				this.addSelectedRows(pEndOffset, pStartOffset);
+				return;
+			}
+			this.removeSelectedRows(pStartOffset, pEndOffset);
+			var vSel = this.fSel.getSelectedRows();
+			vSel.push(pStartOffset, -pEndOffset);
+			this.setSelectedRows(vSel);
+		},
+		setSelectedRows : function(pSelEntries) {
+			var vSelClass = this.xGetClassSelLine();
+			var vL = this.fLines.firstElementChild;
+			var vOffset = this.xGetOffset(vL);
+			if(Array.isArray(pSelEntries)) {
+				while(vL) {
+					if(isInSel(pSelEntries, vOffset)) vL.classList.add(vSelClass);
+					else vL.classList.remove(vSelClass);
+					vL = vL.nextElementSibling;
+					vOffset++;
+				}
+				//this.setActiveRow(Math.abs(pSelEntries[pSelEntries.length-1]));
+			} else {
+				while(vL) {
+					if(pSelEntries == vOffset) vL.classList.add(vSelClass);
+					else vL.classList.remove(vSelClass);
+					vL = vL.nextElementSibling;
+					vOffset++;
+				}
+				this.setActiveRow(pSelEntries);
+			}
+			this.fSel.setSelectedRows(pSelEntries);
+			dom.createAndDispatchEvent(this, "gridSelect");
+		},
+		clearSel : function(){
+			var vSelClass = this.xGetClassSelLine();
+			var vL = this.fLines.firstElementChild;
+			while(vL) {
+				vL.classList.remove(vSelClass);
+				vL = vL.nextElementSibling;
+			}
+			this.setActiveRow(-1);
+			this.fSel.clearSel();
+			dom.createAndDispatchEvent(this, "gridSelect");
+		},
+		
+		//Tri
+		isSortKeyAlterable : function() {
+			return this.getAttribute("hideSortBtns")!="true" && this.fDataHandler && this.fDataHandler.onSortFnChange;
+		},
+		getSortFn : function(){return this.fSortFn},
+		getMainSortCol : function(){return this.fMainCol},
+		getMainSortColState : function(){return this.fMainColState},
+		setMainSortCol : function(pCol, pState){
+			if(this.fMainCol) this.fMainCol.getColumnDef().redrawColSortState(this.fMainCol.fRootNode, "none", 1);
+			if(pCol && pState!="none") {
+				if(pState=="descendant") {
+					var colSortFn = pCol.getCellBuider().getColSortFn();
+					this.fSortFn = function(pR1, pR2){return - colSortFn(pR1, pR2)};
+				} else {
+					this.fSortFn = pCol.getCellBuider().getColSortFn();
+				}
+				this.fMainCol = pCol;
+				this.fMainColState = pState;
+				pCol.getColumnDef().redrawColSortState(pCol.fRootNode, pState, 1);
+			} else {
+				this.fSortFn = this.fDataHandler.getNaturalSortFn();
+				this.fMainCol = null;
+				this.fMainColState = null;
+			}
+			this.fDataHandler.onSortFnChange();
+		},
+		onClickHeader : function(pGridCol, pEvt){
+			if(pGridCol===this.fMainCol) {
+				if(this.fMainColState=="ascendant") {
+					this.setMainSortCol(pGridCol, "descendant");
+				} else if(this.fMainColState=="none") {
+					this.setMainSortCol(pGridCol, "ascendant");
+				} else if(this.fMainColState=="descendant") {
+					if(this.fDataHandler.getNaturalSortFn && this.fDataHandler.getNaturalSortFn()!=null) {
+						this.setMainSortCol(null, "none");
+					} else {
+						this.setMainSortCol(pGridCol, "ascendant");
+					}
+				}
+			} else {
+				this.setMainSortCol(pGridCol, "ascendant");
+			}
+		},
+
+		
+		//interne
+		
+		xNeedListenForRedraw : function(){
+			return this.fHeaders != null;
+		},
+		
+		xTryLoad : function(){
+			if(!this.fColList || !this.fDataHandler) return;
+			if(!this.fBody) this.xBuidShadowDomStruct();
+			if(! this.fSel) this.fSel = this.getAttribute("selType")=="multi" ? new GridSelectionMulti(this) : new GridSelectionMono(this);
+			this.xResetContent();
+			this.fColList.forEach(GridCol.initCellBuilder);
+			this.fDataHandler.initGridDatas(this);
+			this.xRebuildColHeaders();
+		},
+		xBuidShadowDomStruct : function(){
+			var vBd = dom.newBd(this).clear();
+			if(this.getAttribute("hideColumnHeader")!="true") {
+				vBd.elt("div", this.getAttribute("classHead") || "hbox gridHead").style("overflow", "hidden");
+				this.fHeaders = vBd.elt("div", this.getAttribute("classHeaders") || "hbox gridHeaders").style("position", "relative").currentUp();
+				vBd.up();
+			}
+			this.fBody = vBd.elt("div", this.getAttribute("classBody") || "flex gridBody").style("overflow", "auto").att("flex", "1").current();
+			this.fLines = vBd.elt("div", this.getAttribute("classLines") || "vbox gridLines").current();
+			
+			//listeners
+			if(this.xNeedListenForRedraw()) {
+				this.fBody.addEventListener("scroll", this.xOnScroll, false);
+				extPoints.getSvcLazy("eltResize", function(pSvc) {
+					pSvc.addResizeListener(this.fBody, this.xOnResize);
+				}, this, "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/svcs/eltResize.js");
+			}
+		},
+		xResetContent : function(){
+			if(this.fSel) this.fSel.clearSel();
+			if(this.fHeaders) this.fHeaders.textContent = "";
+			this.fLines.textContent = "";
+		},
+		xGetLine : function(pOffset){
+			if(pOffset<0) return null;
+			var vL = this.fLines.firstElementChild;
+			while(vL && pOffset>0) {vL = vL.nextElementSibling; pOffset--}
+			return vL;
+		},
+		xGetLineFrom : function(pNode){
+			if(!pNode || pNode===this) return null;
+			while(pNode.parentNode !== this.fLines) {
+				pNode = pNode.parentNode;
+				if(!pNode || pNode===this) return null;
+			}
+			return pNode;
+		},
+		xGetOffset : function(pLine){
+			if(!pLine) return -1
+			var vOffset = 0;
+			var vP = pLine.previousElementSibling;
+			while(vP){
+				vOffset++
+				vP = vP.previousElementSibling;
+			}
+			return vOffset;
+		},
+		xRebuildColHeaders : function(){
+			if(!this.fHeaders) return;
+			this.fHeaders.textContent = "";
+			var vHeaderClass = this.xGetClassHeader();
+			this.fColList.forEach(function(pCol){
+				if(pCol.fHidden) return;
+				var vCell = document.createElement("div");
+				vCell.className = vHeaderClass;
+				vCell.style.flex = pCol.fFlex;
+				if(pCol.fMinWidth) vCell.style.minWidth = pCol.fMinWidth;
+				if(pCol.fMaxWidth) vCell.style.maxWidth = pCol.fMaxWidth;
+				vCell.fGridCol = pCol;
+				this.fHeaders.appendChild(vCell);
+				pCol.buildColHead(vCell);
+			}, this);
+		},
+		xCreateLine : function(){
+			var vL = document.createElement("div");
+			vL.setAttribute("class", this.getAttribute("classLine") || "hbox gridLine");
+			var vCellClass = this.getAttribute("classCell") || "gridCell";
+			this.fColList.forEach(function(pCol){
+				if(pCol.fHidden) return;
+				var vCell = document.createElement("div");
+				vCell.className = vCellClass;
+				vCell.style.flex = pCol.fFlex;
+				if(pCol.fMinWidth) vCell.style.minWidth = pCol.fMinWidth;
+				if(pCol.fMaxWidth) vCell.style.maxWidth = pCol.fMaxWidth;
+				vCell.fGridCol = pCol;
+				vL.appendChild(vCell);
+			}, this);
+			return vL;
+		},
+		xRedrawLine : function(pLine, pOffset) {
+			var vRow = this.fDataHandler.getRow(pOffset);
+			var vCell = pLine.firstElementChild;
+			while(vCell) {
+				try{
+					vCell.fGridCol.getCellBuider().redrawCell(vRow, vCell);
+				}catch(e){
+					vCell.textContent = "";
+					console.log("redrawCell failed:"+e);
+				}
+				vCell = vCell.nextElementSibling;
+			}
+		},
+		
+		/** resize de fBody */
+		xOnResize : function(){
+			var vGrid = this.parentNode;
+			if(vGrid.fHeaders) vGrid.fHeaders.style.width = getComputedStyle(vGrid.fLines).width;
+		},
+
+		/** scroll de fBody */
+		xOnScroll : function(){
+			var vGrid = this.parentNode;
+			if(vGrid.fHeaders) vGrid.fHeaders.style.left = - vGrid.fBody.scrollLeft + "px";
+		},
+		
+		xGetClassHeader : function(){
+			return this.getAttribute("classHeader") || "gridHeader";
+		},
+		
+		xGetClassSelLine : function(){
+			return this.getAttribute("classSelLine") || "gridSelLine";
+		},
+		
+		xGetClassActiveLine : function(){
+			if(this.fSel.getSelType()==="mono") return null; //pas de gestion graphique d'activeRow en mono.
+			return this.getAttribute("classActiveLine") || "gridActiveLine";
+		}
+	}
+	
+}
+
+xtag.register('sc-gridlite', scGridLite);
+
+
+/** Colonne de la grid. */
+function GridCol(pGrid, pColDef){
+	this.fGrid = pGrid;
+	this.fColDef = pColDef;
+}
+GridCol.prototype = {
+	getGrid : function(){return this.fGrid},
+	getColumnDef : function(){return this.fColDef},
+	getCellBuider : function() {return this.fCellBuilder},
+	buildColHead : function(pRootNode) {
+		this.fColDef.buildColHeader(this, pRootNode);
+		this.fRootNode = pRootNode;
+	}
+}
+GridCol.initCellBuilder = function(pCol){
+	var vColDef = pCol.getColumnDef();
+	pCol.fCellBuilder = vColDef.getCellBuilderFactory(pCol).call(pCol);
+	pCol.fHidden = vColDef.isHidden(pCol);
+	pCol.fFlex = vColDef.getFlexGrow(pCol) + " " + vColDef.getFlexShrink(pCol) + " " + vColDef.getFlexBase(pCol);
+	pCol.fMinWidth = vColDef.getMinWidth(pCol);
+	pCol.fMaxWidth = vColDef.getMaxWidth(pCol);
+}
+
+/** Gestionnaire de sélection Mono. */
+function GridSelectionMono(pGrid){
+	this.fGrid = pGrid;
+	this.fOffset = [-1];
+	this.fGrid.fLines.addEventListener("click", function(pEvt){
+		var vLine = pGrid.xGetLineFrom(pEvt.target);
+		pGrid.setSelectedRows(pGrid.xGetOffset(vLine));
+		pEvt.stopPropagation();
+	}, false);
+	this.fGrid.addEventListener("keydown", function(pEvt){
+		switch(pEvt.keyCode) {
+		case 40 ://down
+			if(pGrid.fActiveRowOffset < pGrid.getGridDataHandler().countRows()-1) pGrid.setSelectedRows(pGrid.fActiveRowOffset + 1);
+			pGrid.ensureRowVisible(pGrid.fActiveRowOffset);
+			break;
+		case 38 ://up
+			if(pGrid.fActiveRowOffset > 0) pGrid.setSelectedRows(pGrid.fActiveRowOffset - 1);
+			pGrid.ensureRowVisible(pGrid.fActiveRowOffset);
+			break;
+		default :
+			//	console.log("pEvt keydown:::"+pEvt.keyCode);
+			return;
+		}
+		if(document.activeElement !== pGrid) pGrid.focus();
+		pEvt.stopPropagation();
+		pEvt.preventDefault();
+	}, false);
+	
+}
+GridSelectionMono.prototype = {
+		getSelType : function(){return "mono"},
+		isRowSelected : function(pOffset){return this.fOffset[0]==pOffset},
+		getSelectedRows : function(){return this.fOffset},
+		setSelectedRows : function(pSelEntries) {
+			if(Array.isArray(pSelEntries)) {
+				if(pSelEntries.length>1) throw "multi-selection not allowed";
+				this.setSelectedRows(pSelEntries[0]);
+			} else this.fOffset[0] = pSelEntries >= 0 ? pSelEntries || 0 : -1;
+		},
+		clearSel : function(){this.fOffset[0]=-1},
+		rowCountChanged : function(pOffset, pCount){
+			var vOffs = this.fOffset[0];
+			if(vOffs >= pOffset) {
+				if(pCount<0 && vOffs < pOffset+pCount) {
+					//la ligne sel est supprimée => reset de la sel.
+					this.fOffset[0] = -1;
+				} else {
+					//ajout ou suppression de lignes qui décale la sel.
+					this.fOffset[0] += pCount;
+				}
+			}
+		}
+}
+
+
+/** Gestionnaire de sélection Multi. */
+function GridSelectionMulti(pGrid){
+	this.fGrid = pGrid;
+	this.fSel = [];
+	this.fGrid.fLines.addEventListener("click", function(pEvt){
+		//console.log("pEvt click::"+log.listProps(pEvt));
+		var vLine = pGrid.xGetLineFrom(pEvt.target);
+		var vOffset = pGrid.xGetOffset(vLine)
+		if(pEvt.ctrlKey && pGrid.fActiveRowOffset>=0) {
+			pGrid.toggleSelectedRow(vOffset);
+		} else if(pEvt.shiftKey && pGrid.fActiveRowOffset>=0) {
+			pGrid.addSelectedRows(pGrid.fActiveRowOffset, vOffset);
+		} else {
+			pGrid.setSelectedRows(vOffset);
+		}
+		pEvt.stopPropagation();
+	}, false);
+	this.fGrid.addEventListener("keydown", function(pEvt){
+		//console.log("pEvt keydown keyCode::"+pEvt.keyCode+" -  charCode::"+pEvt.charCode);
+		switch(pEvt.keyCode) {
+		case 32 ://space
+			if(document.activeElement === pGrid) {//pour éviter de capter l'event sur des buttons dans les headers.
+				pGrid.toggleSelectedRow(pGrid.fActiveRowOffset);
+				pGrid.ensureRowVisible(pGrid.fActiveRowOffset);
+			} else {
+				return;
+			}
+			break;
+		case 40 ://down
+			if(pEvt.ctrlKey) {
+				pGrid.setActiveRow(pGrid.fActiveRowOffset + 1);
+			} else {
+				if(pGrid.fActiveRowOffset < pGrid.getGridDataHandler().countRows()-1) pGrid.setSelectedRows(pGrid.fActiveRowOffset+1);
+			}
+			pGrid.ensureRowVisible(pGrid.fActiveRowOffset);
+			break;
+		case 38 ://up
+			if(pEvt.ctrlKey) {
+				pGrid.setActiveRow(pGrid.fActiveRowOffset - 1);
+			} else {
+				if(pGrid.fActiveRowOffset > 0) pGrid.setSelectedRows(pGrid.fActiveRowOffset-1);
+			}
+			pGrid.ensureRowVisible(pGrid.fActiveRowOffset);
+			break;
+		case 65 ://A
+			if(pEvt.ctrlKey) {
+				pGrid.setActiveRow(-1);
+				pGrid.setSelectedRows([0, - (pGrid.fDataHandler.countRows()-1)]);
+				break;
+			}
+		default :
+			return; // keydown inconnue, on ne stop pas la propagation
+		}
+		if(document.activeElement !== pGrid) pGrid.focus();
+		pEvt.stopPropagation();
+		pEvt.preventDefault();
+	}, false);
+	
+}
+GridSelectionMulti.prototype = {
+		getSelType : function(){return "multi"},
+		isRowSelected : function(pOffset){return isInSel(this.fSel, pOffset)},
+		getSelectedRows : function(){return this.fSel},
+		setSelectedRows : function(pSelEntries) {
+			if(Array.isArray(pSelEntries)) {
+				this.fSel = pSelEntries;
+			} else if(pSelEntries >=0) {
+				this.fSel = [pSelEntries];
+			} else {
+				this.fSel = []
+			}
+		},
+		clearSel : function(){this.fSel = []},
+		rowCountChanged : function(pOffset, pCount){
+			var vEndChange = pOffset + Math.abs(pCount) - 1;
+			for(var i=this.fSel.length-1; i>=0; i--) {
+				var vOffset = this.fSel[i];
+				if(vOffset<0) {
+					//Range sélectionné
+					var vEndRange = -vOffset;
+					var vStartRange = this.fSel[--i];
+					if(pOffset <= vStartRange) {
+						//Début du changement avant le range sélectionné
+						if(pCount>=0 || vEndChange < vStartRange) {
+							//Ajout de lignes, ou supression de lignes avant le range 
+							//=>on déplace tout le range.
+							this.fSel[i] += pCount;
+							this.fSel[i+1] -= pCount;
+						} else if(vEndRange <= vEndChange){
+							//Suppression de lignes incluant tout le range => suppr du range
+							this.fSel.splice(i--, 2);
+						} else {
+							//Suppression de lignes éliminant le début du range
+							this.fSel[i] = pOffset + 1;
+							this.fSel[i+1] -= pCount;
+							trySimplifySel(this.fSel, i);
+						}
+					} else if(pOffset <= vEndRange){
+						//Début du changement dans le range
+						if(pCount>0) {
+							//Ajout de lignes => split du range
+							this.fSel[i+1] = -(pOffset - 1); //Fin du 1er range
+							trySimplifySel(this.fSel, i);
+							this.fSel.splice(i+2, 0, pOffset + pCount, - vEndRange - pCount);
+							trySimplifySel(this.fSel, i+2);
+						} else {
+							//Suppression de lignes => élimine la fin du range
+							this.fSel[i+1] = -(pOffset - 1); //Fin du 1er range
+							trySimplifySel(this.fSel, i);
+						}
+					} // else début du changement après le range
+				} else {
+					//Offset sélectionné isolé
+					if(vOffset >= pOffset) {
+						if(pCount<0 && vOffset < pOffset-pCount) {
+							//la ligne sel est supprimée => suppr de la sel.
+							this.fSel.splice(i--, 1);
+						} else {
+							//ajout ou suppression de lignes qui décale la sel.
+							this.fSel[i] += pCount;
+						}
+					}
+				}
+			}
+		}
+}
+
+/* function callForEachSelEntry(pSel, pFct, pFctThis) {
+	for(var i=0; i < pSel.length; i++) {
+		var vOffset = pSel[i];
+		if(vOffset < 0) {
+			for(var k=pSel[i-1]+1; k<=-vOffset; k++) pFct.call(pFctThis, k);
+		} else pFct.call(pFctThis, vOffset);
+	}
+} */
+
+function isInSel(pSel, pOffset) {
+	for(var i=0; i < pSel.length; i++) {
+		var vOffset = pSel[i];
+		if(vOffset<0) {
+			if(pOffset > pSel[i-1] && pOffset <= -vOffset) return true;
+		} else if(vOffset == pOffset) return true;
+	}
+	return false;
+}
+
+/** Evalue si un range est réduit à une seule ligne, transforme le range en un offset isolé. */
+function trySimplifySel(pSel, pOffset) {
+	if(pSel[pOffset] == - pSel[pOffset+1]) {
+		pSel.splice(pOffset+1, 1);
+		return -1;
+	}
+	return 0;
+}
+
+
+var requestFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame;
+var scGrid = {
+		mixins: [ 'vbox', 'flex' ],	
+		lifecycle: Object.create(scGridLite.lifecycle),
+		methods: Object.create(scGridLite.methods)
+}
+scGrid.lifecycle['created:mixins(before)'] = function() {
+	scGridLite.lifecycle['created:mixins(before)'].call(this);
+	//Offset du dataHandler associé à la 1ere line du grid
+	this.fFirstLineOffset = 0;
+}
+scGrid.methods.xBuidShadowDomStruct = function(){
+	scGridLite.methods.xBuidShadowDomStruct.call(this);
+	this.fLines.style.position = "relative";
+	this.fHBody = document.createElement("div");
+	this.fHBody.style.float = "left";
+	this.fHBody.style.height = "";
+	this.fBody.insertBefore(this.fHBody, this.fLines);
+}
+scGrid.methods.xNeedListenForRedraw = function(){return true}
+
+scGrid.methods.invalidateRows = function(pOffset, pCount){
+	if(!pOffset) pOffset = 0;
+	var vEnd = pCount ? pOffset + pCount : this.fDataHandler.countRows();
+	if(pOffset < this.fFirstLineOffset) pOffset = this.fFirstLineOffset;
+	if(pOffset >= vEnd) return;
+	var vLine = this.xGetLine(pOffset);
+	var vSelClass = this.xGetClassSelLine();
+	var vActiveClass = this.xGetClassActiveLine();
+	while(vLine && pOffset < vEnd){
+		this.xRedrawLineAndSel(vLine, pOffset++, vSelClass, vActiveClass);
+		vLine = vLine.nextElementSibling;
+	}
+	this.xAdjustAreaNextFrame();
+},
+scGrid.methods.rowCountChanged = function(pOffset, pCount) {
+	this.fSel.rowCountChanged(pOffset, pCount);
+	var vL = this.xGetLine(pOffset);
+	if(!vL && pCount < 0 && this.fFirstLineOffset < pOffset - pCount) vL = this.xGetLine(this.fFirstLineOffset);
+	if(vL) {
+		var vSelClass = this.xGetClassSelLine();
+		var vActiveClass = this.xGetClassActiveLine();
+		for(var i=pOffset, l=this.fDataHandler.countRows(); i<l && vL; i++) {
+			this.xRedrawLineAndSel(vL, i, vSelClass, vActiveClass);
+			vL = vL.nextElementSibling;
+		}
+		this.xRemoveLinesFrom(vL);
+	}
+	this.xAdjustAreaNextFrame();
+}
+scGrid.methods.ensureRowVisible = function(pOffset) {
+	var vL = this.xGetLine(pOffset);
+	if(vL) {
+		var vTop = this.fLines.offsetTop + vL.offsetTop;
+		var vScrollTop = this.fBody.scrollTop;
+		if(vTop < vScrollTop) {
+			this.fBody.scrollTop = vTop;
+		} else {
+			var vBottom = vTop + vL.offsetHeight;
+			var vScrollBottom = vScrollTop + this.fBody.clientHeight;
+			if(vBottom > vScrollBottom) this.fBody.scrollTop = vScrollTop - (vScrollBottom-vBottom);
+		}
+	} else {
+		this.fBody.scrollTop = this.xGetHeightLine() * pOffset - (this.fBody.clientHeight / 3);
+	}
+}
+
+scGrid.methods.xGetLine = function(pOffset) {
+	if(pOffset < this.fFirstLineOffset || this.fFirstLineOffset < 0) return null;
+	var vIdxLine = pOffset - this.fFirstLineOffset;
+	var vL = this.fLines.firstElementChild;
+	while(vL && vIdxLine>0) {vL = vL.nextElementSibling; vIdxLine--}
+	return vL;
+}
+scGrid.methods.xGetOffset = function(pLine){
+	if(!pLine) return -1;
+	var vOffset = this.fFirstLineOffset;
+	var vP = pLine.previousElementSibling;
+	while(vP){
+		vOffset++
+		vP = vP.previousElementSibling;
+	}
+	return vOffset;
+},
+scGrid.methods.xOnResize = function(){
+	var vGrid = this.parentNode;
+	if(vGrid.fHeaders) vGrid.fHeaders.style.width = getComputedStyle(vGrid.fLines).width;
+	if(vGrid.fDataHandler) vGrid.xAdjustAreaNextFrame();
+}
+scGrid.methods.xOnScroll = function(){
+	var vGrid = this.parentNode;
+	if(vGrid.fNoReentrency) {
+		vGrid.fNoReentrency = false;
+		if(vGrid.fLastTop == vGrid.fBody.scrollTop) return;
+	}
+	if(vGrid.fHeaders) vGrid.fHeaders.style.left = - vGrid.fBody.scrollLeft + "px";
+	if(!vGrid.fDataHandler) return;
+	vGrid.xAdjustAreaNextFrame();
+}
+/** Après resize, redessinement ou modif des lignes, contrôle que toute la zone soit bien remplie de lines. */
+scGrid.methods.xAdjustAreaNextFrame = function(){
+	var vThis = this;
+	if(vThis.fLastReqFrame==null) this.fLastReqFrame = requestFrame(function(){
+		vThis.xAdjustArea();
+		vThis.fLastReqFrame = null;
+	});
+}
+scGrid.methods.xAdjustArea = function(){
+	var vCountRows = this.fDataHandler.countRows();
+	if(vCountRows==0) {
+		this.fFirstLineOffset = 0;
+		this.fLines.textContent="";
+		this.fHBody.style.height = "0";
+		this.fLines.style.top = "0";
+	} else {
+		var vScrollTop = this.fBody.scrollTop;
+		var vScrollBottom = vScrollTop + this.fBody.clientHeight;
+		//var vLinesTop = this.fLines.offsetTop;
+		//var vLinesBottom = vLinesTop + this.fLines.clientHeight;
+		var vLine = this.fLines.firstElementChild;
+		var vSelClass = this.xGetClassSelLine();
+		var vActiveClass = this.xGetClassActiveLine();
+		//if(!vLine || vLinesBottom < vScrollTop || vLinesTop > vScrollBottom) {
+			//Redessinement complet
+			var vOffset = Math.max(0, Math.floor(vScrollTop * vCountRows / this.fBody.scrollHeight)-1);
+			this.fFirstLineOffset = vOffset;
+			var vLineTop = vScrollTop;
+			while(vLineTop <= vScrollBottom + 20 && vOffset < vCountRows) {
+				if(!vLine) vLine = this.fLines.appendChild(this.xCreateLine());
+				this.xRedrawLineAndSel(vLine, vOffset++, vSelClass, vActiveClass);
+				vLineTop += vLine.offsetHeight;
+				vLine = vLine.nextElementSibling;
+			}
+			this.xRemoveLinesFrom(vLine);
+			var vHLine = this.xGetHeightLine();
+			this.fLines.style.top = Math.round(vHLine * this.fFirstLineOffset) + "px";
+			this.fHBody.style.height = Math.round(vHLine * vCountRows) + "px";
+			if (this.fHeaders) this.fHeaders.style.width = getComputedStyle(this.fLines).width;
+		//	return;
+		//}
+		//if(vLinesTop > vScrollTop - 20) {
+		//	//On doit insérer des lignes avant
+		//	while(vLinesTop > vScrollTop - 20 && this.fFirstLineOffset > 0) {
+		//		vLine = this.fLines.insertBefore(this.xCreateLine(), this.fLines.firstChild);
+		//		this.xRedrawLineAndSel(vLine, --this.fFirstLineOffset, vSelClass, vActiveClass);
+		//		vLinesTop -= vLine.offsetHeight;
+		//	}
+		//	this.fLines.style.top = this.fFirstLineOffset==0 ? "0" : vLinesTop+"px";
+		//} else if(vLinesTop < vScrollTop -100){
+		//	//on va supprimer des lignes au dessus
+		//	while(vLine && (vLinesTop + vLine.offsetHeight < vScrollTop - 50)) {
+		//		vLinesTop += vLine.offsetHeight;
+		//		this.fFirstLineOffset++;
+		//		this.fLines.removeChild(vLine);
+		//		vLine = this.fLines.firstElementChild;
+		//	}
+		//	this.fLines.style.top = vLinesTop+"px";
+		//}
+		//
+		//if(vLinesBottom < vScrollBottom + 20) {
+		//	var vOffset = this.fFirstLineOffset + this.xCountLines();
+		//	while(vLinesBottom < vScrollBottom + 20 && vOffset < vCountRows) {
+		//		//On doit ajouter des lignes après
+		//		vLine = this.fLines.appendChild(this.xCreateLine());
+		//		this.xRedrawLineAndSel(vLine, vOffset++, vSelClass, vActiveClass);
+		//		vLinesBottom += vLine.offsetHeight;
+		//	}
+		//} else if(vLinesBottom > vScrollBottom + 100){
+		//	//on va supprimer des lignes en dessous
+		//	vLine = this.fLines.lastElementChild;
+		//	while(vLine && (vLinesBottom - vLine.offsetHeight > vScrollBottom + 50)) {
+		//		vLinesBottom -= vLine.offsetHeight;
+		//		this.fLines.removeChild(vLine);
+		//		vLine = this.fLines.lastElementChild;
+		//	}
+		//}
+		//this.fHBody.style.height = Math.round(this.xGetHeightLine() * vCountRows) + "px";
+		//if (this.fHeaders) this.fHeaders.style.width = getComputedStyle(this.fLines).width;
+	}
+}
+/** Nb de lignes actuelles. */
+scGrid.methods.xCountLines = function(){
+	var vCount = 0;
+	var vL = this.fLines.firstElementChild;
+	while(vL) {vCount++; vL = vL.nextElementSibling;}
+	return vCount;
+}
+/** Hauteur moyenne d'une ligne. */
+scGrid.methods.xGetHeightLine = function(){
+	var vCountL = this.xCountLines();
+	if(vCountL==0) return 15;
+	return this.fLines.clientHeight / vCountL;
+}
+
+scGrid.methods.xRedrawLineAndSel = function(pLine, pOffset, pSelClass, pActiveClass){
+	if(this.fSel.isRowSelected(pOffset)) {
+		pLine.classList.add(pSelClass);
+	} else {
+		pLine.classList.remove(pSelClass);
+	}
+	if(pActiveClass!=null && this.fActiveRowOffset == pOffset) {
+		pLine.classList.add(pActiveClass);
+	} else {
+		pLine.classList.remove(pActiveClass);
+	}
+	this.xRedrawLine(pLine, pOffset);
+}
+scGrid.methods.xRemoveLinesFrom = function(pLine) {
+	if(!pLine) return;
+	while(pLine.nextSibling) this.fLines.removeChild(this.fLines.lastChild);
+	this.fLines.removeChild(pLine);
+}
+
+xtag.register('sc-grid', scGrid);
+
+})();
+</script>
+
+
+<style>
+sc-gridlite,
+sc-grid {
+	cursor : default;
+	-moz-user-select: none;
+	-webkit-user-select: none;
+	-ms-user-select: none;
+	-o-user-select: none;
+	user-select: none;
+	border : 1px solid grey;
+	background-color: white;
+}
+sc-gridlite:focus,
+sc-grid:focus {
+	outline: 0;
+}
+
+.gridHead {
+	border-bottom : 1px solid grey;
+}
+.gridHeader:not(:nth-child(1)) {
+	border-left : 1px solid grey;
+}
+
+.gridLine {
+    margin: 3px 0;
+}
+
+.gridCell {
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	padding: 1px;
+	background-position: 10px 0 !important;
+}
+.gridHeader{
+	overflow: hidden;
+	max-height: 3em;
+	display: flex;
+	/* white-space: nowrap; 
+	text-overflow: ellipsis;*/
+}
+.gridSelLine {
+	background-color: #DDD;
+	background-clip: content-box;
+}
+:focus > * > * > .gridSelLine {
+	background-color: #E1DFF4;
+}
+:focus > * > * > .gridActiveLine {
+	outline: 1px dotted grey;
+}
+
+button[gridsort] {
+	padding-right: 12px;
+	border: none;
+	display: flex;
+	flex: 1;
+	background: none;
+	background-image: url(https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/widgets/grid/sortBtn_none.png);
+	background-position: right center;
+	background-repeat: no-repeat;
+}
+button[gridsort="ascendant"] {
+	background-image: url(https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/widgets/grid/sortBtn_ascendant.png);
+}
+button[gridsort="descendant"] {
+	background-image: url(https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/widgets/grid/sortBtn_descendant.png);
+}
+</style>

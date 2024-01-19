@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<!--
+Paramètres en QueryString : 
+- r : [optionnal] url de retour une fois connecté
++ cf options de back/commons/dialogs/loginDialog.html
+
+-->
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta charset="UTF-8"/>
+	<title>Authentification - Import</title>
+
+	<!-- Librairies -->
+	
+					<script>
+						CustomElements = { flags: { register: true } }
+					</script>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/x-tag.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/commons.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/areas.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/extPoints.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/security.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/root_Perms.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/actions.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/enums.js"/>
+				
+	
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/desk/desk_Perms.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/desk/utils/deskUtils.js"/>
+				
+	
+<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/store/store_Perms.js"/>
+<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/store/store.js"/>
+<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/store/facets.js"/>
+				
+	<script>extPoints.initAsRoot();</script>
+	<script src="https://studio-paon.edrlab.org/~~static/import/fr-FR/configPublic.js"/>
+
+	<!-- Components -->
+	<link rel="import" href="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/desk/widgets.html"/>
+	<link rel="import" href="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/commons/dialogs/loginDialog.html"/>
+
+	<script id="initCtx"><![CDATA[
+  var vQs = io.parseQueryString(window.location.search);
+  var vCtx = {
+	  lastAccount: utils.getLocalStorage().scUserAccount
+  }
+  ]]></script>
+	<script id="load"><![CDATA[
+  deskUtils.createDesk(window);
+  extPoints.addToList("event:load:login", "init", 1, function () {
+	  var vLoginDialog = sc$("loginDialog");
+	  vLoginDialog.initLoginDialog(vCtx, vQs, {
+		  tryAuth: function (pUiDatas, pCb, pCbThis) {
+			  var vReq = io.openHttpRequest(extPoints.getPref("auth.serverUrl") + "/public/u/loginWeb", "POST");
+			  vReq.onloadend = function (pEvt) {
+				  try {
+					  if (pEvt.target.status == 200) {
+						  var vResp = JSON.parse(pEvt.target.responseText);
+						  if (vResp.result == "logged") {
+							  //console.log("logged:::"+pEvt.target.responseText)
+							  exit(pUiDatas);
+						  } else if (vResp.result == "accountDisabled") {
+							  pCb.call(pCbThis, vResp.result, vResp.secondaryResults ? vResp.secondaryResults.disabledEndDt : null);
+						  } else {
+							  pCb.call(pCbThis, vResp.result);
+						  }
+					  } else {
+						  pCb.call(pCbThis, "otherFailure");
+					  }
+				  } catch (e) {
+					  pCb.call(pCbThis, "otherFailure");
+					  console.log(e);
+				  }
+			  };
+			  vReq.send(JSON.stringify(addCookieParams({account: pUiDatas.account, currentPwd: pUiDatas.password}, pUiDatas)));
+		  },
+		  tryRenewPwd: function (pUiDatas, pCb, pCbThis) {
+			  var vReq = io.openHttpRequest(extPoints.getPref("auth.serverUrl") + "/public/u/renewPwdWeb", "POST");
+			  vReq.onloadend = function (pEvt) {
+				  try {
+					  if (pEvt.target.status == 200) {
+						  var vResp = JSON.parse(pEvt.target.responseText);
+						  switch (vResp.result) {
+							  case "updated" :
+								  exit(pUiDatas);
+								  break;
+							  case "accountDisabled" :
+								  var vDisabledDt = vResp.secondaryResults ? vResp.secondaryResults.disabledEndDt : null;
+								  pCb.call(pCbThis, vResp.result, vDisabledDt);
+								  break;
+							  case "failedInvalidDatas" :
+								  pCb.call(pCbThis, vResp.result, vResp.secondaryResults ? vResp.secondaryResults.msgs : null);
+								  break;
+							  default:
+								  pCb.call(pCbThis, vResp.result);
+						  }
+					  } else {
+						  pCb.call(pCbThis, "otherFailure");
+					  }
+				  } catch (e) {
+					  pCb.call(pCbThis, "otherFailure");
+					  console.log(e);
+				  }
+			  };
+			  vReq.send(JSON.stringify(addCookieParams({account: pUiDatas.account, currentPwd: pUiDatas.currentPwd, password: pUiDatas.password}, pUiDatas)));
+		  },
+		  checkPwd: function (pDatas, pCb, pCbThis) {
+			  var vReq = io.openHttpRequest(extPoints.getPref("auth.serverUrl") + "/public/u/checkPwdWeb", "POST");
+			  vReq.onloadend = function (pEvt) {
+				  try {
+					  if (pEvt.target.status == 200) {
+						  var vResp = JSON.parse(pEvt.target.responseText);
+						  switch (vResp.result) {
+							  case "accountDisabled" :
+								  pCb.call(pCbThis, vResp.result, vResp.secondaryResults ? vResp.secondaryResults.disabledEndDt : null);
+								  break;
+							  case "failedInvalidDatas" :
+								  pCb.call(pCbThis, vResp.result, vResp.secondaryResults ? vResp.secondaryResults.msgs : null);
+								  break;
+							  default:
+								  pCb.call(pCbThis, vResp.result);
+						  }
+					  } else {
+						  pCb.call(pCbThis, "otherFailure");
+					  }
+				  } catch (e) {
+					  pCb.call(pCbThis, "otherFailure");
+					  console.log(e);
+				  }
+			  };
+			  vReq.send(JSON.stringify({account: pDatas.account, password: pDatas.password, currentPwd: pDatas.currentPwd}));
+		  },
+
+		  /**
+		   * Paramètre de la cb :
+		   * 	pResult : {result:"xxx"} où xxx est : "instructionsSent", "accountNotFound", "authRejected", "datasNotAvailable" , "otherFailure"
+		   */
+		  askForPasswordLost: function (pAccount, pCbIfError, pCbIfErrorThis) {
+			  if (!pAccount) throw "askForPasswordLost : no account";
+			  var vPasswordLostUrl = "";
+			  if (extPoints.getPref("auth.foreignPasswordLostUrl")) {
+				  vPasswordLostUrl = extPoints.getPref("auth.foreignPasswordLostUrl");
+			  } else {
+				  vPasswordLostUrl = extPoints.getPref("auth.serverUrl") + "/public/u/pwdLost?cdaction=AskForUpdate";
+			  }
+			  var vReq = io.openHttpRequest(vPasswordLostUrl + "&param=" + encodeURIComponent(pAccount));
+			  vReq.onloadend = io.jsonXhrCb(function (pJson, pErr) {
+				  if (pErr) console.log("askForPasswordLost failed : " + pErr);
+				  if (!pJson) pJson = {result: "otherFailure"};
+				  if (pCbIfError) pCbIfError.call(pCbIfErrorThis, pJson);
+			  });
+			  vReq.send();
+		  }
+	  });
+  }, 10);
+
+  function addCookieParams(pResult, pUiDatas) {
+	  if (pUiDatas.maxAge && pUiDatas.maxAge > 0) {
+		  pResult.cookieMaxAge = pUiDatas.maxAge;
+	  }
+	  return pResult;
+  }
+
+  function exit(pUiDatas) {
+	  utils.getLocalStorage().scUserAccount = pUiDatas.account;
+	  if (vQs.cid) {
+		  //Contexte CID
+		  window.parent.postMessage({"cidAuth": "succeeded"}, '*');
+	  } else if (isRedirectValid(vQs.r)) {
+		  //Retour à l'appelant.
+		  window.location.href = vQs.r;
+	  } else {
+		  //pas d'appelant : probabelement une requete en PUT ou POST
+		  var vLoginDialog = sc$("loginDialog");
+		  vLoginDialog.parentNode.removeChild(vLoginDialog);
+		  sc$("connectedMsg").style.display = "";
+	  }
+  }
+
+  function isRedirectValid(r) {
+	  if (!r) return false;
+	  if (r.charAt(0) === "/" && r.charAt(1) !== "/") return true; // path absolu dans le domaine => ok (mais pas "//..." qui redéfinit le domaine)
+	  if (/^http(s)?:\/\//.test(r) || /^\/\//.test(r)) {
+		  //on limite aux protocole http(s), (exclus javascript: data: ...)
+		  if (document.location.hostname !== new URL(r, document.baseURI).hostname) return false;
+		  return true;
+	  }
+	  return false;
+  }
+
+  ]]></script>
+	<style>
+		body {
+			align-items: center;
+		}
+
+		body.login {
+			background-color: rgba(0, 0, 0, 0.1);
+		}
+	</style>
+</head>
+
+<body is="sc-desk" class="login">
+<h1>Import</h1>
+<sc-vbox id="frame">
+	<sc-logindialog id="loginDialog"/>
+	<section id="connectedMsg" style="display:none;">
+		<p>Vous êtes à présent connecté·e, vous pouvez réexécuter votre requête.</p>
+	</section>
+</sc-vbox>
+</body>
+<script>
+	deskUtils.launchDesk(window);
+</script>
+
+<!-- Skin -->
+
+
+</html>

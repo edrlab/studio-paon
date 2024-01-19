@@ -1,0 +1,341 @@
+<!-- 
+mixins : action, actionsLists
+tags : sc-btn, sc-toolbar
+ -->
+<script>
+xtag.mixins.action = {
+	methods: {
+		refresh: function() {
+			var vAction = this.fAction;			
+			if(vAction) {
+				var vContext = this.actionContext
+                this.setAttribute("data-action", vAction.fId);
+				if (! vAction.isVisible(vContext)) {
+					this.hidden = true;
+				} else {
+					this.hidden = false;
+					//On permet au label d'être surchargé.
+					if (! this.hasAttribute("label")) {
+						this.label = vAction.getLabel(vContext);
+					}
+					//On permet à l'icone d'être surchargé.
+					if (! this.hasAttribute("icon")) {
+						var vIcon = vAction.getIcon(vContext);
+						if(vIcon) this.icon = vIcon;
+					}
+					//On permet au group d'être surchargé.
+					if (! this.hasAttribute("group")) this.setAttribute("group", vAction.getGroup(vContext));
+					this.disabled = ! vAction.isEnabled(vContext);
+					//On permet au title d'être surchargé.
+					if (! this.hasAttribute("title")) {
+						var vDescription = vAction.getDescription(vContext);
+						if(vDescription) this.setAttribute("title", vDescription);
+					}
+					/*
+					var vAccelKeyMgr = vContext.accelKeyMgr;
+					if (vAccelKeyMgr) {
+						var vAccelText = vAccelKeyMgr.searchAccelText(vAction);
+						if(vAccelText) this.setAttribute("acceltext", vAccelText);
+					}*/
+					vAction.initButtonNode(this, vContext);
+				}
+			} else if (vAction !== undefined) {
+				//Pas d'action, on masque le button.
+				this.hidden = true;
+			}
+		}
+	},
+	
+	accessors: {
+		svcAction: {
+			attribute: { name: 'svcAction' },
+			set: function(pActionCd) {
+				if(pActionCd) this.fAction = extPoints.getSvc(pActionCd);
+				this.refresh();
+			}
+		},
+		
+		action: {
+			get: function() {
+				return this.fAction;
+			},
+			set: function(pAction) {
+				this.fAction = pAction;
+				this.refresh();
+				return this.fAction;
+			}
+		},
+		
+		actionContext: {
+			get: function() {
+				return this.fContext || window;
+			},
+			
+			set: function(pContext) {
+				return this.fContext = pContext;
+			}
+		},
+		
+		disabled: {
+			attribute: { boolean: true }
+		}
+	}
+}
+
+xtag.register('sc-btn', {
+	mixins: [ 'hbox', 'flex', 'label', 'action' ],
+	
+	lifecycle: {
+		'created:mixins(before)': function() {
+			this.setAttribute("role", "button");
+			this.tabIndex = 0;
+		},
+	},
+	
+	events: {
+		'click': function(pEvent) {
+			if (this.fAction) this.fAction.execute(pEvent, this.actionContext);
+		},
+		
+		'keydown:keypass(32)': function() {
+			this.click();
+		}
+	}
+});
+
+
+xtag.mixins.actionsLists = {
+	methods: {
+		refresh: function() {
+			this.xResetNodes();
+			var vActions = this.fActions;
+			if (vActions) {
+				var vContext = this.actionContext;
+				for (var i=0; i<vActions.length; i++) {
+					var vAction = vActions[i];
+					if(vAction) this.xCreateActionNode(vAction)
+				}
+			}
+		},
+		xResetNodes : function(){
+			this.innerHTML="";
+		},
+		/*
+		xCreateActionNode: function(pAction, pContext) { }
+		*/
+	},
+		
+	accessors: {
+		actionsLists: {
+			attribute: {},
+			set: function(pActionsLists) {
+				if(!pActionsLists) {
+					this.fActions = null;
+				} else if(pActionsLists.indexOf(" ")>=0) {
+					this.fActions = extPoints.mergeLists(pActionsLists.split(" "));
+				} else {
+					this.fActions = extPoints.getList(pActionsLists);
+				}
+				this.refresh();
+			}
+		},
+		
+		actions: {
+			get: function() {
+				return this.fActions;
+			},
+			set: function(pActions) {
+				this.fActions = pActions;
+				this.refresh();
+			}
+		},
+		
+		actionContext: {
+			get: function() {
+				return this.fContext || window;
+			},
+			
+			set: function(pContext) {
+				return this.fContext = pContext;
+			}
+		}
+	}
+}
+
+
+xtag.register('sc-toolbar', {
+	mixins: [ 'hbox', 'flex', 'actionsLists' ],
+	
+	lifecycle: {
+		'created:mixins(before)': function() { }
+	},
+	
+	methods: {
+		isEmpty : function(){
+			for(var vCh = this.firstElementChild; vCh; vCh = vCh.nextElementSibling) {
+				if(!vCh.hidden) return false;
+			}
+			return true;
+		},
+		xCreateActionNode: function(pAction) {
+			var vItem = document.createElement(this.getAttribute("buttonName") || "sc-btn");
+			vItem.actionContext = this.actionContext;
+			vItem.action = pAction;
+			this.appendChild(vItem);
+		}
+	}
+});
+</script>
+
+<style>
+@font-face {
+	font-family: 'fontello';
+	src: url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.eot');
+	src: url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.eot') format('embedded-opentype'),
+	url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.woff') format('woff'),
+	url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.ttf') format('truetype'),
+	url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.svg') format('svg');
+	font-weight: normal;
+	font-style: normal;
+}
+
+[role=button][disabled] {
+	pointer-events: none;
+	opacity: 0.3;
+}
+
+[role=button] {
+	border: 1px solid silver;
+	cursor: pointer;
+	color: black;
+	padding: 0.5ex 0.8ex;
+	text-decoration: none;
+}
+
+[role=button]:focus {
+	border: 1px dotted;
+	border-color: silver;
+	outline: 0;
+}
+[role=button]:hover {
+	border: 1px solid;
+	border-color: silver;
+	box-shadow: 0px 0px 2px silver;
+}
+[role=button]:active {
+	box-shadow: inset 0px 0px 2px silver;
+}
+
+[role=button][checked] {
+	border: 1px solid;
+	border-color: silver;
+	box-shadow: inset 0px 0px 2px silver;
+	background-color: white;
+}
+
+sc-btn > * {
+	display: -moz-box;
+	cursor: pointer;
+}
+
+sc-btn > img.icon:not([src]) {
+	display: none;
+}
+
+sc-btn[label] > img.icon[src] {
+	padding-right: 0.8ex;
+}
+
+sc-btn[selected="true"] .label {
+    color: #00669A;
+}
+
+sc-toolbar.tbLite > sc-btn[role=button] {
+	border-color: transparent;
+	color: grey;
+}
+
+sc-toolbar.tbLite > sc-btn[checked="true"]{
+	border-bottom: 2px solid #00669A;
+}
+
+sc-toolbar.tbLite > sc-btn:hover, sc-toolbar.tbLite > sc-btn[checked="true"]  {
+    background: transparent none;
+    box-shadow: none;
+    color: #00669A;
+}
+
+sc-toolbar.tbLite > sc-btn > img{
+	display:none;
+}
+
+sc-toolbar.tbLite > sc-btn[data-action="dptBrowserGoToRoot"]::before{
+	font-family:"fontello";
+	content:"\e803";
+	font-size:25px;
+}
+
+sc-toolbar.tbLite > sc-btn[data-action="dptBrowserToggleTrash"]::before{
+	font-family:"fontello";
+	content:"\e806";
+	font-size:22px;
+}
+
+sc-toolbar.tbLite > sc-btn[data-action="actionAddResource"]::before{
+	font-family:"fontello";
+	content:"\e807";
+	font-size:25px;
+}
+
+sc-toolbar.tbLite > sc-btn[data-action="actionCreateFolder"]::before,
+sc-toolbar.tbLite > sc-btn[data-action="actionCreateCustomFolder"]::before{
+	font-family:"fontello";
+	content:"\e808";
+	font-size:25px;
+}
+
+sc-toolbar.tbLite > sc-btn[data-action="actionStoreMoveToTrash"]::before{
+	font-family:"fontello";
+	content:"\e806";
+	font-size:14px;
+}
+
+sc-toolbar.tbLite > sc-btn[data-action="actionStoreRestoreFromTrash"]::before{
+	font-family:"fontello";
+	content:"\e80f";
+	font-size:16px;
+}
+
+sc-toolbar.tbLite > sc-btn[data-action="actionStoreUnlist"]::before{
+	font-family:"fontello";
+	content:"\e816";
+	font-size:14px;
+}
+
+sc-toolbar.tbLite > sc-btn[data-action="actionStoreRelist"]::before{
+	font-family:"fontello";
+	content:"\e826";
+	font-size:16px;
+}
+
+
+sc-toolbar.tbLite > sc-btn[data-action="actionStoreRemoveRes"]::before{
+	font-family:"fontello";
+	content:"\e829";
+	font-size:16x;
+}
+
+sc-toolbar[orient=vertical] > * {
+	margin-top:3px;
+	margin-bottom:3px;
+}
+
+sc-toolbar[icononly] > sc-btn[role=button] > .label {
+	display: none;
+}
+
+sc-toolbar[icononly] > sc-btn[role=button] > img.icon[src] {
+	padding-right: 0;
+}
+
+</style>

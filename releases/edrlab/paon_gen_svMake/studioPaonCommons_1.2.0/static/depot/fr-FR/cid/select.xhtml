@@ -1,0 +1,76 @@
+<!DOCTYPE html SYSTEM "about:legacy-compat">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="fr-FR" xml:lang="fr-FR"><head><meta charset="UTF-8"/><title>Sélection d&apos;une ressource</title><meta name="viewport" content="width=device-width, initial-scale=.8"/><style>
+				body{
+					direction : ltr;
+					margin:0;
+				}
+			</style><style>
+				body {
+					margin: 0;
+					padding: 0;
+					display: flex;
+					min-height: 0;
+					min-width: 0;
+					flex-direction: column;
+					height: 100vh;
+					overflow: hidden;
+				}
+
+				main {
+					flex: 1;
+					display: flex;
+					min-height: 0;
+					min-width: 0;
+					flex-direction: column;
+					overflow: auto;
+				}
+			</style>&gt;
+  		<script>
+  				window.knownNavCompat = [
+						{name: "Brave", url: "https://brave.com"},
+						{name: "Chrome", url: "https://www.google.fr/chrome"},
+						{name: "Chromium (distributions Linux uniquement)"},
+						{name: "Edge", url: "https://www.microsoft.com/edge"},
+						{name: "Opera", url: "https://www.opera.com"},
+						{name: "Vivaldi", url: "https://vivaldi.com"}
+					];
+
+					function badNavigator() {
+						let root = document.getElementById("loading");
+						root.innerHTML = "";
+						if(/iPhone|iPod|iPad/.test(navigator.platform)){
+							root.appendChild(document.createElement("p")).innerHTML = "Les appareils mobiles utilisant iOS sont actuellement incompatibles.";
+							root.appendChild(document.createElement("p")).innerHTML = "Veuillez utiliser un appareil sous un autre système d&apos;exploitation.";
+						} else{
+							root.appendChild(document.createElement("p")).innerHTML = "Ce navigateur ne semble pas compatible.";
+							try{
+								root.appendChild(document.createElement("p")).innerHTML = "Veuillez utiliser la dernière version des navigateurs suivants :";
+								let ul = root.appendChild(document.createElement("ul"));
+								ul.setAttribute("style", "text-align:start");
+								for (let ii = 0; ii &lt; window.knownNavCompat.length; ii++) {
+									if(window.knownNavCompat[ii].url) {
+										let a = ul.appendChild(document.createElement("li")).appendChild(document.createElement("a"));
+										a.innerHTML = window.knownNavCompat[ii].name;
+										a.setAttribute("target", "_blank");
+										a.setAttribute("href", window.knownNavCompat[ii].url);
+									}else
+										ul.appendChild(document.createElement("li")).innerHTML = window.knownNavCompat[ii].name;
+								}
+							}catch(e){
+								root.appendChild(document.createElement("p")).innerHTML = "Veuillez utiliser un navigateur plus récent.";
+							}
+						}
+					}
+
+					function showError(e) {
+						document.getElementById('loading').firstElementChild.textContent = "Une anomalie ne permet pas d&apos;accéder à ce service.";
+					}
+			</script></head><body><main id="loading" style="text-align: center; position: absolute; width: 100vw; height: 100vh;font-family: sans-serif;"><p>Chargement...</p></main><script>
+				if (!window.customElements || !document.documentElement.attachShadow) badNavigator();
+
+				const script = document.createElement("script");
+				script.type = "module";
+				script.src = "https://studio-paon.edrlab.org/~~static/depot/fr-FR/cid/select.js?202401191504";
+				script.onerror = showError;
+				document.head.appendChild(script);
+			</script></body></html>

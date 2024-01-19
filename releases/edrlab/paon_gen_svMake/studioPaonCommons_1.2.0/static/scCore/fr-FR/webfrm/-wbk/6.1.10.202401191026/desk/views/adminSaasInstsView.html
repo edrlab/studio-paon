@@ -1,0 +1,536 @@
+<!--
+ Attributs :
+ -  svcAdminInstsUrl : url du svc d'admin des instances
+-->
+<script>
+
+	xtag.register('sc-adminsaasinstsview', {
+		mixins: ['hbox', 'flex', 'view'],
+		lifecycle: {
+			'created:mixins(before)': function () {
+			},
+		},
+
+		methods: {
+
+			selectInst: function (pInstToSel) {
+				if(pInstToSel) {
+					var vGrid = this.fGrid;
+					this.fDatasHandler.getGridDatas().some(function (pE, pIdx) {
+						if (pE.instId === pInstToSel) {
+							vGrid.setSelectedRows(pIdx);
+							return true;
+						}
+					});
+				} else {
+					this.fGrid.setSelectedRows(-1);
+				}
+			},
+			reloadDatas: function () {
+				var vReq = io.openHttpRequest(this.svcAdminInstsUrl + "?cdaction=GetInfo");
+				vReq.onloadend = io.jsonXhrCb(this.xOnLoadEndDatas, this);
+				vReq.send();
+			},
+			xOnLoadEndDatas: function (pJson) {
+				if (!pJson) {
+					alert("Chargement en erreur. Recommencez ultérieurement.");
+					return;
+				}
+				this.fDatasHandler.setGridDatas(pJson.instances.sort(function(a,b){return a.instId>b.instId?1:-1;}));
+			},
+
+			xInitsaasView: function (pErrors) {
+				if (pErrors) {
+					alert("Chargement en erreur. Recommencez ultérieurement.");
+					throw pErrors;
+				}
+				var vBd = dom.newBd(this).style("margin", "1em");
+				this.fGrid = vBd.elt("sc-grid", "saasInsts").att("flex", "1").currentUp();
+				this.fDatasHandler = new this.grid.GridDataHandlerJsonArray();
+				this.fGrid
+						.initColumDefs(extPoints.getList("saas:columns"))
+						.initGridDataHandler(this.fDatasHandler);
+				vBd.elt("div").att("orient", "vertical");
+				vBd.elt("sc-toolbar", "tbLite saasInstsTbTop").att("orient", "vertical").att("icononly", "").prop("actionContext", this).prop("actionsLists", "saas:toolbar:top").up();
+				vBd.elt("sc-toolbar", "tbLite saasInstsTbBottom flex").att("orient", "vertical").att("pack", "end").att("icononly", "").prop("actionContext", this).prop("actionsLists", "saas:toolbar:bottom").up();
+				this.reloadDatas();
+			},
+
+			onInstUpdated: function(pInstId){
+				if (!pInstId) {
+					alert("La modification a échoué. Recommencez ultérieurement.");
+					return;
+				}
+				var vReq = io.openHttpRequest(this.svcAdminInstsUrl + "?cdaction=GetInfo");
+				vReq.onloadend = io.jsonXhrCb(function(pJson){
+						this.xOnLoadEndDatas(pJson);
+						this.selectInst(pInstId);
+					}, this);
+				vReq.send();
+			},
+
+			xInitDefaultActions: function() {
+				function initButtonNode_SelDependantStopped(pButtonNode, pContext) {
+					pButtonNode.refreshState = function () {
+						var vInstData = pContext.fDatasHandler.getGridDatas()[pContext.fGrid.getSelectedRow()];
+						if (vInstData) {
+							this.removeAttribute("disabled");
+							if (vInstData.instStatus !== "stopped") {
+								this.setAttribute("disabled", "true");
+							}
+						} else {
+							this.setAttribute("disabled", "true");
+						}
+					}
+					pContext.addEventListener("gridSelect", function (pEvt) {
+						pButtonNode.refreshState();
+					}, false);
+					pButtonNode.refreshState();
+				}
+
+				function initButtonNode_SelDependantStarted(pButtonNode, pContext) {
+					pButtonNode.refreshState = function () {
+						var vInstData = pContext.fDatasHandler.getGridDatas()[pContext.fGrid.getSelectedRow()];
+						if (vInstData) {
+							this.removeAttribute("disabled");
+							if (vInstData.instStatus !== "started") {
+								this.setAttribute("disabled", "true");
+							}
+						} else {
+							this.setAttribute("disabled", "true");
+						}
+					}
+					pContext.addEventListener("gridSelect", function (pEvt) {
+						pButtonNode.refreshState();
+					}, false);
+					pButtonNode.refreshState();
+				}
+
+
+				function initButtonNode_SelDependant(pButtonNode, pContext) {
+					pButtonNode.refreshState = function () {
+						var vInstData = pContext.fDatasHandler.getGridDatas()[pContext.fGrid.getSelectedRow()];
+						if (vInstData) {
+							this.removeAttribute("disabled");
+						} else {
+							this.setAttribute("disabled", "true");
+						}
+					}
+					pContext.addEventListener("gridSelect", function (pEvt) {
+						pButtonNode.refreshState();
+					}, false);
+					pButtonNode.refreshState();
+				}
+
+				var vThis = this;
+				extPoints.addToList("saas:toolbar:top", "addInst", 1, new actions.Action("addInst")
+					.setDescription(extPoints.getPref("saas.handleInstsBySet",false)?"Ajouter un jeu d'instances":"Ajouter une instance")
+					.override("execute", function (pEvent, pContext) {
+						page.loadTags({"sc-updateinst": "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/desk/dialogs/updateInst.html"}, function (pErrors) {
+							if (pErrors) {
+								console.log(pErrors);
+								return;
+							}
+							var vBd = dom.newBd(document.body);
+							var vDialog = vBd.elt('sc-dialog').current();
+							var vUpdtInst = vBd.elt('sc-updateinst', 'thinBorder').currentUp();
+							var vCtx = {
+								window: window,
+								action:"create",
+								svcAdminInstsUrl: vThis.getAttribute("svcAdminInstsUrl"),
+								updateInstCb: function (pInstId) {
+									vDialog.removeDialog();
+									if (pInstId) vThis.onInstUpdated(pInstId);
+								}
+							};
+							vUpdtInst.initUpdateInst(vCtx,
+									{fields: extPoints.mergeLists(["saas:fields:inst:create", "saas:fields:inst", "saas:fields:commons"])}
+							);
+						});
+					}), 10);
+
+				//Bouton de rechargement de toutes les instances
+				extPoints.addToList("saas:toolbar:top", "updateAllSet", 1, new actions.Action("updateAllSet")
+					.setDescription("Mettre à jour toutes les instances")
+					//.setIcon("https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/desk/views/saas/deleteUser.png")
+					.override("execute", function (pEvent, pContext) {
+						var i = 0;
+						if(!confirm("Redéploiement et mise à jour de toutes les instances. ATTENTION, tout retour en arrière est impossible.")) return;
+						var set = extPoints.getSvc("saas.set");
+						var reloadInst= function(){
+							var vInstData = pContext.fDatasHandler.getGridDatas()[i];
+							if (!vInstData) {
+								alert("Toutes les instances ont été correctement redéployées")
+								pContext.reloadDatas();
+							}
+							else {
+								var vReq = io.openHttpRequest(io.appendParamsToUrl(pContext.svcAdminInstsUrl,
+									"cdaction", "CloneInst",
+									"instId", vInstData.instId,
+									"instType",set.extractInstType(vInstData.instId),
+									"vars",JSON.stringify(set.extractVarsToSend(vInstData.instId))
+								));
+								vReq.onloadend = io.jsonXhrCb(function (pJson, pError) {
+									if(pError) {
+										alert("Une erreur est survenue. Recommencez ultérieurement.");
+										pContext.reloadDatas();
+									} else {
+										i++;
+										reloadInst();
+									}
+								});
+								vReq.send();
+							}
+						}
+						reloadInst();
+
+					}), 20);
+
+				/**
+				 * Reload/delete d'un jeu d'instances en bar du haut ssi en mode set.
+				 * Sinon, bouton contextuel à une instance.
+				 */
+				if(extPoints.getPref("saas.handleInstsBySet",false)){
+					extPoints.addToList("saas:toolbar:top", "deleteInstsSet", 1, new actions.Action("deleteInstsSet")
+						.setDescription("Supprimer un jeu d'instances")
+						.override("execute", function (pEvent, pContext) {
+							page.loadTags({"sc-updateinst": "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/desk/dialogs/updateInst.html"}, function (pErrors) {
+								if (pErrors) {
+									console.log(pErrors);
+									return;
+								}
+								var vBd = dom.newBd(document.body);
+								var vDialog = vBd.elt('sc-dialog').current();
+								var vUpdtInst = vBd.elt('sc-updateinst', 'thinBorder').currentUp();
+								var vCtx = {
+									window: window,
+									action:"deleteSet",
+									svcAdminInstsUrl: vThis.getAttribute("svcAdminInstsUrl"),
+									updateInstCb: function () {
+										vDialog.removeDialog();
+										vThis.reloadDatas();
+									}
+								};
+								vUpdtInst.initUpdateInst(vCtx,
+									{fields: extPoints.mergeLists(["saas:fields:inst:delete"])}
+								);
+							});
+						}), 30);
+
+
+				}
+
+				//Bouton d'infos d'une instance.
+				extPoints.addToList("saas:toolbar:bottom", "infos", 1, new actions.Action("instInfos")
+					.setDescription("Information de consommation de l'instance")
+					//.setIcon("https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/desk/views/saas/deleteUser.png")
+					.override("initButtonNode", initButtonNode_SelDependant)
+					.override("execute", function (pEvent, pContext) {
+						var vInstData = pContext.fDatasHandler.getGridDatas()[pContext.fGrid.getSelectedRow()];
+						if (!vInstData) return;
+						page.loadTags({"sc-updateinst": "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/desk/dialogs/instInfos.html"}, function (pErrors) {
+							if (pErrors) {
+								console.log(pErrors);
+								return;
+							}
+							var vBd = dom.newBd(document.body);
+							var vDialog = vBd.elt('sc-dialog').current();
+							var vInstInfos = vBd.elt('sc-instinfos', 'thinBorder').currentUp();
+							var vCtx = {
+								window: window,
+								instId: vInstData.instId,
+								svcAdminInstsUrl: vThis.getAttribute("svcAdminInstsUrl"),
+								updateInstCb: function () {
+									vDialog.removeDialog();
+								}
+							};
+							vInstInfos.initInstInfos(vCtx);
+						});
+					}), 10);
+
+				//Bouton de start d'une instance.
+				extPoints.addToList("saas:toolbar:bottom", "start", 1, new actions.Action("startInst")
+					.setDescription("Lancer l'instance sélectionnée")
+					//.setIcon("https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/desk/views/saas/deleteUser.png")
+					.override("initButtonNode", initButtonNode_SelDependantStopped)
+					.override("execute", function (pEvent, pContext) {
+						var vInstData = pContext.fDatasHandler.getGridDatas()[pContext.fGrid.getSelectedRow()];
+						if (!vInstData) return;
+						var vReq = io.openHttpRequest(io.appendParamsToUrl(pContext.svcAdminInstsUrl,
+							"cdaction", "StartInst",
+							"instId", vInstData.instId
+						));
+						vReq.onloadend = io.jsonXhrCb(function (pJson, pError) {
+							if(pError) {
+								alert("Une erreur est survenue. Recommencez ultérieurement.");
+								pContext.reloadDatas();
+							} else {
+								pContext.onInstUpdated(pJson.instId);
+							}
+						});
+						vReq.send();
+					}), 20);
+
+				//Bouton de stop d'une instance.
+				extPoints.addToList("saas:toolbar:bottom", "stop", 1, new actions.Action("stopInst")
+					.setDescription("Stopper l'instance sélectionnée")
+					//.setIcon("https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/desk/views/saas/deleteUser.png")
+					.override("initButtonNode", initButtonNode_SelDependantStarted)
+					.override("execute", function (pEvent, pContext) {
+						var vInstData = pContext.fDatasHandler.getGridDatas()[pContext.fGrid.getSelectedRow()];
+						if (!vInstData) return;
+						var vReq = io.openHttpRequest(io.appendParamsToUrl(pContext.svcAdminInstsUrl,
+							"cdaction", "StopInst",
+							"instId", vInstData.instId,
+						));
+						vReq.onloadend = io.jsonXhrCb(function (pJson, pError) {
+							if(pError) {
+								alert("Une erreur est survenue. Recommencez ultérieurement.");
+								pContext.reloadDatas();
+							} else {
+								pContext.onInstUpdated(pJson.instId);
+							}
+						});
+						vReq.send();
+					}), 30);
+
+				if(!extPoints.getPref("saas.handleInstsBySet",false)) {
+					/**
+					 * Bouton de rechargement d'une instance. Supprimé si les instances sont configurées en mode set.
+					 */
+					extPoints.addToList("saas:toolbar:bottom", "update", 1, new actions.Action("updateInst")
+						.setDescription("Reconfigurer l'instance sélectionnée")
+						//.setIcon("https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/desk/views/saas/deleteUser.png")
+						.override("initButtonNode", initButtonNode_SelDependant)
+						.override("execute", function (pEvent, pContext) {
+							var vInstData = pContext.fDatasHandler.getGridDatas()[pContext.fGrid.getSelectedRow()];
+							if (!vInstData) return;
+							page.loadTags({"sc-updateinst": "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/desk/dialogs/updateInst.html"}, function (pErrors) {
+								if (pErrors) {
+									console.log(pErrors);
+									return;
+								}
+								var vBd = dom.newBd(document.body);
+								var vDialog = vBd.elt('sc-dialog').current();
+								var vUpdtInst = vBd.elt('sc-updateinst', 'thinBorder').currentUp();
+								var vCtx = {
+									window: window,
+									action: "reload",
+									instId: vInstData.instId,
+									svcAdminInstsUrl: vThis.getAttribute("svcAdminInstsUrl"),
+									updateInstCb: function (pInstId) {
+										vDialog.removeDialog();
+										if (pInstId) vThis.onInstUpdated(pInstId);
+									}
+								};
+								vUpdtInst.initUpdateInst(vCtx,
+									{fields: extPoints.mergeLists(["saas:fields:inst:update", "saas:fields:inst", "saas:fields:commons"])}
+								);
+							});
+					}), 40);
+
+					/**
+					 * Bouton de supp d'une instance. Supprimée si les instances sont configurées en mode set.
+					 */
+					extPoints.addToList("saas:toolbar:bottom", "delete", 1, new actions.Action("deleteInst")
+						.setDescription("Supprimer l'instance sélectionnée")
+						//.setIcon("https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/desk/views/saas/deleteUser.png")
+						.override("initButtonNode", initButtonNode_SelDependant)
+						.override("execute", function (pEvent, pContext) {
+							var vInstData = pContext.fDatasHandler.getGridDatas()[pContext.fGrid.getSelectedRow()];
+							if (!vInstData) return;
+							if (!confirm("Souhaitez-vous supprimer cette instance ?\nATTENTION cette suppression est définitive.")) return;
+							var vReq = io.openHttpRequest(io.appendParamsToUrl(pContext.svcAdminInstsUrl,
+								"cdaction", "RemoveInst",
+								"instId", vInstData.instId
+							));
+							vReq.onloadend = io.jsonXhrCb(function (pJson, pError) {
+								if (pError) {
+									alert("Une erreur est survenue. Recommencez ultérieurement.");
+								}
+								pContext.reloadDatas();
+							});
+							vReq.send();
+					}), 50);
+				}
+
+
+			}
+		},
+
+		events: {
+			/* Chargement au 1er affichage de la view. */
+			'SCViewShown': function (pEvent) {
+				if (pEvent.target !== this || this.fStarted) return;
+				this.fStarted = true;
+
+				if (!this.svcAdminInstsUrl) this.svcAdminInstsUrl = this.getAttribute("svcAdminInstsUrl") || authProv.getAuthServerUrl() + "/web/u/adminInst";
+
+				//Actions et fields
+				this.xInitDefaultActions();
+
+				//Colonnes
+				extPoints.getSvcLazy("grid", function (grid, pErrors) {
+					if (pErrors) {
+						this.xInitsaasView(pErrors);
+					} else {
+						this.grid = grid;
+						extPoints.addToList("saas:columns", "instId", 1,
+								new grid.ColumnDef("instId").setLabel("ID").setFlex("10em", 1, 1).setCellBuilderFactory(function () {return new grid.CellBuilderString(this, "instId")})
+								, 10);
+
+						//Dans un contexte non set, on ne sait pas retrouver l'instanceType
+						if(extPoints.getPref("saas.handleInstsBySet",false)) {
+							var set = extPoints.getSvc("saas.set");
+							extPoints.addToList("saas:columns", "instType", 1,
+								new grid.ColumnDef("instType").setLabel("Nom de l'instance").setFlex("10em", 1, 1).setCellBuilderFactory(function () {return new grid.CellBuilderCustom(this, "instType",function(rootNode){
+									var props = set.extractAllVars(this.fRowDatas.instId);
+									var instType = set.getInstType(this.fRowDatas.instId);
+									rootNode.textContent = instType.getLabel(props);
+								})})
+								, 20);
+
+							extPoints.addToList("saas:columns", "url", 1,
+								new grid.ColumnDef("instType").setLabel("URL").setFlex("50em", 1, 1).setCellBuilderFactory(function () {return new grid.CellBuilderCustom(this, "url",function(rootNode){
+									var props = set.extractAllVars(this.fRowDatas.instId);
+									var instType = set.getInstType(this.fRowDatas.instId);
+									var bd = dom.newBd(rootNode);
+									var url = instType.getUrl(props);
+									bd.elt("a").att("href",url).att("target","_blank").elt("span").text(url);
+								})})
+								, 30);
+						}
+
+
+						extPoints.addToList("saas:columns", "lastDeploy", 1,
+								new grid.ColumnDef("lastDeploy").setLabel("Dernier déploiement").setFlex("10em", 1, 1).setCellBuilderFactory(function () {return new grid.CellBuilderDate(this, "lastDeploy",function(date){
+									return i18n.formatStr("le %s",this.toLocaleString("fr-FR"));
+								})})
+								, 40);
+						extPoints.addToList("saas:columns", "instStatus", 1,
+								new grid.ColumnDef("instStatus").setLabel("Statut").setCellBuilderFactory(function () {return new grid.CellBuilderIconLabel(this, "instStatus")})
+								, 50);
+						page.loadTags({
+							"sc-grid": "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/commons/widgets/grid.html"
+						}, this.xInitsaasView, this);
+					}
+				}, this, "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/svcs/grid.js");
+			}
+		}
+	});
+</script>
+
+<style>
+@font-face {
+	font-family: 'fontello';
+	src: url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.eot');
+	src: url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.eot') format('embedded-opentype'),
+	url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.woff') format('woff'),
+	url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.ttf') format('truetype'),
+	url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.svg') format('svg');
+	font-weight: normal;
+	font-style: normal;
+}
+
+sc-saasview sc-btn {
+	border:none;
+    padding: 0.5em;
+	background-color:transparent;
+	color:gray;
+}
+
+sc-saasview sc-btn > img{
+	display:none;
+}
+
+sc-saasview sc-btn:hover {
+	box-shadow:none;
+	color:#00669A;
+}
+
+sc-btn[data-action="addInst"]::before{
+	font-family:"fontello";
+	content:"\e80a";
+	font-size:20px;
+	width:20px;
+}
+
+sc-btn[data-action="deleteInstsSet"]::before{
+	font-family:"fontello";
+	content:"\e813";
+	font-size:20px;
+	width:20px;
+}
+
+sc-btn[data-action="updateAllSet"]::before{
+	font-family:"fontello";
+	content:"\e828";
+	font-size:20px;
+	width:20px;
+}
+
+sc-btn[data-action="deleteInst"]::before{
+	font-family:"fontello";
+	content:"\e813";
+	font-size:20px;
+	width:20px;
+}
+
+sc-btn[data-action="updateInst"]::before{
+	font-family:"fontello";
+	content:"\e828";
+	font-size:20px;
+	width:20px;
+}
+
+
+
+sc-btn[data-action="instInfos"]::before{
+	font-family:"fontello";
+	content:"\e814";
+	font-size:20px;
+	width:20px;
+}
+
+sc-btn[data-action="startInst"]::before{
+	font-family:"fontello";
+	content:"\F00F";
+	font-size:20px;
+	width:20px;
+}
+sc-btn[data-action="stopInst"]::before{
+	font-family:"fontello";
+	content:"\f080";
+	font-size:20px;
+	width:20px;
+}
+
+.stopped, .started, .failed, .stopping, .starting {
+	text-align: center;
+}
+.stopped span, .started span, .failed span, .stopping span, .starting span{
+	display:none;
+}
+.stopped::before{
+	font-family:"fontello";
+	content:"\F00E";
+}
+.started::before{
+	font-family:"fontello";
+	content:"\F00F";
+}
+.failed::before{
+	font-family:"fontello";
+	content:"\e829";
+}
+.stopping::before{
+	font-family:"fontello";
+	content:"\F010";
+}
+.starting::before{
+	font-family:"fontello";
+	content:"\e825";
+	font-size: 0.8em;
+}
+
+</style>le>

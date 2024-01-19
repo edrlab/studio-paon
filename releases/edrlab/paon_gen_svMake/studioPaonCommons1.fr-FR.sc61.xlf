@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+	<file original="model" source-language="" datatype="plaintext" target-language="fr-FR">
+		<header>
+			<note>Scenari portal : studioPaonCommons1</note>
+		</header>
+		<body>
+			<trans-unit id="s2MpblVeP1bnBKnG4SXoOd" resname="Table des matières">
+				<source xml:space="preserve">Table des matières</source>
+			</trans-unit>
+			<trans-unit id="uAz3qvi1bjjJKgMNdoeGB" resname="Liste des pages">
+				<source xml:space="preserve">Liste des pages</source>
+			</trans-unit>
+			<trans-unit id="DsTkaWABZPhBfTWvavbeSd" resname="(note)">
+				<source xml:space="preserve">(note)</source>
+			</trans-unit>
+			<trans-unit id="Jb1r5jLirlkFKZihdEqVqg" resname="Import">
+				<source xml:space="preserve">Import</source>
+			</trans-unit>
+			<trans-unit id="DtTjNn2hARiLG8zb9kJPpf" resname="Auteur">
+				<source xml:space="preserve">Auteur</source>
+			</trans-unit>
+			<trans-unit id="B4QxRFD7eKdF2pefcuejtj" resname="Gestionnaire fonctionnel">
+				<source xml:space="preserve">Gestionnaire fonctionnel</source>
+			</trans-unit>
+			<trans-unit id="LqsaaKYuPxkWvatKMjhZyg" resname="Administrateur technique">
+				<source xml:space="preserve">Administrateur technique</source>
+			</trans-unit>
+			<trans-unit id="bPB0rSb40jc3KTtOUfn7Fg" resname="Aucun">
+				<source xml:space="preserve">Aucun</source>
+			</trans-unit>
+			<trans-unit id="c91iBy7fSUjohqFBC8q0Ng" resname="Lecteur">
+				<source xml:space="preserve">Lecteur</source>
+			</trans-unit>
+			<trans-unit id="RKb5nzWpz4kdcnxtbBDRL" resname="Dossier sans accueil">
+				<source xml:space="preserve">Dossier sans accueil</source>
+			</trans-unit>
+			<trans-unit id="RDfA5GRDxocRfUgi7Nu9Fc" resname="Dossier avec accueil personnalisé">
+				<source xml:space="preserve">Dossier avec accueil personnalisé</source>
+			</trans-unit>
+			<trans-unit id="E5j6D5lO9ReCumopAXwcyf" resname="XML">
+				<source xml:space="preserve">XML</source>
+			</trans-unit>
+			<trans-unit id="UjiDbwRTJpkFUJrACLuDf" resname="EPUB 3">
+				<source xml:space="preserve">EPUB 3</source>
+			</trans-unit>
+			<trans-unit id="qmfSns87R2RE2abRes1qj" resname="Data">
+				<source xml:space="preserve">Data</source>
+			</trans-unit>
+			<trans-unit id="pQQ5vPq3PMfhlhu7j0v4Bh" resname="Archivé">
+				<source xml:space="preserve">Archivé</source>
+			</trans-unit>
+			<trans-unit id="zFA9kUZcaCge69Ec2Ex5Db" resname="Archivé - réouvert">
+				<source xml:space="preserve">Archivé - réouvert</source>
+			</trans-unit>
+			<trans-unit id="HdkmoKdTeeiviHUofchhtg" resname="Ré-importer les contenus dans chain">
+				<source xml:space="preserve">Ré-importer les contenus dans chain</source>
+			</trans-unit>
+			<trans-unit id="FRETYDWBB1bXEddUrZGkSg" resname="Importer un accueil de dossier personnalisé">
+				<source xml:space="preserve">Importer un accueil de dossier personnalisé</source>
+			</trans-unit>
+			<trans-unit id="pEDMm0OKAihQ9HxzBK6Yef" resname="Contenu">
+				<source xml:space="preserve">Contenu</source>
+			</trans-unit>
+			<trans-unit id="IZctkuORccjRa1H4ZOGmdg" resname="Rendu">
+				<source xml:space="preserve">Rendu</source>
+			</trans-unit>
+			<trans-unit id="zOVTDwNdXzls6ypcVeUzg" resname="Sources">
+				<source xml:space="preserve">Sources</source>
+			</trans-unit>
+			<trans-unit id="upjBKaaanhi2X8tfUHqVQe" resname="Supprimer l'accueil de ce dossier">
+				<source xml:space="preserve">Supprimer l'accueil de ce dossier</source>
+			</trans-unit>
+			<trans-unit id="kONrWvG7RyjwwDnkMOQ1R" resname="ISBN">
+				<source xml:space="preserve">ISBN</source>
+			</trans-unit>
+			<trans-unit id="jGyKHMwkbjcDnS3PhpLuTh" resname="UID">
+				<source xml:space="preserve">UID</source>
+			</trans-unit>
+			<trans-unit id="s3PEBGtp9ibE4wzPkVkgdd" resname="Source">
+				<source xml:space="preserve">Source</source>
+			</trans-unit>
+			<trans-unit id="i8NTLEbYQcjgypsM0FyTvd" resname="Titre">
+				<source xml:space="preserve">Titre</source>
+			</trans-unit>
+			<trans-unit id="JLLitKpNlIdWZxoDoXFK2i" resname="Éditeur">
+				<source xml:space="preserve">Éditeur</source>
+			</trans-unit>
+			<trans-unit id="AH8ZraEykhkvrCuQzMtZz" resname="Commentaire">
+				<source xml:space="preserve">Commentaire</source>
+			</trans-unit>
+			<trans-unit id="mRDwWn4WzkbRszjXmERGbc" resname="Nombre de pages">
+				<source xml:space="preserve">Nombre de pages</source>
+			</trans-unit>
+			<trans-unit id="cSi6vQODHshkFSTASgCLi" resname="Format d'origine">
+				<source xml:space="preserve">Format d'origine</source>
+			</trans-unit>
+			<trans-unit id="cLgisO9P3Obg62GYc4DbNb" resname="A demander à Platon">
+				<source xml:space="preserve">A demander à Platon</source>
+			</trans-unit>
+			<trans-unit id="t1CP2HQVCBjAVMlpuig6ee" resname="En attente de Platon">
+				<source xml:space="preserve">En attente de Platon</source>
+			</trans-unit>
+			<trans-unit id="n30QdA1Sq8jBhIcdemCCif" resname="A convertir">
+				<source xml:space="preserve">A convertir</source>
+			</trans-unit>
+			<trans-unit id="PlcllftOOgkG1fyVCiD1Oi" resname="En cours">
+				<source xml:space="preserve">En cours</source>
+			</trans-unit>
+			<trans-unit id="wWnIdzgFujjEwTdkfxiTxc" resname="Exporté">
+				<source xml:space="preserve">Exporté</source>
+			</trans-unit>
+			<trans-unit id="RmzUSVA2rGdYUpbVgtUbdi" resname="OK Médiathèque">
+				<source xml:space="preserve">OK Médiathèque</source>
+			</trans-unit>
+			<trans-unit id="JxG7VD7et9ft2zHLeLPqhb" resname="En attente">
+				<source xml:space="preserve">En attente</source>
+			</trans-unit>
+			<trans-unit id="Qhg6ZwtR0yiVD9dZVzCgfj" resname="Réouvert">
+				<source xml:space="preserve">Réouvert</source>
+			</trans-unit>
+			<trans-unit id="Ifv33ZlzEbim15jS6XOsOd" resname="Statut de production">
+				<source xml:space="preserve">Statut de production</source>
+			</trans-unit>
+			<trans-unit id="KfwJFiVzBzhVYeG2QMtaM" resname="Statut du titre dans la chaine de production">
+				<source xml:space="preserve">Statut du titre dans la chaine de production</source>
+			</trans-unit>
+			<trans-unit id="erVXtQaUsVd4iDQ8WV8u1c" resname="Statut Audio">
+				<source xml:space="preserve">Statut Audio</source>
+			</trans-unit>
+			<trans-unit id="xMAvXp6Xb1dFPmVC6yYWnb" resname="Statut Braille">
+				<source xml:space="preserve">Statut Braille</source>
+			</trans-unit>
+			<trans-unit id="Efr8dqV2LLeSnB6GKQ8xBc" resname="Illustration">
+				<source xml:space="preserve">Illustration</source>
+			</trans-unit>
+			<trans-unit id="dQ8FjoC9Ciepd4EtkDbHMb" resname="Collection">
+				<source xml:space="preserve">Collection</source>
+			</trans-unit>
+			<trans-unit id="jHUGVGcV3bfKFEKYDvg4Be" resname="Nom du fichier source">
+				<source xml:space="preserve">Nom du fichier source</source>
+			</trans-unit>
+			<trans-unit id="WGentujHnCwr19ecJslJg" resname="Langue d'origine">
+				<source xml:space="preserve">Langue d'origine</source>
+			</trans-unit>
+			<trans-unit id="MVxkRiCkw1j3RnpEKzBerj" resname="Type d'ouvrage">
+				<source xml:space="preserve">Type d'ouvrage</source>
+			</trans-unit>
+			<trans-unit id="RlZAdeSZbrgFXOoqhzYddc" resname="Auteur Audio">
+				<source xml:space="preserve">Auteur Audio</source>
+			</trans-unit>
+			<trans-unit id="vtlWvdHHfCcWfFsRUxjAxi" resname="Auteur Braille">
+				<source xml:space="preserve">Auteur Braille</source>
+			</trans-unit>
+			<trans-unit id="Vg150O9cK2bylIIJiKe9D" resname="Auteur Pivot">
+				<source xml:space="preserve">Auteur Pivot</source>
+			</trans-unit>
+			<trans-unit id="ToLRLBmjMXgFKuD9bKVPzb" resname="Statut Embossage">
+				<source xml:space="preserve">Statut Embossage</source>
+			</trans-unit>
+			<trans-unit id="jiUrLjwPf8iy0E20ZR07Jh" resname="Nom de fichier">
+				<source xml:space="preserve">Nom de fichier</source>
+			</trans-unit>
+			<trans-unit id="rRVUuiRt3mxbz1ohnBS3f" resname="Détail DTD (Doctype)">
+				<source xml:space="preserve">Détail DTD (Doctype)</source>
+			</trans-unit>
+			<trans-unit id="bJLq1KpEdVfI9VMRYR3K8h" resname="Date de publication en médiathèque">
+				<source xml:space="preserve">Date de publication en médiathèque</source>
+			</trans-unit>
+			<trans-unit id="bUKAeCAg63k6qDIP20sOR" resname="Date de parution">
+				<source xml:space="preserve">Date de parution</source>
+			</trans-unit>
+			<trans-unit id="IKv03RCbvGkOGce6mMHOPh" resname="Nombre de pages - Braille abrégé">
+				<source xml:space="preserve">Nombre de pages - Braille abrégé</source>
+			</trans-unit>
+			<trans-unit id="RxRAZl4utVbV92KpkcrNlf" resname="Nombre de pages pour le braille abrégé">
+				<source xml:space="preserve">Nombre de pages pour le braille abrégé</source>
+			</trans-unit>
+			<trans-unit id="usVB7Xyithh6cSE87BZvVi" resname="Nombre de pages - Braille intégral">
+				<source xml:space="preserve">Nombre de pages - Braille intégral</source>
+			</trans-unit>
+			<trans-unit id="qRxASvCelnmR4GhSrFuLg" resname="Nombre de pages pour le braille intégral">
+				<source xml:space="preserve">Nombre de pages pour le braille intégral</source>
+			</trans-unit>
+			<trans-unit id="wqwwjXKSV8jI0yzWxX59p" resname="Horodatage de statut">
+				<source xml:space="preserve">Horodatage de statut</source>
+			</trans-unit>
+			<trans-unit id="rsN7Z5RXplglZ3LwnrVTej" resname="Horodatage du changement de statut de l'entrée">
+				<source xml:space="preserve">Horodatage du changement de statut de l'entrée</source>
+			</trans-unit>
+			<trans-unit id="OJXcEIuqUNkcwAmVqVLTvg" resname="DTBook">
+				<source xml:space="preserve">DTBook</source>
+			</trans-unit>
+			<trans-unit id="fuJCWCC8QGbcnwFOAVeELh" resname="DTModel">
+				<source xml:space="preserve">DTModel</source>
+			</trans-unit>
+			<trans-unit id="EuvIUm5KgGcqaFhKDXB9Pg" resname="Archiver">
+				<source xml:space="preserve">Archiver</source>
+			</trans-unit>
+			<trans-unit id="fMwmIEvDsVeT9QgCX78G5f" resname="Importer un fichier XML">
+				<source xml:space="preserve">Importer un fichier XML</source>
+			</trans-unit>
+			<trans-unit id="spC30yD8MkhnnJnpRdZxKd" resname="Durée Audio">
+				<source xml:space="preserve">Durée Audio</source>
+			</trans-unit>
+			<trans-unit id="fRcTNID9nRg1dfEJUb4aVh" resname="Ré-ouvrir l'ouvrage archivé">
+				<source xml:space="preserve">Ré-ouvrir l'ouvrage archivé</source>
+			</trans-unit>
+			<trans-unit id="zMY9FyP0Sbk4tCq8ybAh5i" resname="§§webapp.name§§">
+				<source xml:space="preserve">§§webapp.name§§</source>
+			</trans-unit>
+			<trans-unit id="Sm6AMbpJs3jcdJVJnBIqCf" resname="Supprimer l\\'accueil de ce dossier">
+				<source xml:space="preserve">Supprimer l\'accueil de ce dossier</source>
+			</trans-unit>
+			<trans-unit id="xs8TqldKaRhoiHohvXHVp" resname="Format d\\'origine">
+				<source xml:space="preserve">Format d\'origine</source>
+			</trans-unit>
+			<trans-unit id="dJlgBmxdFeEqx6H7uo2mf" resname="Langue d\\'origine">
+				<source xml:space="preserve">Langue d\'origine</source>
+			</trans-unit>
+			<trans-unit id="eT5axVjQzbeiMzBkHOaMRb" resname="Type d\\'ouvrage">
+				<source xml:space="preserve">Type d\'ouvrage</source>
+			</trans-unit>
+			<trans-unit id="gMvTQ7C46nhDCVLaYhiHlg" resname="Ré-ouvrir l\\'ouvrage archivé">
+				<source xml:space="preserve">Ré-ouvrir l\'ouvrage archivé</source>
+			</trans-unit>
+			<trans-unit id="RZeZ1jGMlxhDPh6omTUTcg" resname="Chain">
+				<source xml:space="preserve">Chain</source>
+			</trans-unit>
+			<trans-unit id="VJOgVolQqdFjVhvIK537e" resname="Export">
+				<source xml:space="preserve">Export</source>
+			</trans-unit>
+			<trans-unit id="Pyfg5tXMY2jPsAplmIXjJc" resname="DT Modèle">
+				<source xml:space="preserve">DT Modèle</source>
+			</trans-unit>
+			<trans-unit id="AVFyftMgn1hG4Qfa3Owrke" resname="Fichier">
+				<source xml:space="preserve">Fichier</source>
+			</trans-unit>
+			<trans-unit id="vkLRUEPx3bblc6nqmgT8Rh" resname="srcUri">
+				<source xml:space="preserve">srcUri</source>
+			</trans-unit>
+			<trans-unit id="VZhWN8tH7Ig4noEMRwGWPi" resname="Pre-build Daisy 2 ">
+				<source xml:space="preserve">Pre-build Daisy 2 </source>
+			</trans-unit>
+			<trans-unit id="LPTaF9W27NhQ2ZXpNkViCc" resname="Pre-build Daisy 3">
+				<source xml:space="preserve">Pre-build Daisy 3</source>
+			</trans-unit>
+			<trans-unit id="eEEl1I5wcZdoJ8RKldJdAb" resname="Pre-build Epub 3">
+				<source xml:space="preserve">Pre-build Epub 3</source>
+			</trans-unit>
+			<trans-unit id="w2mXLV6lIxbv1gehl7Nxwe" resname="Export ODT pour Duxbury">
+				<source xml:space="preserve">Export ODT pour Duxbury</source>
+			</trans-unit>
+			<trans-unit id="ReGVuxjJLbNqGF2vSKBvb" resname="Daisy 2">
+				<source xml:space="preserve">Daisy 2</source>
+			</trans-unit>
+			<trans-unit id="jl3AqkBY9cktjwqWHHqVBb" resname="Daisy 3">
+				<source xml:space="preserve">Daisy 3</source>
+			</trans-unit>
+			<trans-unit id="BJKrD75u8WhCG3o1RLgGgh" resname="Epub 3">
+				<source xml:space="preserve">Epub 3</source>
+			</trans-unit>
+			<trans-unit id="pejvQlLV97j6mNncUTPsV" resname="Studio Paon">
+				<source xml:space="preserve">Studio Paon</source>
+			</trans-unit>
+			<trans-unit id="EuEtfz81BKgJV2kdNgXmsi" resname="Tableau de bord">
+				<source xml:space="preserve">Tableau de bord</source>
+			</trans-unit>
+			<trans-unit id="YkA71oeLjmbZwxHFoRU90e" resname="Le mot de passe doit contenir au moins 3 catégories de caractères parmi les majuscules, minuscules, chiffres et ponctuations.">
+				<source xml:space="preserve">Le mot de passe doit contenir au moins 3 catégories de caractères parmi les majuscules, minuscules, chiffres et ponctuations.</source>
+			</trans-unit>
+			<trans-unit id="gR5JCFe9hJeMhWs2uEOLO" resname="Le mot de passe doit contenir au minimum 8 caractères">
+				<source xml:space="preserve">Le mot de passe doit contenir au minimum 8 caractères</source>
+			</trans-unit>
+			<trans-unit id="UCCSNxSD7FdEI2Y7ZWZRy" resname="Centralisée (annuaire LDAP)">
+				<source xml:space="preserve">Centralisée (annuaire LDAP)</source>
+			</trans-unit>
+		</body>
+	</file>
+</xliff>

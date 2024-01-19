@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<!--
+Paramètres en QueryString : 
+- processing : [optional] sélection en amont du processing à executer (non modifiable).
+- path : [optional] si spécifié, saute l'étape de sélection du path de déploiement.
+- fixedFolderPath : impose le dossier (ou le dossier parent si uploadFolder).
+- defaultFolderPath : dossier par défaut (ou le dossier parent si uploadFolder).
+- fileName : [optional] pré-renseigne le nom du fichier à uploader (meta standard CID)
+								Pas utilisé si "path" est renseigné.
+- uploadFolder: si le param existe, la cible est un dossier
+- * (autres prop) : propriétés cid supplémentaires à transmettre à la création/modification de la ressource.
+
+Propriétés retournées via window.parent.postMessage(result, '*') :
+en cas de succès : 
+- cidInteraction="ended"
+- path
+- permaUrl
+- publicUrl
+- Et toutes les metas éditées sur le node (processing, etc).
+
+ou en cas d'echec / annulation :
+- cidInteraction="aborted"
+
+-->
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta charset="UTF-8" />
+<title>Import - Import d&apos;une ressource</title>
+
+<!-- Librairies -->
+
+					<script>
+						CustomElements = { flags: { register: true } }
+					</script>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/x-tag.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/commons.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/areas.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/extPoints.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/security.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/root_Perms.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/actions.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/enums.js"/>
+				
+<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/authProv/defaultAuthProv.js"/>
+
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/desk/desk_Perms.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/desk/utils/deskUtils.js"/>
+				
+
+<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/store/store_Perms.js"/>
+<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/store/store.js"/>
+<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/store/facets.js"/>
+				
+<!-- Components -->
+<link rel="import" href="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/desk/widgets.html" />
+<link rel="import" href="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/store/dialogs/uploadRes.html" />
+
+<!-- Config -->
+<script id="cidAuthCanal">window.basicAuthCanal="httpHeader";</script>
+<script src="../config.js"></script>
+
+<script xml:space="preserve">
+	deskUtils.createDesk(window);
+	deskUtils.addFeatureCanCloseDesk(window);
+	deskUtils.addFeatureUserMgr(window, false);
+</script>
+
+<script xml:space="preserve"><![CDATA[
+	extPoints.addToList("event:load:cidUpload", "init", 1, function() {
+		document.body.addEventListener("SCSubmit", function(pEvt){
+			try {
+				if(!pEvt.detail.cidWindow) return;
+				var vResult = {};
+				var vNewMetas = pEvt.detail.newMetas;
+				if(pEvt.detail.newMetas) {
+					for(var vKey in pEvt.detail.newMetas) vResult[vKey] = typeof pEvt.detail.newMetas[vKey] == "string" ? pEvt.detail.newMetas[vKey]: JSON.stringify(pEvt.detail.newMetas[vKey]);
+				}
+				vResult.cidInteraction = "ended";
+				vResult.path = pEvt.detail.newPath;
+				vResult.permaUrl = store.buildUrlFromPath(storeProv.getUrlTreeRoot(), vResult.path);
+				vResult.publicUrl = store.buildUrlFromPath(storeProv.getUrlTreeRoot(), new store.StPath(vResult.path).extractLivePath());
+				window.parent.postMessage(vResult, '*');
+			} catch(e){alert(e);}
+		}, false);
+		
+		document.body.addEventListener("SCCancel", function(){
+			window.parent.postMessage({"cidInteraction":"aborted"}, '*');
+		}, false);
+		
+		var vLaunchCtx = desk.getLaunchContext();
+		var vContext = {};
+		for(var vK in vLaunchCtx) {
+			if(vK!="processing" && vK!="path" && vK!="fixedFolderPath" && vK!="defaultFolderPath" && vK!="fileName" && vK!="uploadFolder") {
+				if(!vContext.propsFromCaller) vContext.propsFromCaller={};
+				vContext.propsFromCaller[vK] = vLaunchCtx[vK];
+			}
+		}
+		vContext.window = window;
+		vContext.cidWindow = true;
+		vContext.storeProv = window.storeProv;
+		vContext.processing = vLaunchCtx.processing ? store.getProcessing(vLaunchCtx.processing) : null;
+
+		if(vContext.processing != null)
+			vContext.uploadFolder = vContext.processing.isFolder();
+
+		if(vLaunchCtx.fixedFolderPath) vContext.currentFolderPath = vLaunchCtx.fixedFolderPath;
+
+		var vSelf = this;
+		if(vLaunchCtx.path==null && vLaunchCtx.publicUrl) vLaunchCtx.path = storeProv.extractPathFromUrl(vLaunchCtx.publicUrl);
+		if(vLaunchCtx.path) {
+		var vPathSt = new store.StPath(vLaunchCtx.path);
+		vContext.currentFolderPath = vPathSt.extractLiveFolder();
+		vContext.fileName = vPathSt.extractLiveName();
+		vContext.storeProv.dialogAdminUrlTree(vLaunchCtx.path, "nodeInfos", function (pEvent) {
+			try {
+				if (pEvent.target.status == 200) {
+					//console.log("nodeInfos:::::\n"+pEvent.target.responseText);
+					vContext.nodeInfos = JSON.parse(pEvent.target.responseText);
+				}
+			} finally {
+				sc$("uploadRes").initUploadRes(vContext);
+			}
+		});
+		} else {
+			vContext.fileName = vLaunchCtx.fileName;
+			sc$("uploadRes").initUploadRes(vContext);
+		}
+	}, 10);
+]]></script>
+</head>
+
+<body is="sc-desk" orient="vertical" >
+	<sc-hbox align="center">
+		<sc-hbox flex="1" pack="center">Import</sc-hbox>
+	</sc-hbox>
+	<sc-uploadres id="uploadRes" flex="1"/>
+</body>
+<script>
+	deskUtils.launchDesk(window);		
+</script>
+
+<!-- Skin -->
+
+
+</html>

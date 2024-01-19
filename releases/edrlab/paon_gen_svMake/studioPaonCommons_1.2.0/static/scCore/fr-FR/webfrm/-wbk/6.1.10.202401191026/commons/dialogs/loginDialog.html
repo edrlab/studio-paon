@@ -1,0 +1,295 @@
+<!-- 
+Ecran de login. 
+	
+Options d'affichage : {
+	msg : personnalisation du message de contextualisation affichée dans la fenêtre de login
+	account : affecte un compte par défaut.
+	fixedAccount : impose un compte (non modifiable)
+	cause : [optionnal] cause de l'erreur à l'origine de l'appel de ce dialogue. Si "obsoletPassword", accède directement à l'écran de renouvellement du password.
+	cancellable : si true, la tentative de login peut être abandonnée (false par défaut)
+	loginLayout : url ou Element template du layout de la page de login.
+	renewPwdLayout : url ou Element template du layout de la page de renouvellement du mot de passe.
+}
+
+ExtPoints : 
+- enum.login.saveDurations SVC de type Enum pour les durées de stockage local des données d'authentification (password, token...).
+- login.layoutPage : Pref (url ou objet template) spécifiant le layout de la page de login (utilisé si pOptions.loginLayout est null).
+-->
+<script>
+xtag.register('sc-logindialog', {
+	mixins: [ 'vbox', 'flex' ],
+	
+	lifecycle: {
+		'created:mixins(before)': function() {}
+	},
+	
+	methods : {
+		
+		/** 
+		 * pCtx : 
+		 * - lastAccount : dernier compte utilisé pour affichage par défaut (si pOptions.account ou pOptions.fixedAccount n'est pas spécifié).
+		 */
+		initLoginDialog : function(pCtx, pOptions, pCbLogin) {
+			this.fCtx = pCtx;
+			this.fOptions = Object.create(pOptions || null);
+			this.fCbLogin = pCbLogin;
+			if(this.fOptions.cause == "obsoletPassword" && (this.fOptions.fixedAccount || this.fOptions.account)) {
+				this.buildRenewPwdPage(pCtx, this.fOptions);
+			} else {
+				this.buildLoginPage(pCtx, this.fOptions);
+			}
+		},
+
+		buildLoginPage : function(pCtx, pOptions){
+			var vThis = this;
+			var vLayout = pOptions.loginLayout || extPoints.getPref("login.layoutPage") || "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/desk/layouts/loginLayout.xhtml";
+			var vFields = this.fFields = {};
+
+			var vAreas = [];
+
+			this.addCommonFields(vAreas, vFields, pCtx, pOptions);
+
+			vAreas.push(new areas.Area("msgZone").setBuildBody(function(pBd, pCtx, pOptions){
+				pBd.text(pOptions.msg!=null ? pOptions.msg : "Veuillez vous authentifier.");
+			}));
+
+			vAreas.push(new areas.Area("inputAccount").setBuildBody(function(pBd, pCtx, pOptions){
+				vFields.fAccountInput = pBd.elt("input").att("id", "account").att("type", "text").currentUp();
+				if(pOptions.fixedAccount) {
+					vFields.fAccountInput.disabled = true;
+					vFields.fAccountInput.value = pOptions.fixedAccount;
+				} else if(pOptions.account!=null) vFields.fAccountInput.value = pOptions.account;
+				else if(pCtx.lastAccount) vFields.fAccountInput.value = pCtx.lastAccount;
+			}));
+			vAreas.push(new areas.Area("inputPassword").setBuildBody(function(pBd, pCtx, pOptions){
+				vFields.fPasswordInput = pBd.elt("input").att("id", "password").att("type", "password")
+					.listen("keypress", function(pEvt){if(pEvt.keyCode==13) vThis.doConnect();}).currentUp();
+			}));
+
+			vAreas.push(new areas.Area("btnConnect").setBuildBody(function(pBd, pCtx, pOptions){
+				pBd.elt("button").listen("click", function(){vThis.doConnect()}).text("Se connecter").up();
+			}));
+
+			this.textContent = "";
+			areas.loadAndCloneLayout(function(pErrors){
+				if(pErrors) console.log("Loading res failed:"+pErrors);
+				if(pOptions.fixedAccount) vFields.fPasswordInput.focus();
+				else vFields.fAccountInput.focus();
+			}, this, vLayout, this, vAreas, pCtx, pOptions);
+			
+		},
+
+		addCommonFields : function(pAreas, pFields, pCtx, pOptions){
+			var vThis =  this;
+
+			pAreas.push(new areas.Area("errorZone").setBuildBody(function(pBd, pCtx, pOptions){
+				pFields.fErrorZone = pBd.current();
+			}));
+
+			var vPwdLost = extPoints.getPref("password.lost.label");
+			if(vPwdLost) {
+				pAreas.push(new areas.Area("btnPasswordLost").setBuildBody(function(pBd, pCtx, pOptions){
+					pBd.elt("button").att("id", "passwordLost").listen("click", function(){
+						var vAccount = pFields.fAccountInput.value;
+						if(!vAccount) {
+							vThis.setError("Veuillez renseigner votre compte.");
+							pFields.fAccountInput.focus();
+						} else {
+							this.disabled = true;
+							var vBtn = this;
+							vThis.fCbLogin.askForPasswordLost(vAccount, function(pResult){
+									switch(pResult.result) {
+										case "instructionsSent" :
+											vThis.setError("");
+											alert("Les instructions pour renouveler votre mot de passe vous ont été envoyées.");
+											break;
+										case "accountNotFound" :
+										case "authRejected" :
+											vThis.setError("Ce compte n'existe pas, veuillez vérifier.");
+											break;
+										case "datasNotAvailable" :
+											vThis.setError("Nous ne disposons pas des informations nécessaires pour vous envoyer les instructions.");
+											break;
+										default :
+											vThis.setError("Une erreur est survenue. Recommencez ultérieurement.");
+											break;
+									}
+									vBtn.disabled = false;
+								});
+						}
+					}).text(vPwdLost);
+				}));
+			}
+
+			var vSaveLoginEnum = extPoints.getSvc("enum.login.saveDurations");
+			if(vSaveLoginEnum) {
+				pAreas.push(new areas.Area("inputSaveLogin").setBuildBody(function(pBd, pCtx, pOptions){
+					pFields.fSaveLoginInput = pBd.elt("select").att("id", "inputSaveLogin").current();
+					vSaveLoginEnum.fillSelectOptions(pBd);
+				}));
+			}
+
+			if(pOptions.cancellable) {
+				pAreas.push(new areas.Area("btnCancel").setBuildBody(function(pBd, pCtx, pOptions){
+					pBd.elt("button").listen("click", function(){vThis.doCancel()}).text("Annuler").up();
+				}));
+			}
+		},
+
+		buildRenewPwdPage : function(pCtx, pOptions){
+			var vThis = this;
+			var vLayout = pOptions.renewPwdLayout || extPoints.getPref("login.renewPwdLayout") || "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/desk/layouts/renewPwdLayout.xhtml";
+			var vFields = vThis.fFields = {};
+
+			var vAreas = [];
+
+			this.addCommonFields(vAreas, vFields, pCtx, pOptions);
+
+			vAreas.push(new areas.Area("msgZone").setBuildBody(function(pBd, pCtx, pOptions){
+				pBd.text(i18n.formatStr("Le mot de passe du compte %s a expiré, vous devez en définir un nouveau.", pOptions.fixedAccount || pOptions.account));
+			}));
+			vAreas.push(new areas.Area("inputPassword").setBuildBody(function(pBd, pCtx, pOptions){
+				vFields.fPasswordInput = pBd.elt("input").att("id", "password").att("type", "password").currentUp();
+				if(pOptions.password) vFields.fPasswordInput.value=pOptions.password;
+			}));
+			vAreas.push(new areas.Area("inputNewPwd").setBuildBody(function(pBd, pCtx, pOptions){
+				vFields.fNewPwdInput = pBd.elt("input").att("id", "newPwd").att("type", "password")
+						.listen("focus", function(){this.classList.remove("error");})
+						.listen("blur", function(){vThis.doCheckPwd();vThis.doCheckPwd2();})
+						.currentUp();
+			}));
+			vAreas.push(new areas.Area("inputNewPwd2").setBuildBody(function(pBd, pCtx, pOptions){
+				vFields.fNewPwd2Input = pBd.elt("input").att("id", "newPwd2").att("type", "password")
+						.listen("keypress", function(pEvt){if(pEvt.keyCode==13) vThis.doRenewPwd()})
+						.listen("focus", function(){this.classList.remove("error");})
+						.listen("blur", function(){vThis.doCheckPwd2();})
+						.currentUp();
+			}));
+
+			vAreas.push(new areas.Area("btnSave").setBuildBody(function(pBd, pCtx, pOptions){
+				pBd.elt("button").listen("click", function(){vThis.doRenewPwd()}).text("Enregistrer").up();
+			}));
+
+			this.textContent = ""; //clear
+			areas.loadAndCloneLayout(function(pErrors){
+				if(pErrors) console.log("Loading res failed:"+pErrors);
+				if( ! vFields.fPasswordInput.value) vFields.fPasswordInput.focus();
+				else vFields.fNewPwdInput.focus();
+			}, this, vLayout, this, vAreas, pCtx, pOptions);
+
+		},
+		
+		doConnect : function(){
+			var vDatas = {
+					account : this.fFields.fAccountInput.value,
+					password : this.fFields.fPasswordInput.value
+			}
+			if(this.fFields.fSaveLoginInput) vDatas.maxAge = this.fFields.fSaveLoginInput.value;
+			this.fCbLogin.tryAuth(vDatas, this.showResult, this);
+		},
+
+		doRenewPwd : function(){
+			if(!this.doCheckPwd2()) {
+				this.setError("La confirmation du mot de passe est incorrecte, veuillez resaisir votre nouveau mot de passe.");
+				return;
+			}
+			var vDatas = {
+				account : this.fOptions.fixedAccount || this.fOptions.account,
+				currentPwd : this.fFields.fPasswordInput.value,
+				password : this.fFields.fNewPwdInput.value
+			}
+			if(this.fFields.fSaveLoginInput) vDatas.maxAge = this.fFields.fSaveLoginInput.value;
+			this.fCbLogin.tryRenewPwd(vDatas, this.showResult, this);
+		},
+
+		doCheckPwd : function(){
+			if(!this.fCbLogin.checkPwd) return;
+			var vDatas = {
+				password : this.fFields.fNewPwdInput.value, /* pwd à checker. */
+				account : this.fOptions.fixedAccount || this.fOptions.account, /* indispensable si le serveur controle l'historique des pwd. */
+				currentPwd : this.fFields.fPasswordInput.value /* indispensable si le serveur controle l'historique des pwd. */
+			}
+			this.fCbLogin.checkPwd(vDatas, this.showResult, this);
+		},
+
+		doCheckPwd2 : function(){
+			if(this.fFields.fNewPwdInput.value != this.fFields.fNewPwd2Input.value) {
+				this.fFields.fNewPwd2Input.classList.add("error");
+				this.fFields.fNewPwd2Input.setAttribute("title", "Cette confirmation ne correspond pas au nouveau mot de passe saisi.");
+				return false;
+			} else {
+				this.fFields.fNewPwd2Input.classList.remove("error");
+				this.fFields.fNewPwd2Input.removeAttribute("title");
+				return true;
+			}
+		},
+
+		doCancel : function(){
+			this.fCbLogin.cancel();
+		},
+
+		setError : function(pMsg) {
+			this.fFields.fErrorZone.textContent = pMsg || "";
+		},
+		
+		/**
+		 * Retour graphique des requêtes this.fCbLogin.tryAuth(), this.fCbLogin.tryRenewPwd(), this.fCbLogin.checkPwd()
+		 * @param pDetails
+		 * 		si pCause==accountDisabled, pDetails est la date de fin de désactivation du compte.
+		 * 		si pCause==failedInvalidDatas, pDetails est un tableau de messages d'anomalies.
+		 */
+		showResult : function(pCause, pDetails) {
+			switch (pCause) {
+				case "ok": //checkPwd
+					this.setError("");
+					break;
+				case "accountNotFound" : //login et renewPwd
+					this.setError("Ce compte n'existe pas.");
+					break;
+				case "accountDisabled" : //login et renewPwd
+					if (pDetails && pDetails > (Date.now() - 5000)) {
+						var vDt = new Date(parseInt(pDetails, 10));
+						this.setError(i18n.formatStr("Ce compte a été temporairement désactivé. Il sera de nouveau actif le %s vers %s.", vDt.toLocaleDateString(), vDt.toLocaleTimeString()));
+					} else {
+						this.setError("Ce compte est désactivé.");
+					}
+					break;
+				case "invalidPassword" : //login
+					this.setError("Ce mot de passe est incorrect.");
+					break;
+				case "authRejected" : //login, renewPwd
+					this.setError("Ce compte et/ou ce mot de passe sont incorrects.");
+					break;
+				case "invalidToken" : //renewPwd
+					this.setError("Votre mot de passe actuel est incorrect.");
+					break;
+				case "obsoletPassword": //login
+					if(this.fCbLogin.tryRenewPwd) {
+						//api de chgt du pwd dispo
+						if(this.fFields.fAccountInput) this.fOptions.account = this.fFields.fAccountInput.value; //on mémorise le compte.
+						if(!extPoints.getPref("renewPwd.resetCurrentPassword", false) && this.fFields.fPasswordInput) this.fOptions.password = this.fFields.fPasswordInput.value;
+						this.buildRenewPwdPage(this.fCtx, this.fOptions);
+					} else {
+						this.setError("Votre mot de passe est périmé. Vous devez impérativement le modifier dès à présent.");
+					}
+					break;
+				case "failedInvalidDatas" : //renewPwd, checkPwd
+					if(pDetails && pDetails.length > 0) {
+						this.setError(pDetails[0]);
+					} else {
+						this.setError("Ce mot de passe est incorrect.");
+					}
+					this.fFields.fNewPwdInput.classList.add("error");
+					break;
+				case "otherFailure": //login, renewPwd, checkPwd
+					this.setError("Le système de validation des mots de passe est indisponible. Recommencez ultérieurement.");
+					break;
+				default:
+					log.debug("authFailed cause unknown : " + pCause);
+					this.setError("Le système de validation des mots de passe est indisponible. Recommencez ultérieurement.");
+			}
+			
+		}
+	}
+});
+</script>

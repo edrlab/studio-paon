@@ -1,0 +1,594 @@
+<!--
+Attributs de sc-searchview :
+- pageMapping : [optional - true par défaut] permet de désactiver le mapping de page
+
+-->
+
+<template id="searchViewTpl">
+	<sc-hbox flex="1">
+		<sc-view class="aside">
+			<label class="hbox align-center">
+				<span>Texte : </span>
+				<input type="text" class="flex textInput"/>
+			</label>
+			<sc-vbox class="facets" class="hbox"></sc-vbox>
+		</sc-view>
+		<sc-vbox flex="1">
+			<sc-view class="results" flex="1">
+				<sc-stack disabled="true" flex="1" orient="vertical">
+					<div class="content flex selectable"></div>
+				</sc-stack>
+			</sc-view>
+			<sc-hbox class="status">
+				<sc-label class="statusText" flex="1"></sc-label>
+				<sc-hbox class="viewModes" pack="end">
+					<sc-btn class="listViewMode" label="Liste"></sc-btn>
+					<sc-btn class="thumbViewMode" label="Miniatures"></sc-btn>
+				</sc-hbox>
+			</sc-hbox>
+			<sc-showresview flex="2" hidden="true"/>
+		</sc-vbox>
+	</sc-hbox>
+</template>
+
+<script>
+	xtag.register('sc-searchview', {
+		template: document._currentScript.ownerDocument.getElementById('searchViewTpl'),
+		mixins: ['vbox', 'flex', 'view'],
+		lifecycle: {
+			'created:mixins(before)': function () {
+				this.fContext = window;
+			}
+		},
+
+		methods: {
+			xInit: function () {
+				this.appendChild(dom.cloneContents(xtag.tags['sc-searchview'].template));
+				this._facets = this.querySelector('.facets');
+				this._results = this.querySelector('.results');
+				this._resultsStack = this._results.querySelector('sc-stack');
+				this._resultsContent = this._resultsStack.querySelector('.content');
+				this._textInput = this.querySelector('.textInput');
+				this._status = this.querySelector('.status');
+				this._statusText = this._status.querySelector('.statusText');
+				this._viewModes = this._status.querySelector('.viewModes');
+				this._listViewMode = this._viewModes.querySelector('.listViewMode');
+				this._thumbViewMode = this._viewModes.querySelector('.thumbViewMode');
+
+				this.showResFrame = this.querySelector('sc-showresview');
+
+				var vProcessings = extPoints.mergeLists(['searchRes:prcs', 'store:prcs']);
+				this.fProcessings = {};
+				for (var i = 0; i < vProcessings.length; i++) {
+					var vPrcs = vProcessings[i];
+					this.fProcessings[vPrcs.getCode()] = vPrcs;
+				}
+
+				this.fFacets = extPoints.getList('store:default:facets') || [];
+				this.fFacetsBd = dom.newBd(this._facets);
+				this.xBuildFacets();
+
+				this.fResultsBd = dom.newBd(this._resultsContent);
+				this.xDisplayResultsMsg("Veuillez entrer un critère de recherche.");
+
+				this.fTextMatchFields = extPoints.getList('store:search:fields:fulltxt');
+				this.fQuery = {
+					"from": 0,
+					"size": 50,
+					"_source": ["path", "processing"],
+					"query": {
+						"bool": {"must": null, "filter": null}
+					},
+					"aggs": {}
+				};
+				var vHighlight = {
+					"number_of_fragments": 3,
+					"fragment_size": 100,
+					"pre_tags": ["<strong>"],
+					"post_tags": ["</strong>"],
+					"fields": {},
+					"encoder": "html"
+				}
+				this.fHighlightPartArr = extPoints.getList('store:search:fields:highlightPart') || [];
+				this.fHighlightFullArr = extPoints.getList('store:search:fields:highlightFull') || [];
+				this.fHighlightPartArr.forEach(function (pField) {vHighlight.fields[pField] = {};});
+				this.fHighlightFullArr.forEach(function (pField) {vHighlight.fields[pField] = {"number_of_fragments": 0};});
+				if (Object.keys(vHighlight.fields).length) this.fQuery.highlight = vHighlight;
+
+				for (var i = 0; i < this.fFacets.length; i++) this.fQuery.aggs[this.fFacets[i].getCode()] = this.fFacets[i].getQueryAggs();
+
+				this.xSetResultsViewMode('listMode');
+				var vSelf = this;
+				if (extPoints.getPref('store:search:thumbMode', false)) {
+					this._listViewMode.onclick = function () {
+						vSelf.xSetResultsViewMode('listMode');
+					}
+					this._thumbViewMode.onclick = function () {
+						vSelf.xSetResultsViewMode('thumbMode');
+					}
+				} else {
+					this._viewModes.hidden = true;
+				}
+			},
+
+			xSetResultsViewMode: function (pMode) {
+				if (pMode == 'listMode' && !this._results.classList.contains('listMode')) {
+					this.classList.remove('thumbMode');
+					this.classList.add('listMode');
+					this._listViewMode.setAttribute('aria-pressed', 'true');
+					this._thumbViewMode.setAttribute('aria-pressed', 'false');
+				} else if (pMode == 'thumbMode' && !this._results.classList.contains('thumbMode')) {
+					this.classList.remove('listMode');
+					this.classList.add('thumbMode');
+					this._thumbViewMode.setAttribute('aria-pressed', 'true');
+					this._listViewMode.setAttribute('aria-pressed', 'false');
+				}
+			},
+
+			xSearch: function () {
+				var vQuery;
+				var vText = this._textInput.value;
+				var vFilters = this.xBuildFilter();
+
+				var vEmptyQuery = (!vFilters || !vFilters.length) && !this._textInput.value;
+				if (vEmptyQuery) {
+					this.fFilters = null;
+					this.xBuildFacets();
+					this.xDisplayResultsMsg("Veuillez entrer un critère de recherche.");
+					this.xSetStatusText(0);
+					return;
+				}
+
+				if (!vText) vQuery = {"match_all": {}};
+				else vQuery = {
+					"simple_query_string": {
+						"query": vText,
+						"fields": this.fTextMatchFields
+					}
+				};
+				//Sub query to pages
+				if (this.withPageMapping() && vText) {
+					this.fQuery.query.bool.should = [
+						vQuery,
+						{
+							"has_child": {
+								"type": "page",
+								"query": vQuery,
+								"inner_hits": {
+									"size": 3,
+									"_source": false,
+									"highlight": this.fQuery.highlight
+								}
+							}
+						}
+					]
+				} else {
+					this.fQuery.query.bool.must = vQuery;
+				}
+
+				if (!vFilters) vFilters = [];
+				this.fQuery.query.bool.filter = vFilters;
+
+				vFilters.push({"terms": {"scgroup": ["res"]}});
+
+				this.fQuery.query.bool.must_not = [{"term": {"trashed": "true"}}];
+				this.fFilters = vFilters;
+				this.xSearchRequest(this.fQuery, function (pResp) {
+					var vHits = pResp.hits.hits;
+					var vAggsCounts = {};
+					for (var vField in pResp.aggregations) {
+						var vAggCount = vAggsCounts[vField] = {};
+						var vBuckets = pResp.aggregations[vField].buckets;
+						for (var i = 0; i < vBuckets.length; i++) {
+							var vBucket = vBuckets[i];
+							vAggCount[vBucket.key] = vBucket.doc_count;
+						}
+					}
+					this.xBuildFacets(vAggsCounts);
+					if (!vHits.length) {
+						vEmptyQuery = true;
+						this.xDisplayResultsMsg("Aucun résultat n'a été trouvé.");
+						this.xSetStatusText(0);
+						return;
+					}
+
+					this.xDisplayResults(pResp.hits.hits);
+					this.xSetStatusText(pResp.hits.total.value);
+
+				});
+			},
+
+			xBuildFacets: function (pAggsCounts) {
+				this.fFacetsBd.clear();
+				this.fFacetElts = {};
+				for (var i = 0; i < this.fFacets.length; i++) {
+					var vFacet = this.fFacets[i];
+					this.fFacetElts[vFacet.getCode()] = vFacet.buildBody(this.fFacetsBd, pAggsCounts && pAggsCounts[vFacet.getCode()], this.fFilters);
+				}
+			},
+
+			xBuildFilter: function () {
+				if (!this.fFacetElts) return null;
+
+				var vFilters = [];
+				for (var i = 0; i < this.fFacets.length; i++) {
+					var vFacet = this.fFacets[i];
+					var vFacetElt = this.fFacetElts[vFacet.getCode()];
+					if (vFacetElt) {
+						var vFacetFilter = vFacet.getQueryFilter(vFacetElt);
+						if (vFacetFilter) vFilters.push(vFacetFilter);
+					}
+				}
+				return vFilters;
+			},
+
+			xSearchRequest: function (pQuery, pCallback, pSearchType) {
+				this._resultsStack.loading = true;
+				var vSelf = this;
+				this.fContext.storeProv.dialogSearch('depot', '/_search', JSON.stringify(pQuery), function (pEvt) {
+					vSelf._resultsStack.loading = false;
+					if (pEvt.target.status != 200) {
+						log.debug("Search failed : " + pEvt.target.status + "\n" + pEvt.target.responseText);
+						vSelf.xDisplayResultsMsg("Serveur inaccessible, recommencez ultérieurement.");
+					} else pCallback.call(vSelf, JSON.parse(pEvt.target.responseText));
+				});
+			},
+
+			xDisplayResults: function (pHits) {
+				this.showResFrame.hide();
+				this.fResultsBd.clear();
+				var vSelf = this;
+				pHits.forEach(function (pHit) {vSelf.createRow(pHit)});
+				this._resultsStack.disabled = !this._resultsContent.children.length;
+				;
+			},
+
+			xDisplayResultsMsg: function (pMsg) {
+				this.fResultsBd.clear();
+				this.fResultsBd.elt("p", "msg").text(pMsg).up();
+			},
+
+			withPageMapping: function () {
+				return this.getAttribute("pageMapping") != "false";
+			},
+
+			createRow: function (pHit) {
+				var vSelf = this;
+				var vPath = new store.StPath(pHit._source.path);
+				var vPrcs = this.fProcessings[pHit._source.processing];
+
+				if (!vPrcs) return;
+
+				var vHighlights = pHit.highlight || {};
+				var vFolder = vPath.extractLiveFolder();
+				var vBd = this.fResultsBd;
+				vBd.elt("div", "result")
+					.elt("div", "head")
+					.elt("span", "props")
+					.elt("img", "icon").att("src", vPrcs.getIcon()).up()
+					.elt("a").att("href", "#")
+					.elt("span", "nm").text(vPath.extractLiveName()).up()
+					.prop("onclick", function () {
+						vSelf.xShowRes(vPath.extractLivePath());
+					})
+					.up()
+					.elt("span", "fd").text('(' + vFolder + ')').att('title', vFolder).up()
+					.up()
+					.text(" ")
+					.elt("span", "metas");
+				this.fHighlightFullArr.forEach(function (pField) {
+					if (vHighlights[pField]) vBd.elt("em", "highlight").prop('innerHTML', vHighlights[pField][0]).up();
+				});
+				vBd.up().up();
+				var vRow = vBd.current();
+
+				vBd.elt("div", "thumbnail");
+				var vPreview = vBd.elt("img", "preview").att('src', this.fContext.storeProv.getUrlTreeRoot() + encodeURI(vPath.getPath()) + '?V=thumbnail').currentUp();
+				vPreview.onload = function () {
+					vRow.classList.add('preview');
+				}
+				vBd.up();
+
+				var vHighlightElt = vBd.elt("p", "highlight").current();
+				this.fHighlightPartArr.forEach(function (pField) {
+					if (vHighlights[pField]) {
+						for (var i = 0; i < vHighlights[pField].length; i++) vBd.elt("span", pField).prop('innerHTML', vHighlights[pField][i]).up();
+					}
+				});
+
+				if (pHit.inner_hits && pHit.inner_hits.page.hits.total.value) {
+					pHit.inner_hits.page.hits.hits.forEach(function (pPageHit) {
+						var vPageHighlight = pPageHit.highlight || {};
+						vBd.elt("span", "page");
+						vSelf.fHighlightFullArr.forEach(function (pField) {
+							if (vPageHighlight[pField]) vBd.elt("em", "highlight").prop('innerHTML', vPageHighlight[pField][0]).up();
+						});
+						vSelf.fHighlightPartArr.forEach(function (pField) {
+							if (vPageHighlight[pField])
+								for (var i = 0; i < vPageHighlight[pField].length; i++) vBd.elt("span", pField).prop('innerHTML', vPageHighlight[pField][i]).up();
+						});
+						vBd.up();
+					});
+				}
+				vBd.up().up();
+				if (vHighlightElt.firstElementChild) vRow.classList.add('highlights');
+			},
+
+			xSetStatusText: function (pHitCount) {
+				var pMessage;
+				if (!pHitCount) {
+					pMessage = "";
+				} else if (pHitCount == 1) {
+					pMessage = "1 résultat";
+				} else {
+					pMessage = i18n.formatStr("%s résultats", pHitCount);
+				}
+				this._statusText.textContent = pMessage;
+			},
+
+			xShowRes: function (pPath) {
+				this.showResFrame.show();
+				this.showResFrame.showResPath(pPath);
+			},
+
+			xOnFacetChange: function () {
+
+			}
+		},
+
+		events: {
+			'click:delegate(button.searchBtn)': function (pEvent, pComponent) {
+				pComponent.xSearch();
+			},
+			'keydown:delegate(.textInput):keypass(13)': function (pEvent, pComponent) {
+				clearTimeout(pComponent.fTextInputTimeout);
+				pComponent.xSearch();
+			},
+			'input:delegate(.textInput)': function (pEvent, pComponent) {
+				clearTimeout(pComponent.fTextInputTimeout);
+				pComponent.fTextInputTimeout = setTimeout(function () {
+					pComponent.xSearch();
+				}, 500);
+
+			},
+			'SCFacetChange': function (pEvent) {
+				this.xSearch();
+			},
+
+			/* Chargement à l'affichage de la view. */
+			'SCViewShown': function (pEvent) {
+				if (pEvent.target !== this || this.fStarted) return;
+				this.fStarted = true;
+				page.loadTags({
+					"sc-showresview": "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/store/views/showResView.html"
+				}, this.xInit, this);
+			}
+		}
+	});
+
+</script>
+
+
+<style>
+	sc-searchview sc-view.aside {
+		min-width: 20em;
+		padding: 1ex;
+	}
+
+	sc-searchview div.facet {
+		margin: 1ex 0;
+	}
+
+	sc-searchview label > span {
+		margin-right: 1ex;
+	}
+
+	sc-searchview label > input {
+		margin: 0;
+	}
+
+	sc-searchview button.searchBtn {
+		margin: 1ex 0 2ex;
+	}
+
+	sc-searchview .facets fieldset {
+		border: none;
+		padding: 1ex;
+		margin: 1ex 0;
+	}
+
+	sc-searchview .facets legend {
+		font-weight: bold;
+		text-align: center;
+	}
+
+	sc-searchview .facet label.disabled {
+		color: silver;
+	}
+
+	sc-searchview .facet input[type=checkbox] {
+		margin: 0 1ex;
+	}
+
+	sc-searchview sc-hbox.viewModes > * {
+		margin: 0 0.2em;
+	}
+
+	sc-searchview sc-view.results {
+		border: solid 1px #ccc;
+		background-color: white;
+		margin: 1ex;
+		margin-bottom: 0.5ex;
+	}
+
+	sc-searchview sc-view.results p.msg {
+		font-style: italic;
+		text-align: center;
+		flex: 1;
+	}
+
+	sc-searchview sc-view.results div.content {
+		overflow-y: auto;
+		padding: 1em;
+	}
+
+	sc-searchview sc-showresview {
+		margin: 1ex;
+	}
+
+	sc-searchview div.head {
+		font-size: 1.2em;
+	}
+
+	sc-searchview div.head * {
+		vertical-align: bottom;
+	}
+
+	sc-searchview div.head .props > a {
+		margin: 0 0.5em;
+		word-break: break-all;
+	}
+
+	sc-searchview span.fd {
+		color: grey;
+		max-width: 20em;
+		display: inline-block;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		overflow: hidden;
+	}
+
+	sc-searchview span.aggCount {
+		color: #333;
+		margin-left: 0.5ex;
+		font-weight: bold;
+	}
+
+	sc-searchview .hbox.align-center {
+		margin: 0.2em 0;
+	}
+
+	sc-uploadres {
+		padding: 0.5em 1em;
+	}
+
+	sc-searchview img.preview {
+		display: none;
+	}
+
+	sc-searchview div.result.preview img.preview {
+		display: block;
+		border: solid 1px #EEE;
+	}
+
+	sc-searchview.listMode div.result {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		margin: 0.5em 0;
+	}
+
+	sc-searchview.listMode div.head {
+		flex: 1;
+	}
+
+	sc-searchview.listMode img.preview {
+		max-height: 5em;
+	}
+
+	sc-searchview.listMode p.highlight {
+		margin-top: 0.5ex;
+		margin-left: 2em;
+		flex-basis: 100%;
+	}
+
+	sc-searchview.thumbMode div.content {
+		display: flex;
+		flex-wrap: wrap;
+		align-content: flex-start;
+	}
+
+	sc-searchview.thumbMode div.result {
+		display: flex;
+		flex-direction: column;
+		width: 15em;
+		height: fit-content;
+		margin: 1em;
+		position: relative;
+		justify-content: center;
+		min-height: 16em;
+	}
+
+	sc-searchview.thumbMode .head {
+		order: 2;
+		text-align: center;
+		margin-top: 0.2em;
+	}
+
+	sc-searchview.thumbMode div.result.preview .thumbnail,
+	sc-searchview.thumbMode div.result.highlights .thumbnail {
+		height: 15em;
+		display: flex;
+		align-items: center;
+	}
+
+	sc-searchview.thumbMode p.highlight {
+		display: none;
+		position: absolute;
+		left: 0;
+		top: 0;
+		width: 15em;
+		height: 15em;
+		border: solid 1em transparent;
+		box-sizing: border-box;
+		background-color: rgba(255, 255, 255, 0.8);
+		margin: 0;
+		overflow: hidden;
+	}
+
+	sc-searchview.thumbMode div.result:hover p.highlight:not(:empty),
+	sc-searchview.thumbMode div.result.highlights:not(.preview) p.highlight:not(:empty) {
+		display: block;
+	}
+
+	sc-searchview.thumbMode img.preview {
+		max-height: 15em;
+		max-width: 15em;
+		margin: 0 auto;
+	}
+
+	sc-searchview .status {
+		margin: 0 1ex;
+	}
+
+	sc-searchview .thumbViewMode,
+	sc-searchview .listViewMode {
+		color: grey;
+	}
+
+	sc-searchview .thumbViewMode[aria-pressed=true],
+	sc-searchview .listViewMode[aria-pressed=true] {
+		color: #00669A;
+	}
+
+	sc-searchview .thumbViewMode::before,
+	sc-searchview .listViewMode::before {
+		font-family: "fontello";
+		font-size: 1.4em;
+	}
+
+	sc-searchview .thumbViewMode::before {
+		content: "\e811";
+	}
+
+	sc-searchview .listViewMode::before {
+		content: "\e812";
+	}
+
+	sc-searchview .thumbViewMode > span,
+	sc-searchview .listViewMode > span {
+		display: none;
+	}
+
+
+</style>

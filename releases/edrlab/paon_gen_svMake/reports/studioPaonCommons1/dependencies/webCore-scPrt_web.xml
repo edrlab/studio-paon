@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="ivy-report.xsl"?>
+<ivy-report version="1.0">
+	<info
+		organisation="scenari.org"
+		module="webCore"
+		revision="working@PPC085"
+
+		conf="scPrt_web"
+		confs="scPrt_web"
+		date="20240119150421"/>
+	<dependencies>
+		<module organisation="org.scenari.core" name="sc-web-store">
+			<revision name="6.1.10.202401191026" status="release" pubdate="20240119102946" resolver="scBuild-snapshots" artresolver="scBuild-snapshots" homepage="" downloaded="false" searched="true" default="false" conf="default, compile, runtime, master" position="1">
+				<license name="Scenari LICENSE (MPL2.0 or GPL3.0  or LGPL3.0 or CeCILL 2.1)" url="https://scenari.software/license"/>
+				<metadata-artifact status="no" details="" size="2718" time="0" location="F:\Nextcloud\Devs_AVH\StudioPaon\Scenari6.1\dev-core\Data_AppDev\DEV-SCbuilder\working\.ivy\cache\org.scenari.core\sc-web-store\ivy-6.1.10.202401191026.xml" searched="true" original-local-location="F:\Nextcloud\Devs_AVH\StudioPaon\Scenari6.1\dev-core\Data_AppDev\DEV-SCbuilder\working\.ivy\cache\org.scenari.core\sc-web-store\ivy-6.1.10.202401191026.xml.original" origin-is-local="false" origin-location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-web-store/6.1.10.202401191026/sc-web-store-6.1.10.202401191026.pom"/>
+				<caller organisation="scenari.org" name="webCore" conf="scPrt_web" rev="6.1.10.+" rev-constraint-default="6.1.10.+" rev-constraint-dynamic="6.1.10.+" callerrev="working@PPC085"/>
+				<artifacts>
+					<artifact name="sc-web-store" type="web.zip" ext="web.zip" status="no" details="" size="72463" time="0" location="F:\Nextcloud\Devs_AVH\StudioPaon\Scenari6.1\dev-core\Data_AppDev\DEV-SCbuilder\working\.ivy\cache\org.scenari.core\sc-web-store\web.zips\sc-web-store-6.1.10.202401191026.web.zip">
+						<origin-location is-local="false" location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-web-store/6.1.10.202401191026/sc-web-store-6.1.10.202401191026.web.zip"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="org.scenari.core" name="sc-web-desk">
+			<revision name="6.1.10.202401191026" status="release" pubdate="20240119102945" resolver="scBuild-snapshots" artresolver="scBuild-snapshots" homepage="" downloaded="false" searched="false" default="false" conf="master(*), compile, runtime(*), runtime, compile(*), master" position="2">
+				<license name="Scenari LICENSE (MPL2.0 or GPL3.0  or LGPL3.0 or CeCILL 2.1)" url="https://scenari.software/license"/>
+				<metadata-artifact status="no" details="" size="2368" time="0" location="F:\Nextcloud\Devs_AVH\StudioPaon\Scenari6.1\dev-core\Data_AppDev\DEV-SCbuilder\working\.ivy\cache\org.scenari.core\sc-web-desk\ivy-6.1.10.202401191026.xml" searched="false" original-local-location="F:\Nextcloud\Devs_AVH\StudioPaon\Scenari6.1\dev-core\Data_AppDev\DEV-SCbuilder\working\.ivy\cache\org.scenari.core\sc-web-desk\ivy-6.1.10.202401191026.xml.original" origin-is-local="false" origin-location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-web-desk/6.1.10.202401191026/sc-web-desk-6.1.10.202401191026.pom"/>
+				<caller organisation="org.scenari.core" name="sc-web-store" conf="default, compile, runtime, master" rev="6.1.10.202401191026" rev-constraint-default="6.1.10.202401191026" rev-constraint-dynamic="6.1.10.202401191026" callerrev="6.1.10.202401191026"/>
+				<artifacts>
+					<artifact name="sc-web-desk" type="web.zip" ext="web.zip" status="no" details="" size="55901" time="0" location="F:\Nextcloud\Devs_AVH\StudioPaon\Scenari6.1\dev-core\Data_AppDev\DEV-SCbuilder\working\.ivy\cache\org.scenari.core\sc-web-desk\web.zips\sc-web-desk-6.1.10.202401191026.web.zip">
+						<origin-location is-local="false" location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-web-desk/6.1.10.202401191026/sc-web-desk-6.1.10.202401191026.web.zip"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="org.scenari.core" name="sc-web-commons">
+			<revision name="6.1.10.202401191026" status="release" pubdate="20240119102944" resolver="scBuild-snapshots" artresolver="scBuild-snapshots" homepage="" downloaded="false" searched="true" default="false" conf="default, master(*), compile, runtime(*), runtime, compile(*), master" position="0">
+				<license name="Scenari LICENSE (MPL2.0 or GPL3.0  or LGPL3.0 or CeCILL 2.1)" url="https://scenari.software/license"/>
+				<metadata-artifact status="no" details="" size="2374" time="0" location="F:\Nextcloud\Devs_AVH\StudioPaon\Scenari6.1\dev-core\Data_AppDev\DEV-SCbuilder\working\.ivy\cache\org.scenari.core\sc-web-commons\ivy-6.1.10.202401191026.xml" searched="true" original-local-location="F:\Nextcloud\Devs_AVH\StudioPaon\Scenari6.1\dev-core\Data_AppDev\DEV-SCbuilder\working\.ivy\cache\org.scenari.core\sc-web-commons\ivy-6.1.10.202401191026.xml.original" origin-is-local="false" origin-location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-web-commons/6.1.10.202401191026/sc-web-commons-6.1.10.202401191026.pom"/>
+				<caller organisation="scenari.org" name="webCore" conf="scPrt_web" rev="6.1.10.+" rev-constraint-default="6.1.10.+" rev-constraint-dynamic="6.1.10.+" callerrev="working@PPC085"/>
+				<caller organisation="org.scenari.core" name="sc-web-store" conf="default, compile, runtime, master" rev="6.1.10.202401191026" rev-constraint-default="6.1.10.202401191026" rev-constraint-dynamic="6.1.10.202401191026" callerrev="6.1.10.202401191026"/>
+				<artifacts>
+					<artifact name="sc-web-commons" type="web.zip" ext="web.zip" status="no" details="" size="148094" time="0" location="F:\Nextcloud\Devs_AVH\StudioPaon\Scenari6.1\dev-core\Data_AppDev\DEV-SCbuilder\working\.ivy\cache\org.scenari.core\sc-web-commons\web.zips\sc-web-commons-6.1.10.202401191026.web.zip">
+						<origin-location is-local="false" location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-web-commons/6.1.10.202401191026/sc-web-commons-6.1.10.202401191026.web.zip"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+	</dependencies>
+</ivy-report>

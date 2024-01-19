@@ -1,0 +1,19 @@
+[portal]
+portal.code		=	studioPaonCommons1
+portal.name		=	Studio Paon 1
+portal.version	=	1.2.0
+portal.buildId	=	202401191504
+
+[framework]
+framework.name		=	portalBuilder
+framework.version	=	6.1.10
+
+[server]
+server.code		=	static
+server.name		=	Frontal NGINX
+server.includePortletCodeInServletPath = true
+server.portlets	=	|depot;1|chain;1|depot;1|
+server.portlets.codes	=	|import|chain|depot|
+server.type	=	web
+server.url	=	https://studio-paon.edrlab.org
+server.dataDirPath	=	

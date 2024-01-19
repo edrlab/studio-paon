@@ -1,0 +1,413 @@
+<!--
+ Attributs :
+ -  svcAdminUsersUrl : url du svc pour obtenir la liste des users.
+ -  filterType : [optionnel] sélection du type de users à lister: 'user' (valeur par défaut) ou 'group'
+ -  svcCreateUserUrl : [optionnel] url du svc pour créer un user.
+ -  svcUpdateUserUrl : [optionnel] url du svc pour éditer un user.
+ -  svcCreateGroupUrl : [optionnel] url du svc pour créer un groupe.
+ -  svcUpdateGroupUrl : [optionnel] url du svc pour éditer un groupe.
+-->
+<script>
+	xtag.register('sc-adminusersview', {
+		mixins: ['hbox', 'flex', 'view'],
+		lifecycle: {
+			'created:mixins(before)': function () {
+			},
+		},
+
+		methods: {
+
+			selectAccount: function (pAccountToSel) {
+				if(pAccountToSel) {
+					var vGrid = this.fGrid;
+					this.fDatasHandler.getGridDatas().some(function (pE, pIdx) {
+						if (pE.account === pAccountToSel) {
+							vGrid.setSelectedRows(pIdx);
+							return true;
+						}
+					});
+				} else {
+					this.fGrid.setSelectedRows(-1);
+				}
+			},
+			reloadDatas: function () {
+				var vReq = io.openHttpRequest(this.svcAdminUsersUrl + "?cdaction=List" + this.xGetFilterList());
+				vReq.onloadend = io.jsonXhrCb(this.xOnLoadEndDatas, this);
+				vReq.send();
+			},
+			xOnLoadEndDatas: function (pJson) {
+				if (!pJson) {
+					alert("Chargement en erreur. Recommencez ultérieurement.");
+					return;
+				}
+				this.fDatasHandler.setGridDatas(pJson.userList);
+			},
+
+			xInitAdminUsersView: function (pErrors) {
+				if (pErrors) {
+					alert("Chargement en erreur. Recommencez ultérieurement.");
+					throw pErrors;
+				}
+				var vBd = dom.newBd(this).style("margin", "1em");
+				this.fGrid = vBd.elt("sc-grid", "users").att("flex", "1").currentUp();
+				this.fDatasHandler = new this.grid.GridDataHandlerJsonArray();
+				this.fGrid
+						.initColumDefs(extPoints.getList("adminUsers:columns"))
+						.initGridDataHandler(this.fDatasHandler);
+				vBd.elt("div").att("orient", "vertical");
+				vBd.elt("sc-toolbar", "tbLite usersTbTop").att("orient", "vertical").att("icononly", "").prop("actionContext", this).prop("actionsLists", "adminUsers:toolbar:top").up();
+				vBd.elt("sc-toolbar", "tbLite usersTbBottom flex").att("orient", "vertical").att("pack", "end").att("icononly", "").prop("actionContext", this).prop("actionsLists", "adminUsers:toolbar:bottom").up();
+				this.reloadDatas();
+			},
+
+			onUserUpdated: function(pAccount){
+				if (!pAccount) {
+					alert("La modification a échoué. Recommencez ultérieurement.");
+					return;
+				}
+				var vReq = io.openHttpRequest(this.svcAdminUsersUrl + "?cdaction=List" + this.xGetFilterList());
+				vReq.onloadend = io.jsonXhrCb(function(pJson){
+						this.xOnLoadEndDatas(pJson);
+						this.selectAccount(pAccount);
+					}, this);
+				vReq.send();
+			},
+
+			xGetFilterList: function () {
+				return this.getAttribute("filterType") === 'group' ? "&options=(filterType'group')" : "&options=(filterType'user')";
+			},
+
+			xInitDefaultActions: function() {
+				function initButtonNode_SelDependantDisable(pButtonNode, pContext) {
+					pButtonNode.refreshState = function () {
+						var vUserData = pContext.fDatasHandler.getGridDatas()[pContext.fGrid.getSelectedRow()];
+						if (vUserData) {
+							this.removeAttribute("disabled");
+							if (vUserData["isDisabled"]) {
+								this.setAttribute("checked", "true");
+							} else {
+								this.removeAttribute("checked");
+							}
+						} else {
+							this.setAttribute("disabled", "true");
+							this.removeAttribute("checked");
+						}
+					}
+					pContext.addEventListener("gridSelect", function (pEvt) {
+						pButtonNode.refreshState();
+					}, false);
+					pButtonNode.refreshState();
+				}
+					
+				
+				function initButtonNode_SelDependant(pButtonNode, pContext) {
+					pButtonNode.refreshState = function () {
+						var vUserData = pContext.fDatasHandler.getGridDatas()[pContext.fGrid.getSelectedRow()];
+						if (vUserData) {
+							this.removeAttribute("disabled");
+							this.removeAttribute("checked");
+						} else {
+							this.setAttribute("disabled", "true");
+							this.removeAttribute("checked");
+						}
+					}
+					pContext.addEventListener("gridSelect", function (pEvt) {
+						pButtonNode.refreshState();
+					}, false);
+					pButtonNode.refreshState();
+				}
+
+				//Ajout d'un user
+				var vThis = this;
+				if (this.getAttribute("svcCreateUserUrl")) {
+					extPoints.addToList("adminUsers:toolbar:top", "addUser", 1, new actions.Action("addUser")
+							.setDescription("Ajouter un utilisateur")
+							//.setIcon("https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/desk/views/adminUsers/addUser.png")
+							.override("execute", function (pEvent, pContext) {
+								page.loadTags({"sc-updateuser": "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/desk/dialogs/updateUser.html"}, function (pErrors) {
+									if (pErrors) {
+										console.log(pErrors);
+										return;
+									}
+									var vBd = dom.newBd(document.body);
+									var vDialog = vBd.elt('sc-dialog').current();
+									var vUpdtUser = vBd.elt('sc-updateuser', 'thinBorder').currentUp();
+									var vCtx = {
+										window: window,
+										svcUserUrl: vThis.getAttribute("svcCreateUserUrl"),
+										updateUserCb: function (pUser) {
+											vDialog.removeDialog();
+											if (pUser) vThis.onUserUpdated(pUser);
+										}
+									};
+									vUpdtUser.initUpdateUser(vCtx,
+											{fields: extPoints.mergeLists(["adminUsers:fields:user:create", "adminUsers:fields:user", "adminUsers:fields:commons"])}
+									);
+								});
+							}), 10);
+				}
+				//Modif user.
+				if (this.getAttribute("svcUpdateUserUrl")) {
+					extPoints.addToList("adminUsers:toolbar:bottom", "updateUser", 1, new actions.Action("updateUser")
+							.setDescription("Modifier cet utilisateur")
+							//.setIcon("https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/desk/views/adminUsers/editUser.png")
+							.override("initButtonNode", initButtonNode_SelDependant)
+							.override("execute", function (pEvent, pContext) {
+								page.loadTags({"sc-updateuser": "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/desk/dialogs/updateUser.html"}, function (pErrors) {
+									if (pErrors) {
+										console.log(pErrors);
+										return;
+									}
+									var vBd = dom.newBd(document.body);
+									var vDialog = vBd.elt('sc-dialog').current();
+									var vUpdtUser = vBd.elt('sc-updateuser', 'thinBorder').currentUp();
+									var vCtx = {
+										window: window,
+										user : vThis.fDatasHandler.getGridDatas()[vThis.fGrid.getSelectedRow()],
+										svcUserUrl: vThis.getAttribute("svcUpdateUserUrl"),
+										updateUserCb: function (pUser) {
+											vDialog.removeDialog();
+											if (pUser) vThis.onUserUpdated(pUser);
+										}
+									};
+									vUpdtUser.initUpdateUser(vCtx,
+											{fields: extPoints.mergeLists(["adminUsers:fields:user:update", "adminUsers:fields:user", "adminUsers:fields:commons"])}
+									);
+								});
+							}), 1);
+				}
+				//Ajout group.
+				if (this.getAttribute("svcCreateGroupUrl")) {
+					extPoints.addToList("adminUsers:toolbar:top", "addGroup", 1, new actions.Action("addGroup")
+							.setDescription("Ajouter un utilisateur")
+							//.setIcon("https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/desk/views/adminUsers/addGroup.png")
+							.override("execute", function (pEvent, pContext) {
+								page.loadTags({"sc-updateuser": "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/desk/dialogs/updateUser.html"}, function (pErrors) {
+									if (pErrors) {
+										console.log(pErrors);
+										return;
+									}
+									var vBd = dom.newBd(document.body);
+									var vDialog = vBd.elt('sc-dialog').current();
+									var vUpdtGroup = vBd.elt('sc-updateuser', 'thinBorder').currentUp();
+									var vCtx = {
+										window: window,
+										svcUserUrl: vThis.getAttribute("svcCreateGroupUrl"),
+										updateUserCb: function (pUser) {
+											vDialog.removeDialog();
+											if (pUser) vThis.onUserUpdated(pUser);
+										}
+									};
+									vUpdtGroup.initUpdateUser(vCtx,
+											{fields: extPoints.mergeLists(["adminUsers:fields:group:create", "adminUsers:fields:group", "adminUsers:fields:commons"])}
+									);
+								});
+							}), 10);
+				}
+
+				if (this.getAttribute("svcUpdateGroupUrl")) {
+					extPoints.addToList("adminUsers:toolbar:bottom", "updateGroup", 1, new actions.Action("updateGroup")
+							.setDescription("Modifier cet utilisateur")
+							//.setIcon("https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/desk/views/adminUsers/editGroup.png")
+							.override("initButtonNode", initButtonNode_SelDependant)
+							.override("execute", function (pEvent, pContext) {
+								page.loadTags({"sc-updateuser": "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/desk/dialogs/updateUser.html"}, function (pErrors) {
+									if (pErrors) {
+										console.log(pErrors);
+										return;
+									}
+									var vBd = dom.newBd(document.body);
+									var vDialog = vBd.elt('sc-dialog').current();
+									var vUpdtGroup = vBd.elt('sc-updateuser', 'thinBorder').currentUp();
+									var vCtx = {
+										window: window,
+										user : vThis.fDatasHandler.getGridDatas()[vThis.fGrid.getSelectedRow()],
+										svcUserUrl: vThis.getAttribute("svcUpdateGroupUrl"),
+										updateUserCb: function (pUser) {
+											vDialog.removeDialog();
+											if (pUser) vThis.onUserUpdated(pUser);
+										}
+									};
+									vUpdtGroup.initUpdateUser(vCtx,
+											{fields: extPoints.mergeLists(["adminUsers:fields:group:update", "adminUsers:fields:group", "adminUsers:fields:commons"])}
+									);
+								});
+							}), 1);
+				}
+
+				//Bouton d'activation / désactivation rapide d'un user.
+				extPoints.addToList("adminUsers:toolbar:bottom", "disable", 1, new actions.Action("disableUser")
+						.setDescription("Activer ou désactiver l'utilisateur sélectionné")
+						//.setIcon("https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/desk/views/adminUsers/disableUser.png")
+						.override("initButtonNode", initButtonNode_SelDependantDisable)
+						.override("execute", function (pEvent, pContext) {
+							var vUserData = pContext.fDatasHandler.getGridDatas()[pContext.fGrid.getSelectedRow()];
+							if (!vUserData) return;
+							if (vUserData.isDisabled) {
+								if (!confirm("Souhaitez-vous activer cet utilisateur ?")) return;
+							} else {
+								if (!confirm("Souhaitez-vous désactiver cet utilisateur ?")) return;
+							}
+							var vProps = {isDisabled: !vUserData.isDisabled};
+							var vReq = io.openHttpRequest(io.appendParamsToUrl(pContext.svcAdminUsersUrl,
+									"cdaction", "Update",
+									"param", vUserData.account,
+									"userProps", utils.serializeCdm(vProps)
+							));
+							vReq.onloadend = io.jsonXhrCb(function (pJson) {pContext.onUserUpdated(pJson ? pJson.user : null);});
+							vReq.send();
+						}), 10);
+
+				//Bouton de suppr d'un user.
+				extPoints.addToList("adminUsers:toolbar:bottom", "delete", 1, new actions.Action("deleteUser")
+						.setDescription("Supprimer l'utilisateur sélectionné")
+						//.setIcon("https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/desk/views/adminUsers/deleteUser.png")
+						.override("initButtonNode", initButtonNode_SelDependant)
+						.override("execute", function (pEvent, pContext) {
+							var vUserData = pContext.fDatasHandler.getGridDatas()[pContext.fGrid.getSelectedRow()];
+							if (!vUserData) return;
+							if (!confirm("Souhaitez-vous supprimer cet utilisateur ?\nATTENTION cette suppression est définitive.")) return;
+							var vReq = io.openHttpRequest(io.appendParamsToUrl(pContext.svcAdminUsersUrl,
+									"cdaction", "Drop",
+									"param", vUserData.account
+							));
+							vReq.onloadend = io.jsonXhrCb(function (pJson, pError) {
+								if(pError) {
+									alert("Une erreur est survenue. Recommencez ultérieurement.");
+									pContext.reloadDatas();
+								} else {
+									pContext.xOnLoadEndDatas(pJson);
+								}
+							});
+							vReq.send();
+						}), 10);
+
+			}
+		},
+
+		events: {
+			/* Chargement au 1er affichage de la view. */
+			'SCViewShown': function (pEvent) {
+				if (pEvent.target !== this || this.fStarted) return;
+				this.fStarted = true;
+
+				if (!this.svcAdminUsersUrl) this.svcAdminUsersUrl = this.getAttribute("svcAdminUsersUrl") || authProv.getAuthServerUrl() + "/web/u/adminUsers";
+
+				//Actions et fields
+				this.xInitDefaultActions();
+
+				//Colonnes
+				extPoints.getSvcLazy("grid", function (grid, pErrors) {
+					if (pErrors) {
+						this.xInitAdminUsersView(pErrors);
+					} else {
+						this.grid = grid;
+						extPoints.addToList("adminUsers:columns", "account", 1,
+								new grid.ColumnDef("account").setLabel("Compte").setFlex("10em", 1, 1).setCellBuilderFactory(function () {return new grid.CellBuilderString(this, "account")})
+								, 10);
+						extPoints.addToList("adminUsers:columns", "firstName", 1,
+								new grid.ColumnDef("firstName").setLabel("Prénom").setFlex("10em", 1, 1).setCellBuilderFactory(function () {return new grid.CellBuilderString(this, "firstName")})
+								, 20);
+						extPoints.addToList("adminUsers:columns", "lastName", 1,
+								new grid.ColumnDef("lastName").setLabel("Nom").setFlex("10em", 1, 1).setCellBuilderFactory(function () {return new grid.CellBuilderString(this, "lastName")})
+								, 30);
+						extPoints.addToList("adminUsers:columns", "email", 1,
+								new grid.ColumnDef("email").setLabel("Email").setFlex("10em", 1, 1).setCellBuilderFactory(function () {return new grid.CellBuilderString(this, "email")})
+								, 40);
+						var CellBuilderDisabled = function () {
+							this.fDataKey = "isDisabled";
+						}
+						CellBuilderDisabled.prototype = {
+							__proto__: grid.CellBuilderString.prototype,
+							redrawCell: function (pGridDataRow, pRootNode) {
+								var vDisabled = this.xGetValue(pGridDataRow);
+								pRootNode.parentNode.style.color = vDisabled ? "#666" : "";
+								pRootNode.style.background = vDisabled ? "url(https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/img/lock.png) no-repeat" : "";
+							},
+						}
+						var vDisabledCol = new grid.ColumnDef("isDisabled").setDescription("Compte inactif").setFlex("53px", 0, 0).setCellBuilderFactory(function () {return new CellBuilderDisabled()});
+						vDisabledCol.buildColHeaderDefault = vDisabledCol.buildColHeader;
+						vDisabledCol.buildColHeader = function (pGridCol, pRootNode) {
+							this.buildColHeaderDefault(pGridCol, pRootNode);
+							pRootNode.firstElementChild.style.color = "transparent";
+							//pRootNode.style.background = "url(https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/desk/views/adminUsers/disableUser.png) no-repeat";
+						}
+						extPoints.addToList("adminUsers:columns", "isDisabled", 1, vDisabledCol, 999);
+						page.loadTags({
+							"sc-grid": "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/commons/widgets/grid.html"
+						}, this.xInitAdminUsersView, this);
+					}
+				}, this, "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/svcs/grid.js");
+			}
+		}
+	});
+</script>
+
+<style>
+@font-face {
+	font-family: 'fontello';
+	src: url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.eot');
+	src: url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.eot') format('embedded-opentype'),
+	url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.woff') format('woff'),
+	url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.ttf') format('truetype'),
+	url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.svg') format('svg');
+	font-weight: normal;
+	font-style: normal;
+}
+
+sc-adminusersview sc-btn {
+	border:none;
+    padding: 0.5em;
+	background-color:transparent;
+	color:gray;
+}
+
+sc-adminusersview sc-btn > img{
+	display:none;
+}
+
+sc-adminusersview sc-btn:hover {
+	box-shadow:none;
+	color:#00669A;
+}
+
+sc-btn[data-action="addUser"]::before{
+	font-family:"fontello";
+	content:"\f234";
+	font-size:20px;
+	width:20px;
+}
+
+sc-btn[data-action="deleteUser"]::before{
+	font-family:"fontello";
+	content:"\f235";
+	font-size:20px;
+	width:20px;
+}
+
+sc-btn[data-action="disableUser"]::before{
+	font-family:"fontello";
+	content:"\e80e";
+	font-size:20px;
+	width:20px;
+}
+
+sc-btn[data-action="updateUser"]::before{
+	font-family:"fontello";
+	content:"\e80d";
+	font-size:20px;
+	width:20px;
+}
+
+button[data-column="isDisabled"]::before{
+	font-family:"fontello";
+	content:"\e80e";
+	font-size:16px;
+	color:gray;
+}
+
+button[data-column="isDisabled"]:hover::before{
+	color:#00669A;
+}
+
+</style>

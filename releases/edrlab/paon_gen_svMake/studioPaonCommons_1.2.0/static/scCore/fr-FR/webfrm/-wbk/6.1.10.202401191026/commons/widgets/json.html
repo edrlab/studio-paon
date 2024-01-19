@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<!--
+tags: sc-json
+-->
+ 
+<!-- 
+-->
+<script>(function(){
+var scJson = {
+	mixins: [ 'flex' ],
+	
+	lifecycle: {
+		'created:mixins(before)': function() {
+			extPoints.getSvcLazy("jsonRdr", function(pSvc) {
+				this.jsonRdr = pSvc.newJsonRdr();
+				var vRdrsList = this.getAttribute("jsonRdrList");
+				if(vRdrsList) this.jsonRdr.addRenderers(extPoints.getList(vRdrsList));
+				if(this.fWaitingRdrs) {
+					this.addRenderers(this.fWaitingRdrs);
+					delete this.fWaitingRdrs;
+				}
+				if(this.fWaitingJson) {
+					this.render(this.fWaitingJson);
+					delete this.fWaitingJson;
+				} else {
+					var vJson = this.getAttribute("value");
+					if(vJson) {
+						this.renderFromString(vJson);
+					} else {
+						var vSrc = this.getAttribute("src");
+						if(vSrc) this.renderFromUrl(vSrc);
+					}
+				}
+			}, this, "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/svcs/jsonRdr.js");
+			//gestion focus
+			this.tabIndex = 0;
+		}
+	},
+
+	methods : {
+		renderFromUrl: function(pUrl){
+			try {
+				var vReq = io.openHttpRequest(pUrl);
+				var vThis = this;
+				vReq.onloadend = function(pEvt) {
+					try {
+						if(pEvt.target.status == 200) {
+							vThis.renderFromString(pEvt.target.responseText);
+							return;
+						}
+					}catch(e){console.log(e);}
+					dom.newBd(vThis).elt("p", "jsonError").text("Échec au chargement : "+pUrl);
+				};
+				vReq.send();
+			} catch (e){
+				console.log(e);
+				dom.newBd(vThis).elt("p", "jsonError").text("Échec au chargement : "+pUrl);
+			}
+		},
+		renderFromString: function(pStr){
+			try {
+				this.render(JSON.parse(pStr));
+			} catch (e){
+				console.log(e);
+				dom.newBd(vThis).elt("p", "jsonError").text("Échec au parsing JSON").up().elt("pre").text(pStr);
+			}
+		},
+		render: function(pJson){
+			if(this.jsonRdr) {
+				this.jsonRdr.render(dom.newBd(this), pJson);
+			} else {
+				this.fWaitingJson = pJson;
+			}
+		},
+		setJsonRdr: function(pJsonRdr){
+			this.jsonRdr = pJsonRdr;
+			if(this.fWaitingRdrs) delete this.fWaitingRdrs;
+		},
+		addRenderers: function(pRdrs) {
+			if(this.jsonRdr) {
+				this.jsonRdr.addRenderers(pRdrs);
+			} else if(this.fWaitingRdrs){
+				this.fWaitingRdrs = this.fWaitingRdrs.concat(pRdrs);
+			} else {
+				this.fWaitingRdrs = Array.isArray(pRdrs) ? pRdrs : [pRdrs];
+			}
+		}
+	}
+	
+};
+xtag.register('sc-json', scJson);
+
+})();</script>
+
+
+<style>
+sc-json{
+	background-color: white;
+	font-family: monospace;
+	font-size: 1.1em;
+	overflow: auto;
+}
+.jsonObj{
+	margin: 1px 1px 1px 5px;
+	padding-left: 5px;
+	border-left: 1px solid silver;
+}
+.jsonKeyLabel{
+	color: #440000;
+	padding-right: .5em;
+}
+/*.jsonKeyLabel::after{
+	content: ": ";
+}*/
+.jsonArr{
+	margin: 1px 1px 1px 5px;
+	padding-left: 5px;
+	border-left: 1px solid silver;
+}
+.jsonIdxLabel{
+	color: #440000;
+	padding-right: .5em;
+}
+.jsonNum,
+.jsonBool,
+.jsonNull {
+	font-weight: bold;
+	color: #8B0000;
+	padding: 0 1em;
+	-moz-user-select: text;
+	-webkit-user-select: text;
+	-ms-user-select: text;
+	-o-user-select: text;
+	user-select: text;
+	cursor: text;
+}
+.jsonStr{
+	padding: 0 .5em;
+	font-weight: bold;
+	white-space: pre-wrap;
+	color: #116644;
+	-moz-user-select: text;
+	-webkit-user-select: text;
+	-ms-user-select: text;
+	-o-user-select: text;
+	user-select: text;
+	cursor: text;
+}
+.jsonStr::before{
+	content: "\"";
+}
+.jsonStr::after{
+	content: "\"";
+}
+.jsonError{
+	color: #8B0000;
+	-moz-user-select: text;
+	-webkit-user-select: text;
+	-ms-user-select: text;
+	-o-user-select: text;
+	user-select: text;
+	cursor: text;
+}
+.jsonToggle{
+	cursor: pointer;
+	padding: 3px;
+}
+.jsonToggle::before{
+	content: "▼";
+}
+.jsonToggle.closed::before{
+	content: "▶";
+	font-size: 75%;
+}
+</style>

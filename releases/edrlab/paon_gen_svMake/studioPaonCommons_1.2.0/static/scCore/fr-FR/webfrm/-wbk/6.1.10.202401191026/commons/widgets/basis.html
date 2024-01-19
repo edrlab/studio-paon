@@ -1,0 +1,300 @@
+<!--
+mixins :  flex, vbox, hbox, label
+tags: sc-vbox, sc-hbox, sc-label, sc-panel, sc-stack, sc-dialog
+ -->
+<script>
+xtag.mixins.flex = {
+	lifecycle: {
+		created: function() {
+			if (!this.hasAttribute('flex')) this.setAttribute('flex', '');
+			else this.style.webkitBoxFlex = this.style.flex = this.getAttribute('flex');
+		},
+		
+		attributeChanged: function(pName, pOldValue, pNewValue) {
+			if (pName == "flex") this.style.webkitBoxFlex = this.style.flex = pNewValue;
+		}
+	}
+}
+
+
+xtag.mixins.vbox = {
+	lifecycle: {
+		created: function() {
+			if (!this.hasAttribute('orient')) this.setAttribute('orient', 'vertical');
+		}
+	}
+}
+
+xtag.register('sc-vbox', {
+	mixins: [ 'vbox', 'flex' ],
+	
+	lifecycle: {
+		'created:mixins(before)': function() {}
+	},
+});
+
+xtag.mixins.hbox = {
+	lifecycle: {
+		created: function() {
+			if (!this.hasAttribute('orient')) this.setAttribute('orient', 'horizontal');
+		}
+	}
+}
+
+xtag.register('sc-hbox', {
+	mixins: [ 'hbox', 'flex' ],
+	lifecycle: {
+		'created:mixins(before)': function() {}
+	},
+});
+
+xtag.mixins.label = {
+	lifecycle: {
+		created: function() {
+			this.setAttribute('align', 'center');
+			
+			var vBd = dom.newBd(this);
+			this._icon = vBd.elt("img", "icon").att("flex").currentUp();
+			this._label = vBd.elt("span", "label").att("flex").currentUp();
+		}
+	},
+	
+	accessors: {
+		label: {
+			attribute: { },
+			get: function () {
+				return this._label.textContent;
+			},
+			set: function (pLabel) {
+				return this._label.textContent = pLabel;
+			}
+		},
+		
+		icon: {
+			attribute: { },
+			get: function () {
+				return this._icon.src;
+			},
+			set: function (pValue) {
+				return this._icon.src = pValue;
+			}
+		}
+	}
+	
+}
+
+xtag.register('sc-label', {
+	mixins: [ 'hbox', 'flex', 'label' ],
+	lifecycle: {
+		'created:mixins(before)': function() { }
+	}
+});
+
+xtag.register('sc-panel', {
+	'extends': 'iframe',
+	mixins: [ 'flex' ],
+ 	lifecycle: {
+		'created:mixins(before)': function() {}
+	}
+});
+
+
+xtag.register('sc-stack', {
+	mixins: [ 'flex' ],
+	lifecycle: {
+		'created:mixins(before)': function() { }
+	},
+	
+	accessors: {
+		disabled: {
+			attribute: { },
+			get: function () {
+				return this._disabledMask != null;
+			},
+			set: function (pValue) {
+				if (!pValue) {
+					if (this._disabledMask) this.removeChild(this._disabledMask);
+					this._disabledMask = null;
+				} else if (!this._disabledMask) {
+					this._disabledMask = this.appendChild(document.createElement('div'));
+					this._disabledMask.className = 'mask disabledMask';
+				}
+			}
+		},
+		
+		loading: {
+			attribute: { },
+			get: function () {
+				return this._loadingMask != null;
+			},
+			set: function (pValue) {
+				if (!pValue) {
+					if (this._loadingMask) this.removeChild(this._loadingMask);
+					this._loadingMask = null;
+				} else if (!this._loadingMask) {
+					this._loadingMask = dom.newBd(this).elt("div", "loadingMask").elt("div", "loadingSpinner").up().current();
+				}
+			}
+		}
+	}
+});
+	
+xtag.register('sc-dialog', {
+	mixins: [ 'vbox', 'flex' ],
+ 	lifecycle: {
+		'created:mixins(before)': function() {}
+	},
+	methods : {
+		removeDialog : function(){
+			if(this.parentNode) this.parentNode.removeChild(this);
+		}
+	}
+});
+</script>
+
+<style>
+* { /* Must be set on all parent flex items of an overflowing item - set on all items for the moment */
+	min-height: 0;
+	min-width: 0;
+}
+
+[flex], .vbox > *, .hbox > * {
+	display: block;
+}
+
+.flex {
+	-webkit-flex: 1;
+	flex: 1;
+}
+
+/* L'attribut hidden ne fonctionne pas avec les éléments flexibles */
+[flex][hidden], .flex[hidden] {
+	display: none !important;
+}
+
+.vbox, .hbox, [orient] {
+	display: -webkit-flex;
+	display: flex !important;
+}
+
+.vbox, [orient=vertical] {
+	-webkit-flex-direction: column;
+	flex-direction: column;
+}
+
+.hbox, [orient=horizontal] {
+	-webkit-flex-direction: row;
+	flex-direction: row;
+}
+
+.align-start, [align=start] {
+	-webkit-box-align: start;
+	align-items: flex-start;
+}
+
+.align-center, [align=center] {
+	-webkit-box-align: center;
+	align-items: center;
+}
+
+.align-end, [align=end] {
+	-webkit-box-align: end;
+	align-items: flex-end;
+}
+
+.pack-start, [pack=start] {
+	-webkit-box-pack: start;
+	justify-content: flex-start;
+}
+
+.pack-center, [pack=center] {
+	-webkit-box-pack: center;
+	justify-content: center;
+}
+
+.pack-end, [pack=end] {
+	-webkit-box-pack: end;
+	justify-content: flex-end;
+}
+
+sc-label > img.icon:not([src]) {
+	display: none;
+}
+sc-label[label] > img.icon[src] {
+	padding-right: 0.8ex;
+}
+
+
+iframe[is=sc-panel] {
+	border: 0;
+}
+
+	
+sc-stack {
+	position: relative;
+}
+
+sc-stack > .disabledMask,
+sc-stack > .loadingMask {
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 0;
+	bottom: 0;
+}
+
+.disabledMask {
+	background-color: rgba(0,0,0,0.1);
+}
+
+.loadingMask {
+	background-color: rgba(255,255,255,0.1);
+}
+
+.loadingMask > .loadingSpinner {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	margin-left: -8px;
+	margin-top: -8px;
+	width: 16px;
+	height: 16px;
+	background-image: url(https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/img/loading.png);
+	background-position: center center;
+	background-repeat:no-repeat;
+  -webkit-animation: scRotateLoading 1s linear infinite;
+  -moz-animation: scRotateLoading 1s linear infinite;
+	-o-animation: scRotateLoading 1s linear infinite;
+	animation: scRotateLoading 1s linear infinite;
+}
+
+sc-dialog {
+	position: absolute;
+	left: 0;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 100;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	background-color: rgba(0,0,0,0.1);
+}
+
+@-webkit-keyframes scRotateLoading {
+  from { -webkit-transform: rotate(0deg); }
+  to { -webkit-transform: rotate(360deg); }
+}
+@-moz-keyframes scRotateLoading {
+  from { -moz-transform: rotate(0deg); }
+  to { -moz-transform: rotate(360deg); }
+}
+@-o-keyframes scRotateLoading {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes scRotateLoading {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+</style>

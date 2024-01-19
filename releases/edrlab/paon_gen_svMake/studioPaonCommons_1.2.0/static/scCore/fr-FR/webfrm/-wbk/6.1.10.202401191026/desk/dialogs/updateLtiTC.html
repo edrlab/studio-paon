@@ -1,0 +1,206 @@
+<!--
+component sc-updateltitc : Création ou upate d'un consomateur LTI.
+
+Doit être initialisé via  initUpdateTC(pContext, pUiOptions)
+pContext :
+ - svcLtiMgr : url du svc LtiMgr
+ - tc : [optionnel] objet json avec les props du tc à éditer, null pour une création.
+ - updateTCCb & updateTCCbThis : [optionnel] callback avec la key du tc créé / modifié ou null si annulé.
+
+pUiOptions :
+ - fields : tableau de areas.InputArea
+ - layout : [optionnel] areas.Area structurant les fields
+
+Evènements produits :
+"SCSubmit" avec en "detail" de l'event le compte modifié / créé.
+"SCCancel" abandon par l'utilisateur ou echec à l'upload.
+
+ -->
+<script>
+
+	//Fields par défaut.
+	extPoints.addToList("adminLtiTC:fields:tc:create", "oauthKey", 1, new areas.InputArea("oauthKey")
+					.setLabel("Clé OAuth")
+					.setRequired(true)
+					.setTag("input", "input-text", {"class":"fieldValue -uu", pattern:"[A-Za-z][A-Za-z0-9_\-]*"})
+			, 10);
+
+	extPoints.addToList("adminLtiTC:fields:tc:update", "oauthKey", 1, new areas.InputArea("oauthKey")
+					.setLabel("Clé OAuth")
+					.setReadOnly(true)
+					.setTag("input", "input-text", {class:"fieldValue -uu"})
+			, 10);
+
+	extPoints.addToList("adminLtiTC:fields:tc", "oauthSecret", 1, new areas.InputArea("oauthSecret")
+					.setLabel("Secret OAuth")
+					.setRequired(true)
+					.setTag("input", "input-text", {class:"fieldValue -uu"})
+			, 20);
+
+	xtag.register('sc-updateltitc', {
+		mixins: ['vbox', 'flex'],
+		lifecycle: {
+			'created:mixins(before)': function () {}
+		},
+
+		methods: {
+
+			initUpdateTC: function (pContext, pUiOptions) {
+				this.fOriginalCtx = pContext;
+				this.fContext = js.create(pContext);
+
+				var vBd = dom.newBd(this).clear(); //.outTree();
+				var vSelf = this;
+				this.fErrorNode = vBd.elt('sc-hbox', 'error -uu').att("pack", "center").currentUp();
+				this.fFieldsRoot = vBd.elt('sc-stack', 'userFields -uu').att('flex', '1 1 auto').current();
+				(pUiOptions.layout || this).buildBody(vBd, pContext, pUiOptions);
+				vBd.setCurrent(this);
+				vBd.elt('sc-hbox', 'btns -uu').att('pack', 'end');
+				vBd.elt('sc-btn', 'cancel -uu').att('label', "Annuler").listen("click", function () {vSelf.cancel()}).up();
+				this.fSaveBtn = vBd.elt('sc-btn', 'save -uu').att('label', "Enregistrer").listen("click", function () {vSelf.submit()}).currentUp();
+				vBd.up(); //.inTree();
+
+				this.fFieldNodes = areas.applyLayout(vBd.setCurrent(this.fFieldsRoot), pUiOptions.fields, pContext, pUiOptions);
+				if (pContext.tc) for (var vKey in this.fFieldNodes) this.fFieldNodes[vKey].extractValue(pContext.tc);
+			},
+
+			submit: function () {
+				if (!this.checkValidity()) {
+					alert("Des propriétés sont incorrectes.");
+					return;
+				}
+				this.fFieldsRoot.disabled = true;
+				this.fSaveBtn.disabled = true;
+				var vNewProps = this.getNewProps();
+				this.fTC = vNewProps.oauthKey || this.fContext.tc.oauthKey;
+				var vReq = io.openHttpRequest(io.appendParamsToUrl(this.fContext.svcLtiMgr,"cdaction",this.fContext.tc?"UpdateTC":"CreateTC"), "POST");
+				var vThis = this ;
+				vReq.onloadend = function (pEvt) {vThis.xOnUpdate(pEvt.target.status >= 400?pEvt.target.status:null);};
+				var vFD = new FormData();
+				vFD.append("props",utils.serializeCdm(vNewProps))
+				vReq.send(vFD);
+			},
+
+			setError: function(pMsg) {
+				this.fErrorNode.textContent = pMsg;
+			},
+
+			xOnUpdate: function (pError) {
+				if (pError) {
+					alert("Une erreur est survenue. Recommencez ultérieurement.");
+					return;
+				}
+				if (this.fContext.updateTCCb) this.fContext.updateTCCb.call(this.fContext.updateTCCbThis, this.fTC);
+			},
+
+			cancel: function () {
+				dom.createAndDispatchEvent(this, 'SCCancel');
+				if (this.fContext.updateTCCb) this.fContext.updateTCCb.call(this.fContext.updateTCCbThis);
+			},
+
+			checkValidity: function () {
+				for (var vKey in this.fFieldNodes) {
+					if (!this.fFieldNodes[vKey].checkValidity()) return false;
+				}
+				return true;
+			},
+			getNewProps: function () {
+				var vNewProps = {};
+				for (var vKey in this.fFieldNodes) this.fFieldNodes[vKey].fillValue(vNewProps);
+				return vNewProps;
+			},
+
+			/** Construction du layout (api Area). */
+			buildBody: function(pBd, pContext, pUiOptions){
+				var vRoot = pBd.elt('div', 'inputTable -uu').currentUp();
+				vRoot.setAttributeNS("scenari.eu:areaLayout:1.0", "sal:areaIds", "*");
+				return vRoot;
+			}
+		}
+	});
+</script>
+
+<style>
+	sc-updateltitc {
+		margin: 0.5ex;
+	}
+	sc-hbox.btns.-uu {
+		border-top: solid 1px silver;
+		margin: 0.5ex 2ex 0 2ex;
+	}
+	sc-hbox.btns.-uu > sc-btn {
+		margin: 0.5ex 0.5ex;
+	}
+
+	.error.-uu {
+		color: red;
+		font-weight: bold;
+		margin: 1em;
+	}
+
+	input.fieldValue.-uu {
+		width: 90%;
+		border: 1px solid lightgrey;
+	}
+
+	input.fieldValue.-uu[type="radio"] {
+		width: inherit;
+		margin-left:0;
+	}
+
+	input.fieldValue.-uu[type="checkbox"] {
+		width: inherit;
+		margin-left:0;
+	}
+
+	textarea.fieldValue.-uu {
+		width: 90%;
+		border: 1px solid lightgrey;
+		margin: 0;
+		resize: none;
+		padding: 0;
+	}
+
+	select.fieldValue.-uu {
+		-webkit-appearence: none;
+		-moz-appearance: none;
+		border: 1px solid lightgrey;
+		margin: 0;
+	}
+
+	input.fieldValue[readonly] {
+		border: none;
+		font-weight: bold;
+		background: none;
+		padding: 1px;
+	}
+
+	textarea.fieldValue.-uu[readonly] {
+		border: none;
+		font-weight: bold;
+		background: none;
+		padding: 1px;
+	}
+
+	select.fieldValue.-uu[readonly] {
+		-webkit-appearence: none;
+		-moz-appearence: none;
+		border: none;
+		font-weight: bold;
+		background: none;
+		padding: 1px;
+		color: #000;
+	}
+
+	/*
+	a.fieldValue.-uu,
+	span.fieldValue.-uu {
+		font-weight: bold;
+		-moz-user-select: text;
+		-webkit-user-select: text;
+		-ms-user-select: text;
+		-o-user-select: text;
+		user-select: text;
+	}
+	*/
+</style>

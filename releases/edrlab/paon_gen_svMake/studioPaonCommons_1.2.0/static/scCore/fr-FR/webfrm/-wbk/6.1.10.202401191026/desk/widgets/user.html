@@ -1,0 +1,90 @@
+<!-- TAG sc-user
+Affiche le user connecté et les actions associées.
+ -->
+<script>
+xtag.register('sc-user', {
+	mixins: [ 'hbox'],
+	
+	lifecycle: {
+		'created:mixins(before)': function() {
+			this.onCurrentUserChange(authProv.getUser());
+			authProv.authListeners.add(this);
+		}
+	},
+	
+	methods: {
+		
+		/** api authProv.authListeners */
+		onCurrentUserChange : function(pUser) {
+			var vBd = dom.newBd(this);
+			vBd.clear();
+			if(pUser && !pUser.isAnonymous) {
+				vBd.elt("sc-hbox").att("align", "center");
+				vBd.elt("span", "account").text(pUser.account).up();
+				if(!utils.isScenariApp()) {
+					//pas de déconnexion quand on est dans le client Sc.
+					vBd.elt("sc-btn", "disconnect").att("role", "button").att("title", "Déconnecter").att("data-action","disconnectUser").listen("click", function(){authProv.logout();})
+						.elt("img").att("src", "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/desk/widgets/user/logout.png"); 
+				}
+			} else {
+				if(pUser){
+					vBd.elt("sc-hbox").att("align", "center");
+					vBd.elt("span", "account").text(pUser.account).up();
+				}
+				vBd.elt("sc-btn", "connect").att("role", "button").att("title", "Se connecter").att("data-action","connectUser").listen("click", function(){authProv.forceLogin();})
+				.elt("img").att("src", "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/desk/widgets/user/login.png");
+			}
+		}
+	}
+});
+
+</script>
+<style>
+@font-face {
+	font-family: 'fontello';
+	src: url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.eot');
+	src: url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.eot') format('embedded-opentype'),
+	url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.woff') format('woff'),
+	url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.ttf') format('truetype'),
+	url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.svg') format('svg');
+	font-weight: normal;
+	font-style: normal;
+}
+
+.account {
+	font-weight:bold;
+	margin: 3px;
+}
+
+.disconnect, .connect {
+    border: none;
+}
+
+.disconnect:hover, .connect:hover{
+	box-shadow:none;
+	border: none;
+}
+
+.connect::before {
+    content:"\e810";
+}
+
+.disconnect::before, .connect::before{
+	font-family:"fontello";
+	content:"\e820";
+	font-size:1.7em;
+	color:grey;
+}
+
+.disconnect:hover::before{
+	color:#e34434;
+}
+
+.connect:hover::before{
+	color:#0E7B00;
+}
+
+.disconnect > img, .connect > img{
+	display:none;
+}
+</style>

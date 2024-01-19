@@ -1,0 +1,65 @@
+@import "basedark.css";
+
+:root {
+	--color: #F4F4F4;
+	--bgcolor: #121212;
+	--border-color: #565656;
+	--selection-color: #2d462e;
+	--selection-bgcolor: #d9f8e6;
+
+	--alt1-bgcolor: #2D2F37;
+	--alt2-bgcolor: #08254A;
+	--alt1-color: #8fc6ee;
+	--alt2-color: #bdb8ff;
+	--alt1-border-color: #000;
+	--alt2-border-color: #000;
+
+	--inv-bgcolor: #0D3B75;
+	--inv-color: #fcf6fb;
+	--inv-border-color: #000;
+
+	--form-bgcolor: #121212;
+
+	--edit-bgcolor: #1D1E24;
+	--edit-color: #E5E5E5;
+	--edit-seltext-bgcolor: #6288B8;
+	--edit-select-bgcolor: #4437754d;
+	--edit-select-unfocus-bgcolor: #010723;
+	--edit-cmt-bgcolor: #453810;
+	--edit-cmt-color: #cccccc;
+	--edit-cmt-border-color: #000;
+	--edit-drop-color: #374875;
+	--edit-drop-bgcolor: #6881DD40;
+
+	--row-bgcolor: #1D1E24;
+	--row-inSel-bgcolor: #3748754d;
+	--row-inSel-unfocus-bgcolor: #000c40;
+	--row-current-img-end: url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2012%2030%22%3E%3Ccircle%20fill%3D%22%236288B8%22%20r%3D%224%22%20cx%3D%225%22%20cy%3D%2215%22%2F%3E%3C%2Fsvg%3E');
+
+	--focus-outline: solid 1px #6288B8;
+
+	--form-color: #ffffff;
+
+	--tooltip-border-color: #10192c;
+	--tooltip-bgcolor: #10192c;
+
+	--scroll-color: #000;
+	--scroll-thumb-color: #505050;
+
+	--insbtn-color: #ffffff;
+	--insbtn-bg: #6288B8;
+	--insbtn-hover-bg: #0D3B75;
+
+	--dialog-bgcolor: #10192c;
+	--dialog-color: #b5b6b9;
+
+	--tabf-bgcolor: #494964;
+
+	--tabl-select-color: #6288B8;
+
+	--item-bgcolor: #000;
+	--item-color: #fff3e7;
+	--item-border-color: #385c8a;
+
+	--item-tabl-select-color: #fff3e7;
+}

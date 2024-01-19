@@ -1,0 +1,243 @@
+<!--
+component sc-updateuser  : Création ou upate d'un user ou d'un groupe.
+
+Doit être initialisé via  initUpdateUser(pContext, pUiOptions)
+pContext :
+ - svcUserUrl : url du svc d'update/create du user (de type eu.scenari.core.service.adminuser.SvcAdminUser ou eu.scenari.core.service.userselfmgr.SvcUserSelfMgr)
+ - user : [optionnel] objet json avec les props du user à éditer, null pour une création.
+ - updateUserCb & updateUserCbThis : [optionnel] callback avec le compte du user créé / modifié ou null si annulé.
+
+pUiOptions :
+ - fields : tableau de areas.InputArea
+ - layout : [optionnel] areas.Area structurant les fields
+
+Evènements produits :
+"SCSubmit" avec en "detail" de l'event le compte modifié / créé.
+"SCCancel" abandon par l'utilisateur ou echec à l'upload.
+
+ -->
+<script>
+
+	//Fields par défaut.
+	extPoints.addToList("adminUsers:fields:user:create", "account", 1, new areas.InputArea("account")
+					.setLabel("Compte")
+					.setRequired(true)
+					.setTag("input", "input-text", {"class":"fieldValue -uu", pattern:"[A-Za-z][A-Za-z0-9_\-]*"})
+			, 10);
+
+	extPoints.addToList("adminUsers:fields:user:update", "account", 1, new areas.InputArea("account")
+					.setLabel("Compte")
+					.setReadOnly(true)
+					.setTag("input", "input-text", {class:"fieldValue -uu"})
+			, 10);
+
+	extPoints.addToList("adminUsers:fields:user", "firstName", 1, new areas.InputArea("firstName")
+					.setLabel("Prénom")
+					.setTag("input", "input-text", {class:"fieldValue -uu"})
+			, 20);
+
+	extPoints.addToList("adminUsers:fields:user", "lastName", 1, new areas.InputArea("lastName")
+					.setLabel("Nom")
+					.setTag("input", "input-text", {class:"fieldValue -uu"})
+			, 30);
+	extPoints.addToList("adminUsers:fields:user", "email", 1, new areas.InputArea("email")
+					.setLabel("Email")
+					.setRequired(true)
+					.setTag("input", "input-text", {class:"fieldValue -uu", type:"email"})
+			, 40);
+	extPoints.addToList("adminUsers:fields:user", "grantedRoles", 1, new areas.InputArea("grantedRoles")
+		.setLabel("Rôles")
+		.setTag("input-checkbox-array", null, {class:"fieldValue -uu"})
+		.overrideTagInput("inputsList", "user:roles")
+	, 50);
+
+
+	xtag.register('sc-updateuser', {
+		mixins: ['vbox', 'flex'],
+		lifecycle: {
+			'created:mixins(before)': function () {}
+		},
+
+		methods: {
+
+			initUpdateUser: function (pContext, pUiOptions) {
+				this.fOriginalCtx = pContext;
+				this.fContext = js.create(pContext);
+
+				var vBd = dom.newBd(this).clear(); //.outTree();
+				var vSelf = this;
+				this.fErrorNode = vBd.elt('sc-hbox', 'error -uu').att("pack", "center").currentUp();
+				this.fFieldsRoot = vBd.elt('sc-stack', 'userFields -uu').att('flex', '1 1 auto').current();
+				(pUiOptions.layout || this).buildBody(vBd, pContext, pUiOptions);
+				vBd.setCurrent(this);
+				vBd.elt('sc-hbox', 'btns -uu').att('pack', 'end');
+				vBd.elt('sc-btn', 'cancel -uu').att('label', "Annuler").listen("click", function () {vSelf.cancel()}).up();
+				this.fSaveBtn = vBd.elt('sc-btn', 'save -uu').att('label', "Enregistrer").listen("click", function () {vSelf.submit()}).currentUp();
+				vBd.up(); //.inTree();
+
+				this.fFieldNodes = areas.applyLayout(vBd.setCurrent(this.fFieldsRoot), pUiOptions.fields, pContext, pUiOptions);
+				if (pContext.user) for (var vKey in this.fFieldNodes) this.fFieldNodes[vKey].extractValue(pContext.user);
+			},
+
+			submit: function () {
+				if (!this.checkValidity()) {
+					alert("Des propriétés sont incorrectes.");
+					return;
+				}
+				this.fFieldsRoot.disabled = true;
+				this.fSaveBtn.disabled = true;
+				var vNewProps = this.getNewProps();
+				//console.log("vNewProps:::::"+log.listProps(vNewProps));
+				//envoi de la requete
+				this.fLastAccount = vNewProps.account || this.fContext.user.account;
+				var vReq = io.openHttpRequest(io.appendParamsToUrl(this.fContext.svcUserUrl, "param", this.fLastAccount), "POST", true);
+				vReq.onloadend = io.jsonXhrCb(this.xOnUpdate, this);
+				vReq.send(utils.serializeCdm(vNewProps));
+			},
+
+			setError: function(pMsg) {
+				this.fErrorNode.textContent = pMsg;
+			},
+
+			xOnUpdate: function (pJson, pError) {
+				this.fFieldsRoot.disabled = false;
+				this.fSaveBtn.disabled = false;
+				if (pError) {
+					alert("Une erreur est survenue. Recommencez ultérieurement.");
+					return;
+				}
+				switch(pJson.result) {
+					case "available" :
+					case "updated" :
+						dom.createAndDispatchEvent(this, 'SCSubmit', this.fLastAccount);
+						if (this.fContext.updateUserCb) this.fContext.updateUserCb.call(this.fContext.updateUserCbThis, this.fLastAccount);
+						break;
+					case "validationPending" :
+						alert("La demande a bien été enregistrée, le processus de validation est en cours.\nVous serez tenu informé.e de son avancement.");
+						dom.createAndDispatchEvent(this, 'SCSubmit', this.fLastAccount);
+						if (this.fContext.updateUserCb) this.fContext.updateUserCb.call(this.fContext.updateUserCbThis, this.fLastAccount);
+						break;
+					case "failedInvalidDatas" :
+						this.setError("Des données sont incorrectes, merci de les corriger.");
+						break;
+					case "failedAccountConflict" :
+						this.setError("Ce compte existe déjà.");
+						break;
+					case "otherFailure" :
+					default:
+						alert("Une erreur est survenue. Recommencez ultérieurement.");
+						break;
+				}
+			},
+
+			cancel: function () {
+				dom.createAndDispatchEvent(this, 'SCCancel');
+				if (this.fContext.updateUserCb) this.fContext.updateUserCb.call(this.fContext.updateUserCbThis);
+			},
+
+			checkValidity: function () {
+				for (var vKey in this.fFieldNodes) {
+					if (!this.fFieldNodes[vKey].checkValidity()) return false;
+				}
+				return true;
+			},
+			getNewProps: function () {
+				var vNewProps = {};
+				for (var vKey in this.fFieldNodes) this.fFieldNodes[vKey].fillValue(vNewProps);
+				return vNewProps;
+			},
+
+			/** Construction du layout (api Area). */
+			buildBody: function(pBd, pContext, pUiOptions){
+				var vRoot = pBd.elt('div', 'inputTable -uu').currentUp();
+				vRoot.setAttributeNS("scenari.eu:areaLayout:1.0", "sal:areaIds", "*");
+				return vRoot;
+			}
+		}
+	});
+</script>
+
+<style>
+	sc-updateuser {
+		margin: 0.5ex;
+	}
+	sc-hbox.btns.-uu {
+		border-top: solid 1px silver;
+		margin: 0.5ex 2ex 0 2ex;
+	}
+	sc-hbox.btns.-uu > sc-btn {
+		margin: 0.5ex 0.5ex;
+	}
+
+	.error.-uu {
+		color: red;
+		font-weight: bold;
+		margin: 1em;
+	}
+
+	input.fieldValue.-uu {
+		width: 90%;
+		border: 1px solid lightgrey;
+	}
+
+	input.fieldValue.-uu[type="radio"] {
+		width: inherit;
+		margin-left:0;
+	}
+
+	input.fieldValue.-uu[type="checkbox"] {
+		width: inherit;
+		margin-left:0;
+	}
+
+	textarea.fieldValue.-uu {
+		width: 90%;
+		border: 1px solid lightgrey;
+		margin: 0;
+		resize: none;
+		padding: 0;
+	}
+
+	select.fieldValue.-uu {
+		-webkit-appearence: none;
+		-moz-appearance: none;
+		border: 1px solid lightgrey;
+		margin: 0;
+	}
+
+	input.fieldValue[readonly] {
+		border: none;
+		font-weight: bold;
+		background: none;
+		padding: 1px;
+	}
+
+	textarea.fieldValue.-uu[readonly] {
+		border: none;
+		font-weight: bold;
+		background: none;
+		padding: 1px;
+	}
+
+	select.fieldValue.-uu[readonly] {
+		-webkit-appearence: none;
+		-moz-appearence: none;
+		border: none;
+		font-weight: bold;
+		background: none;
+		padding: 1px;
+		color: #000;
+	}
+
+	/*
+	a.fieldValue.-uu,
+	span.fieldValue.-uu {
+		font-weight: bold;
+		-moz-user-select: text;
+		-webkit-user-select: text;
+		-ms-user-select: text;
+		-o-user-select: text;
+		user-select: text;
+	}
+	*/
+</style>

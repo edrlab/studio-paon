@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wed:wed xmlns="http://www.w3.org/1999/xhtml" xmlns:wed="scenari.eu:wed">
+	<wed:jslib key="SC_WSP" src=":back:modeling/widgets/wed/richText/jsLib.js"/>
+	<wed:jslib key="SC_MODELING_CORE" src=":back:modeling/widgets/wed/modeling.js"/>
+	<wed:bind nodeType="document" wedlet="Box">
+		<box-static skin="box/root">
+			<box-host>
+				<wed:children/>
+			</box-host>
+		</box-static>
+	</wed:bind>
+	<wed:bind attName="sc:refUri" wedlet="Box">
+		<box-ptritem/>
+	</wed:bind>
+	<wed:bind nodeType="element" wedlet="Box" insertUiForChildren=".body" insertUiForAtts=".head">
+		<box-collaps skin="box/genElt">
+			<div class="head">
+				<box-nameinput/>
+				<wed:children select="@"/>
+			</div>
+			<div class="body">
+				<wed:children/>
+			</div>
+		</box-collaps>
+	</wed:bind>
+	<wed:bind nodeType="attribute" wedlet="Box">
+		<box-ctn skin="box/genAtt">
+			<box-nameinput/>
+			<span class="quote">="</span>
+			<box-input-ctedit/>
+			<span class="quote">"</span>
+		</box-ctn>
+	</wed:bind>
+	<wed:bind nodeType="text" wedlet="Box">
+		<box-ctn-input skin="box/genTxt">
+			<box-input-ctedit aria-multiline="true"/>
+		</box-ctn-input>
+	</wed:bind>
+	<wed:bind nodeType="comment" wedlet="BoxScComment">
+		<box-ctn-input skin="box/comment">
+			<box-input-ctedit aria-multiline="true"/>
+		</box-ctn-input>
+		<box-scexclude/>
+		<box-sccomment/>
+	</wed:bind>
+</wed:wed>

@@ -1,0 +1,60 @@
+@import "baselight.css";
+
+:root {
+	--color: #48004e;
+	--bgcolor: #f3eAf8;
+	--selection-color: #e1fffd;
+	--selection-bgcolor: #590971;
+	--border-color: #d6c8de;
+
+	--alt1-bgcolor: #edfbf9;
+	--alt2-bgcolor: #fdf3fe;
+	--alt1-color: #2290ab;
+	--alt2-color: #ad39d6;
+	--alt1-border-color: #cee2df;
+	--alt2-border-color: #470c4e;
+
+	--inv-bgcolor: #387b85;
+	--inv-color: #dff7f9;
+	--inv-border-color: #5e9097;
+
+	--edit-bgcolor: white;
+	--edit-color: #58005e;
+	--edit-seltext-bgcolor: #ff60ea4d;
+	--edit-select-bgcolor: #ff60ea4d;
+	--edit-select-unfocus-bgcolor: #ff60ea08;
+	--edit-forbidden-bgcolor: rgba(255, 1, 0, 0.19);
+	--edit-drop-color: #d684ce;
+	--edit-drop-bgcolor: rgba(214, 132, 206, 0.3);
+	--edit-btn-color: #0d913b;
+
+	--row-bgcolor: #fff;
+	--row-inSel-bgcolor: #ff60ea4d;
+	--row-inSel-unfocus-bgcolor: #ff60ea08;
+	--row-current-img-end: url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2012%2030%22%3E%3Ccircle%20fill%3D%22%23489eab%22%20r%3D%224%22%20cx%3D%225%22%20cy%3D%2215%22%2F%3E%3C%2Fsvg%3E');
+
+	--focus-outline: #ffc2f699 auto 1px;
+
+	--form-color: #000000;
+
+	--scroll-color: #efebef;
+
+	--insbtn-color: #73106A;
+	--insbtn-bg: rgb(224, 184, 238);
+	--insbtn-hover-bg: rgb(234, 208, 245);
+
+	--dialog-bgcolor: #6ca0a1;
+	--dialog-color: #fff;
+
+	--tabf-bgcolor: rgb(198, 181, 207);
+	--panel-tabf-bgcolor: #cceee9;
+
+	--tabl-select-color: #020269;
+
+	--page-border-color: #ecdfeb;
+
+	--item-tabl-select-color: #8db0f7;
+	--item-bgcolor: #f8edf7;
+	--item-color: #05011b;
+	--item-border-color: #fcdaff;
+}

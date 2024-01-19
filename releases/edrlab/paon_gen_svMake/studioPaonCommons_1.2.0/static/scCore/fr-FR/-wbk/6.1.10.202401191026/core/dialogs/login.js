@@ -1,0 +1,42 @@
+import{REG}from"https://studio-paon.edrlab.org/~~static/scCore/fr-FR/-wlb/6.1.10.202401191026/commons/registry.js"
+import{BaseElement}from"https://studio-paon.edrlab.org/~~static/scCore/fr-FR/-wbk/6.1.10.202401191026/commons/basis.js"
+import{initLoginForm,initRenewPwdForm}from"https://studio-paon.edrlab.org/~~static/scCore/fr-FR/-wbk/6.1.10.202401191026/core/userSelfForms.js"
+import{JSX}from"https://studio-paon.edrlab.org/~~static/scCore/fr-FR/-wlb/6.1.10.202401191026/commons/xml/dom.js"
+import{DOMSH}from"https://studio-paon.edrlab.org/~~static/scCore/fr-FR/-wlb/6.1.10.202401191026/commons/xml/domsh.js"
+import{Action}from"https://studio-paon.edrlab.org/~~static/scCore/fr-FR/-wlb/6.1.10.202401191026/commons/actions.js"
+import{POPUP}from"https://studio-paon.edrlab.org/~~static/scCore/fr-FR/-wbk/6.1.10.202401191026/commons/widgets/popups.js"
+import{UiLangDeskFeat}from"https://studio-paon.edrlab.org/~~static/scCore/fr-FR/-wbk/6.1.10.202401191026/core/plugins/optionsPlg.js"
+import{ActionBtn}from"https://studio-paon.edrlab.org/~~static/scCore/fr-FR/-wbk/6.1.10.202401191026/commons/widgets/buttons.js"
+export class LoginDialog extends BaseElement{_initialize(init){const reg=this.findReg(init)
+const sr=this.attachShadow(DOMSH.SHADOWDOM_INIT)
+reg.installSkin("webzone:panel",sr)
+this._initAndInstallSkin(this.localName,init)
+const loginForm=reg.getSvc("userLoginForm")(reg)
+sr.appendChild(loginForm)
+this.appendChild(JSX.createElement("form",{style:"display: none"},JSX.createElement("input",{name:"password",type:"password"})))
+const universe=reg.env.universe
+initLoginForm(loginForm,universe.userSelf,universe.auth,{defaultAccount:localStorage.getItem("login:lastAccount"),showRenewPwd:()=>{const renewForm=reg.getSvc("userRenewPwdForm")(reg)
+loginForm.hidden=true
+sr.appendChild(renewForm)
+return renewForm},hideRenewPwd:renewForm=>{renewForm.remove()
+loginForm.hidden=false}})}}REG.reg.registerSkin("c-login",1,`\n\t:host {\n\t\tdisplay: flex;\n\t\tmin-height: 0;\n\t\tmin-width: 0;\n\t\tpadding: 1em;\n\t}\n\n\t:focus-visible {\n\t\toutline: var(--focus-outline);\n\t}\n\n\t.fields {\n\t\tmax-width: 30em;\n\t\twidth: 85vw;\n\t\tmargin: auto;\n\t\tdisplay: grid;\n\t\tgrid-template-columns: auto 1fr;\n\t\tgrid-row-gap: 0.5em;\n\t\tgrid-column-gap: 0.5em;\n\t}\n\n\tlabel {\n\t\ttext-align: end;\n\t\tcolor: var(--alt1-color);\n\t\tuser-select: none;\n\t}\n\n\tinput {\n\t\tbackground-color: var(--form-bgcolor);\n\t\tcolor: var(--form-color);\n\t\tborder: 1px solid var(--border-color);\n\t}\n\n\tinput:invalid {\n\t\tborder: 1px solid var(--error-color);\n\t\tbox-shadow: 0 0 2px var(--error-color);\n\t}\n\n\t.message {\n\t\tmargin: 1em;\n\t}\n\n\t.message[data-type='pending'] {\n\t\ttext-align: end;\n\t\tfont-style: italic;\n\t}\n\n\t.error {\n\t\tcolor: var(--error-color);\n\t\tmargin: 1em;\n\t}\n\n\t#langCtn {\n\t\tdisplay: flex;\n\t\tjustify-content: flex-end;\n\t\tmargin-bottom: .5em;\n\t}\n\n\t.footer {\n\t\tdisplay: flex;\n\t\tmin-height: 0;\n\t\tmin-width: 0;\n\t\tjustify-content: flex-end;\n\t\tmargin-block: 1em 0;\n\t\tmargin-inline: 0;\n\t}\n\n\t.spacer {\n\t\tflex: 1;\n\t}\n\n\tbutton {\n\t\tpadding: 0.5em;\n\t\tborder-radius: 5px;\n\t\tborder: 1px solid var(--border-color);\n\t\tbackground-color: var(--bgcolor);\n\t\tcolor: var(--color);\n\t\tcursor: pointer;\n\t\tmargin-block: 0;\n\t\tmargin-inline: 1em 0;\n\t}\n\n\tbutton:hover {\n\t\tbackground-color: var(--pressed-bgcolor);\n\t}\n\n\tbutton[type=submit] {\n\t\tborder: none;\n\t\tcolor: var(--inv-color);\n\t\tbackground-color: var(--inv-bgcolor);\n\t}\n\n\tbutton[type=submit]:hover {\n\t\tbackground-image: linear-gradient(var(--inv-pressed-bgcolor), var(--inv-pressed-bgcolor));\n\t}\n`)
+customElements.define("c-login",LoginDialog)
+export class ChangePwdDialog extends BaseElement{_initialize(init){const reg=this.findReg(init)
+const sr=this.attachShadow(DOMSH.SHADOWDOM_INIT)
+reg.installSkin("webzone:panel",sr)
+this._initAndInstallSkin("c-login",init)
+const changePwdForm=reg.getSvc("userChangePwdForm")(reg)
+sr.appendChild(changePwdForm)
+const universe=reg.env.universe
+initRenewPwdForm(changePwdForm,universe.userSelf,universe.auth,{renewPwdDone:()=>{POPUP.findPopupableParent(this).close()}})}}customElements.define("c-change-pwd",ChangePwdDialog)
+REG.reg.registerSvc("userLoginForm",1,reg=>JSX.createElement("form",{id:"loginForm",method:"post"},JSX.createElement("section",null,JSX.createElement("p",{class:"message",hidden:""}),JSX.createElement("p",{class:"error",hidden:""}),langSelector(reg),JSX.createElement("section",{class:"fields"},JSX.createElement("label",{for:"loginAccount"},"Compte"),JSX.createElement("input",{name:"account",id:"loginAccount",autocomplete:"username",spellcheck:"false"}),JSX.createElement("label",{for:"loginPassword"},"Mot de passe"),JSX.createElement("input",{name:"password",type:"password",id:"loginPassword",autocomplete:"current-password"})),JSX.createElement("div",{class:"footer",id:"loginActions"},JSX.createElement("button",{class:"pwdLost",type:"button"},"Mot de passe perdu"),JSX.createElement("div",{class:"spacer"}),JSX.createElement("button",{type:"submit"},"Se connecter")))))
+REG.reg.registerSvc("userRenewPwdForm",1,reg=>JSX.createElement("form",{id:"renewPwdForm",method:"post"},JSX.createElement("section",null,JSX.createElement("h3",null,"Renouvellement de votre mot de passe"),JSX.createElement("p",{class:"message",hidden:""}),JSX.createElement("p",{class:"error",hidden:""}),langSelector(reg),JSX.createElement("section",{class:"fields"},JSX.createElement("label",{for:"renewAccount"},"Compte"),JSX.createElement("input",{name:"account",id:"renewAccount",autocomplete:"username",spellcheck:"false"}),JSX.createElement("label",{for:"currentPwd"},"Mot de passe actuel"),JSX.createElement("input",{name:"currentPwd",type:"password",id:"currentPwd",autocomplete:"current-password"}),JSX.createElement("label",{for:"newPwd"},"Nouveau mot de passe"),JSX.createElement("input",{name:"newPwd",type:"password",id:"newPwd",autocomplete:"new-password"}),JSX.createElement("label",{for:"confirmPwd"},"Confirmation du mot de passe"),JSX.createElement("input",{name:"confirmPwd",type:"password",id:"confirmPwd",autocomplete:"new-password"})),JSX.createElement("div",{class:"footer",id:"renewPwdActions"},JSX.createElement("button",{type:"submit"},"Valider")))))
+REG.reg.registerSvc("userChangePwdForm",1,reg=>JSX.createElement("form",{id:"changePwdForm",method:"post"},JSX.createElement("section",null,JSX.createElement("p",{class:"message",hidden:""}),JSX.createElement("p",{class:"error",hidden:""}),langSelector(reg),JSX.createElement("section",{class:"fields"},JSX.createElement("label",{for:"renewAccount"},"Compte"),JSX.createElement("input",{name:"account",id:"renewAccount",autocomplete:"username",disabled:"",spellcheck:"false"}),JSX.createElement("label",{for:"currentPwd"},"Mot de passe actuel"),JSX.createElement("input",{name:"currentPwd",type:"password",id:"currentPwd",autocomplete:"current-password"}),JSX.createElement("label",{for:"newPwd"},"Nouveau mot de passe"),JSX.createElement("input",{name:"newPwd",type:"password",id:"newPwd",autocomplete:"new-password"}),JSX.createElement("label",{for:"confirmPwd"},"Confirmation du mot de passe"),JSX.createElement("input",{name:"confirmPwd",type:"password",id:"confirmPwd",autocomplete:"new-password"})),JSX.createElement("div",{class:"footer",id:"changePwdActions"},JSX.createElement("button",{type:"submit"},"Valider")))))
+const actionChangePwd=new Action("actionChangePwd").setLabel("Modifier le mot de passe...").setVisible((function(ctx){const reg=REG.findReg(ctx)
+return reg.env.universe.auth.currentAuthenticatedUser!==null})).setEnabled((function(ctx){const reg=REG.findReg(ctx)
+let currentUser=reg.env.universe.auth.currentAuthenticatedUser
+if(currentUser&&(currentUser.isReadOnly||currentUser.isDisabled))return false})).setExecute((function(ctx,event){POPUP.showDialog(new ChangePwdDialog,ctx,{fixSize:false,titleBar:{barLabel:{label:"Changement de votre mot de passe"}}})}))
+REG.reg.registerSvc("actionChangePwd",1,actionChangePwd)
+function langSelector(reg){if(!window.desk)return
+if(UiLangDeskFeat.isIn(desk)){return JSX.createElement("div",{id:"langCtn"},JSX.createElement(ActionBtn,{id:"langBtn","î":{reg:reg,action:desk.newLangMenu(),uiContext:"bar"}}))}}
+//# sourceMappingURL=login.js.map

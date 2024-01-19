@@ -1,0 +1,91 @@
+<!--
+
+Contexte (window par défaut) :
+- storeProv
+
+Events générés :
+- SCResShown, SCGotoRes, SCResUpdated : cf views/showResView.html
+- SCResSelected, SCFolderSelected : cf widgets/dptbrowser.html
+
+Init via desk.getLaunchContext() :
+- path : initilaise le folderPath et le fileName issus du path
+- defaultFolderPath : initilaise le folderPath
+
+-->
+<script>
+xtag.register('sc-browseview', {
+	mixins: [ 'hbox', 'flex', 'view' ],
+	lifecycle: {
+		'created:mixins(before)': function() {
+			this.fContext = window;
+		}
+	},
+	methods : {
+		initBrowseView : function(pCtx){
+			this.fContext = pCtx;
+		},
+		
+		xInit : function(pErrors) {
+			if(pErrors) { alert("Chargement en erreur. Recommencez ultérieurement."); return;}
+			var vBd = dom.newBd(this);
+			this.fBrowserNode = vBd.elt("sc-dptbrowser").att("flex", "1").currentUp();
+			this.fShowResNode = vBd.elt("sc-showresview").att("flex", "3").current();
+			this.fShowResNode.initShowRes(this.fContext);
+			var vSelf = this;
+			//evts showRes -> browser.
+			function showResListener (pEvent) {
+				//console.log("showResListener pEvent.detail.newPath::::"+pEvent.detail.newPath);
+				if(pEvent.detail.isFolder!=null) {
+					if(pEvent.detail.isFolder) {
+						vSelf.fBrowserNode.openFolder(pEvent.detail.newPath);
+					} else {
+						var vStPath = new store.StPath(pEvent.detail.newPath);
+						vSelf.fBrowserNode.openFolder(vStPath.extractPermaFolder(), vStPath.extractLiveName());
+					}
+				} else {
+					vSelf.fBrowserNode.selectPath(pEvent.detail.newPath);
+				}
+			}
+			this.fShowResNode.addEventListener("SCGotoRes",  showResListener, false);
+			this.fShowResNode.addEventListener("SCResUpdated", showResListener , false);
+			//evts browser -> showRes.
+			function browserListener (pEvent) {
+				vSelf.fShowResNode.showResPath(pEvent.detail ? pEvent.detail.nodeInfos.path : null);
+			}
+			this.fBrowserNode.addEventListener("SCResSelected",  browserListener, false);
+			this.fBrowserNode.addEventListener("SCFolderSelected",  browserListener, false);
+
+			var vLaunchCtx = desk.getLaunchContext();
+			if(vLaunchCtx.path) {
+				var vPath = new store.StPath(desk.getLaunchContext().path);
+				this.fBrowserNode.setAttribute("folderPath", vPath.extractPermaFolder());
+				this.fBrowserNode.setAttribute("fileNameToSelect", vPath.extractPermaName());
+			} else if(vLaunchCtx.defaultFolderPath) {
+				this.fBrowserNode.setAttribute("folderPath", vLaunchCtx.defaultFolderPath);
+			}
+			this.fBrowserNode.initDptBrowser(this.fContext);
+		}
+	},
+
+	events: {
+		/* Chargement à l'affichage de la view. */
+		'SCViewShown': function(pEvent) {
+			if(pEvent.target !== this || this.fStarted) return;
+			this.fStarted = true;
+			page.loadTags({
+					"sc-dptbrowser": "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/store/widgets/dptbrowser.html",
+					"sc-showresview": "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/store/views/showResView.html"
+				}, this.xInit, this);
+		}
+	}
+});
+</script>
+<style>
+sc-browseview {
+	padding: 1ex;
+}
+sc-browseview > sc-dptbrowser {
+	min-width: 20em;
+	margin-right: 1ex; 
+}
+</style>

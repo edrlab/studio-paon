@@ -1,0 +1,126 @@
+:root {
+	--font-default: "Segoe UI", "Roboto", "Ubuntu", "Liberation Sans", "Verdana", "Arial", sans-serif;
+	--font-mono: "Segoe UI Mono", "Roboto Mono", "Ubuntu Mono", "Liberation Mono", "Andale Mono", "Arial Monospaced", monospace;
+	--icon-color: #00000000;
+	--icon-size: 1.2rem;
+	--label-size: .9rem;
+
+	--error-color: #d50000;
+	--warning-color: #de7a00;
+	--valid-color: #006d00;
+	--fade-color: #7a7a7a;
+	--info-color: #535353;
+
+	--form-search-bgcolor: #00000000;
+	--form-bgcolor: #ffffff88;
+
+	--dropdown-url: url(https://studio-paon.edrlab.org/~~static/scCore/fr-FR/-wsk/6.1.10.202401191026/commons/widgets/dropdown.svg);
+
+	--pressed-bgcolor: rgba(0,0,0,0.05);
+
+	--scroll-thumb-color: #a1a1a1;
+
+	--tabf-off-bgcolor: none;
+	--tabf-color: var(--color);
+
+	--edit-search-bgcolor: rgba(201, 179, 38, 0.9);
+	--edit-forbidden-bgcolor: rgba(239, 0, 0, .1);
+	--edit-diff-bgcolor: rgba(142, 104, 249, .1);
+	--edit-diff-color: rgb(142, 104, 249);
+	--edit-diffadd-bgcolor: rgba(131, 249, 142, 0.24);
+	--edit-diffadd-color: rgb(131, 249, 142);
+	--edit-diffrem-bgcolor: rgba(249, 183, 125, 0.24);
+	--edit-diffrem-color: rgb(249, 183, 125);
+	--edit-box-focus: var(--focus-outline);
+	--edit-input-focus: var(--focus-outline);
+	--edit-caret-focus: var(--focus-outline);
+	--edit-cmt-bgcolor: rgba(255, 234, 105, 0.1);
+	--edit-cmt-color: var(--edit-color);
+	--edit-cmt-border-color: #ffffff;
+	--edit-cmt-shadow-color: #e3de9f;
+	--edit-exclude-bgcolor: #eaeaea;
+	--edit-exclude-shadow-color: #b6b6b6;
+	--edit-btn-bgcolor: rgba(0, 0, 0, .05);
+	--edit-btn-color: #62B880;
+	--add-color: var(--edit-btn-color)/*TODOSc7*/;
+
+	--row-current-bgcolor: rgba(0, 0, 0, 0.03);
+	--row-highlight-bgcolor: rgba(255, 255, 0, 0.15);
+	--row-assigned-bgcolor: rgba(226, 255, 173, 0.15);
+
+	--tooltip-border-color: #57552a;
+	--tooltip-bgcolor: #faf8e9;
+
+	--filter: none;
+
+	--inv-pressed-bgcolor: #ffffff20;
+	--inv-filter: none;
+	--inv-hover-filter: brightness(.8);
+	--inv-active-filter: opacity(.5);
+
+	--page-bgcolor: var(--row-bgcolor);
+	--page-color: var(--color);
+	--page-border-color: var(--border-color);
+	--page-icon-color: var(--icon-color);
+	--page-selection-bgcolor: var(--selection-bgcolor);
+	--page-selection-color: var(--selection-color);
+	--page-form-bgcolor: var(--form-bgcolor);
+	--page-form-search-bgcolor: var(--form-search-bgcolor);
+	--page-form-color: var(--form-color);
+	--page-edit-bgcolor: var(--edit-bgcolor);
+	--page-edit-color: var(--edit-color);
+	--page-row-bgcolor: #00000000;
+	--page-row-inSel-bgcolor: var(--row-inSel-bgcolor);
+	--page-row-inSel-unfocus-bgcolor: var(--row-inSel-unfocus-bgcolor);
+	--page-tabf-off-bgcolor: var(--tabf-off-bgcolor);
+	--page-tabf-bgcolor: var(--tabf-bgcolor);
+	--page-tabf-color: var(--tabf-color);
+	--page-tabl-select-color: var(--tabl-select-color);
+	--page-img-filter: var(--filter);
+	--page-img-hover-filter: var(--hover-filter);
+	--page-img-active-filter: var(--active-filter);
+
+	--panel-bgcolor: var(--alt1-bgcolor);
+	--panel-color: var(--color);
+	--panel-border-color: var(--alt1-border-color);
+	--panel-icon-color: var(--icon-color);
+	--panel-selection-bgcolor: var(--selection-bgcolor);
+	--panel-selection-color: var(--selection-color);
+	--panel-form-bgcolor: var(--form-bgcolor);
+	--panel-form-search-bgcolor: var(--form-search-bgcolor);
+	--panel-form-color: var(--form-color);
+	--panel-edit-bgcolor: var(--edit-bgcolor);
+	--panel-edit-color: var(--edit-color);
+	--panel-row-bgcolor: #00000000;
+	--panel-row-inSel-bgcolor: var(--row-inSel-bgcolor);
+	--panel-row-inSel-unfocus-bgcolor: var(--row-inSel-unfocus-bgcolor);
+	--panel-tabf-off-bgcolor: var(--tabf-off-bgcolor);
+	--panel-tabf-bgcolor: var(--tabf-bgcolor);
+	--panel-tabf-color: var(--tabf-color);
+	--panel-tabl-select-color: var(--tabl-select-color);
+	--panel-img-filter: var(--filter);
+	--panel-img-hover-filter: var(--hover-filter);
+	--panel-img-active-filter: var(--active-filter);
+
+	--item-bgcolor: var(--alt2-bgcolor);
+	--item-color: var(--color);
+	--item-border-color: var(--border-color);
+	--item-icon-color: var(--icon-color);
+	--item-selection-bgcolor: var(--selection-bgcolor);
+	--item-selection-color: var(--selection-color);
+	--item-form-bgcolor: var(--form-bgcolor);
+	--item-form-search-bgcolor: var(--form-search-bgcolor);
+	--item-form-color: var(--form-color);
+	--item-edit-bgcolor: var(--edit-bgcolor);
+	--item-edit-color: var(--edit-color);
+	--item-row-bgcolor: #00000000;
+	--item-row-inSel-bgcolor: var(--row-inSel-bgcolor);
+	--item-row-inSel-unfocus-bgcolor: var(--row-inSel-unfocus-bgcolor);
+	--item-tabf-off-bgcolor: var(--tabf-off-bgcolor);
+	--item-tabf-bgcolor: var(--tabf-bgcolor);
+	--item-tabf-color: var(--tabf-color);
+	--item-tabl-select-color: var(--tabl-select-color);
+	--item-img-filter: var(--filter);
+	--item-img-hover-filter: var(--hover-filter);
+	--item-img-active-filter: var(--active-filter);
+}

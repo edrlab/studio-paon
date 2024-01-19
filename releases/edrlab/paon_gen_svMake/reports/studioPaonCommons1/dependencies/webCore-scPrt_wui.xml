@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="ivy-report.xsl"?>
+<ivy-report version="1.0">
+	<info
+		organisation="scenari.org"
+		module="webCore"
+		revision="working@PPC085"
+
+		conf="scPrt_wui"
+		confs="scPrt_wui"
+		date="20240119150414"/>
+	<dependencies>
+		<module organisation="org.scenari.core" name="sc-wui-styler">
+			<revision name="6.1.10.202401191026" status="release" pubdate="20240119103021" resolver="scBuild-snapshots" artresolver="scBuild-snapshots" homepage="" downloaded="false" searched="true" default="false" conf="default, compile, runtime, master" position="9">
+				<license name="Scenari LICENSE (MPL2.0 or GPL3.0  or LGPL3.0 or CeCILL 2.1)" url="https://scenari.software/license"/>
+				<metadata-artifact status="no" details="" size="2372" time="0" location="F:\Nextcloud\Devs_AVH\StudioPaon\Scenari6.1\dev-core\Data_AppDev\DEV-SCbuilder\working\.ivy\cache\org.scenari.core\sc-wui-styler\ivy-6.1.10.202401191026.xml" searched="true" original-local-location="F:\Nextcloud\Devs_AVH\StudioPaon\Scenari6.1\dev-core\Data_AppDev\DEV-SCbuilder\working\.ivy\cache\org.scenari.core\sc-wui-styler\ivy-6.1.10.202401191026.xml.original" origin-is-local="false" origin-location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-wui-styler/6.1.10.202401191026/sc-wui-styler-6.1.10.202401191026.pom"/>
+				<caller organisation="scenari.org" name="webCore" conf="scPrt_wui" rev="6.1.10.+" rev-constraint-default="6.1.10.+" rev-constraint-dynamic="6.1.10.+" callerrev="working@PPC085"/>
+				<artifacts>
+					<artifact name="sc-wui-styler" type="wui.zip" ext="wui.zip" status="no" details="" size="66762" time="0" location="F:\Nextcloud\Devs_AVH\StudioPaon\Scenari6.1\dev-core\Data_AppDev\DEV-SCbuilder\working\.ivy\cache\org.scenari.core\sc-wui-styler\wui.zips\sc-wui-styler-6.1.10.202401191026.wui.zip">
+						<origin-location is-local="false" location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-wui-styler/6.1.10.202401191026/sc-wui-styler-6.1.10.202401191026.wui.zip"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="org.scenari.core" name="sc-wui-modeling">
+			<revision name="6.1.10.202401191026" status="release" pubdate="20240119103015" resolver="scBuild-snapshots" artresolver="scBuild-snapshots" homepage="" downloaded="false" searched="true" default="false" conf="default, compile, runtime, master" position="8">
+				<license name="Scenari LICENSE (MPL2.0 or GPL3.0  or LGPL3.0 or CeCILL 2.1)" url="https://scenari.software/license"/>
+				<metadata-artifact status="no" details="" size="2566" time="0" location="F:\Nextcloud\Devs_AVH\StudioPaon\Scenari6.1\dev-core\Data_AppDev\DEV-SCbuilder\working\.ivy\cache\org.scenari.core\sc-wui-modeling\ivy-6.1.10.202401191026.xml" searched="true" original-local-location="F:\Nextcloud\Devs_AVH\StudioPaon\Scenari6.1\dev-core\Data_AppDev\DEV-SCbuilder\working\.ivy\cache\org.scenari.core\sc-wui-modeling\ivy-6.1.10.202401191026.xml.original" origin-is-local="false" origin-location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-wui-modeling/6.1.10.202401191026/sc-wui-modeling-6.1.10.202401191026.pom"/>
+				<caller organisation="scenari.org" name="webCore" conf="scPrt_wui" rev="6.1.10.+" rev-constraint-default="6.1.10.+" rev-constraint-dynamic="6.1.10.+" callerrev="working@PPC085"/>
+				<artifacts>
+					<artifact name="sc-wui-modeling" type="wui.zip" ext="wui.zip" status="no" details="" size="55859" time="0" location="F:\Nextcloud\Devs_AVH\StudioPaon\Scenari6.1\dev-core\Data_AppDev\DEV-SCbuilder\working\.ivy\cache\org.scenari.core\sc-wui-modeling\wui.zips\sc-wui-modeling-6.1.10.202401191026.wui.zip">
+						<origin-location is-local="false" location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-wui-modeling/6.1.10.202401191026/sc-wui-modeling-6.1.10.202401191026.wui.zip"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="org.scenari.core" name="sc-wui-store">
+			<revision name="6.1.10.202401191026" status="release" pubdate="20240119103019" resolver="scBuild-snapshots" artresolver="scBuild-snapshots" homepage="" downloaded="false" searched="true" default="false" conf="default, compile, runtime, master" position="0">
+				<license name="Scenari LICENSE (MPL2.0 or GPL3.0  or LGPL3.0 or CeCILL 2.1)" url="https://scenari.software/license"/>
+				<metadata-artifact status="no" details="" size="3027" time="0" location="F:\Nextcloud\Devs_AVH\StudioPaon\Scenari6.1\dev-core\Data_AppDev\DEV-SCbuilder\working\.ivy\cache\org.scenari.core\sc-wui-store\ivy-6.1.10.202401191026.xml" searched="true" original-local-location="F:\Nextcloud\Devs_AVH\StudioPaon\Scenari6.1\dev-core\Data_AppDev\DEV-SCbuilder\working\.ivy\cache\org.scenari.core\sc-wui-store\ivy-6.1.10.202401191026.xml.original" origin-is-local="false" origin-location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-wui-store/6.1.10.202401191026/sc-wui-store-6.1.10.202401191026.pom"/>
+				<caller organisation="scenari.org" name="webCore" conf="scPrt_wui" rev="6.1.10.+" rev-constraint-default="6.1.10.+" rev-constraint-dynamic="6.1.10.+" callerrev="working@PPC085"/>
+				<artifacts>
+					<artifact name="sc-wui-store" type="wui.zip" ext="wui.zip" status="no" details="" size="304687" time="0" location="F:\Nextcloud\Devs_AVH\StudioPaon\Scenari6.1\dev-core\Data_AppDev\DEV-SCbuilder\working\.ivy\cache\org.scenari.core\sc-wui-store\wui.zips\sc-wui-store-6.1.10.202401191026.wui.zip">
+						<origin-location is-local="false" location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-wui-store/6.1.10.202401191026/sc-wui-store-6.1.10.202401191026.wui.zip"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="org.scenari.core" name="sc-wui-wsp">
+			<revision name="6.1.10.202401191026" status="release" pubdate="20240119103030" resolver="scBuild-snapshots" artresolver="scBuild-snapshots" homepage="" downloaded="false" searched="true" default="false" conf="master(*), default, compile, runtime(*), runtime, compile(*), master" position="6">
+				<license name="Scenari LICENSE (MPL2.0 or GPL3.0  or LGPL3.0 or CeCILL 2.1)" url="https://scenari.software/license"/>
+				<metadata-artifact status="no" details="" size="3024" time="0" location="F:\Nextcloud\Devs_AVH\StudioPaon\Scenari6.1\dev-core\Data_AppDev\DEV-SCbuilder\working\.ivy\cache\org.scenari.core\sc-wui-wsp\ivy-6.1.10.202401191026.xml" searched="true" original-local-location="F:\Nextcloud\Devs_AVH\StudioPaon\Scenari6.1\dev-core\Data_AppDev\DEV-SCbuilder\working\.ivy\cache\org.scenari.core\sc-wui-wsp\ivy-6.1.10.202401191026.xml.original" origin-is-local="false" origin-location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-wui-wsp/6.1.10.202401191026/sc-wui-wsp-6.1.10.202401191026.pom"/>
+				<caller organisation="org.scenari.core" name="sc-wui-store" conf="default, compile, runtime, master" rev="6.1.10.202401191026" rev-constraint-default="6.1.10.202401191026" rev-constraint-dynamic="6.1.10.202401191026" callerrev="6.1.10.202401191026"/>
+				<caller organisation="scenari.org" name="webCore" conf="scPrt_wui" rev="6.1.10.+" rev-constraint-default="6.1.10.+" rev-constraint-dynamic="6.1.10.+" callerrev="working@PPC085"/>
+				<artifacts>
+					<artifact name="sc-wui-wsp" type="wui.zip" ext="wui.zip" status="no" details="" size="1629230" time="0" location="F:\Nextcloud\Devs_AVH\StudioPaon\Scenari6.1\dev-core\Data_AppDev\DEV-SCbuilder\working\.ivy\cache\org.scenari.core\sc-wui-wsp\wui.zips\sc-wui-wsp-6.1.10.202401191026.wui.zip">
+						<origin-location is-local="false" location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-wui-wsp/6.1.10.202401191026/sc-wui-wsp-6.1.10.202401191026.wui.zip"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="org.scenari.core" name="sc-wui-help">
+			<revision name="6.1.10.202401191026" status="release" pubdate="20240119103013" resolver="scBuild-snapshots" artresolver="scBuild-snapshots" homepage="" downloaded="false" searched="false" default="false" conf="master(*), compile, runtime(*), runtime, compile(*), master" position="7">
+				<license name="Scenari LICENSE (MPL2.0 or GPL3.0  or LGPL3.0 or CeCILL 2.1)" url="https://scenari.software/license"/>
+				<metadata-artifact status="no" details="" size="2561" time="0" location="F:\Nextcloud\Devs_AVH\StudioPaon\Scenari6.1\dev-core\Data_AppDev\DEV-SCbuilder\working\.ivy\cache\org.scenari.core\sc-wui-help\ivy-6.1.10.202401191026.xml" searched="false" original-local-location="F:\Nextcloud\Devs_AVH\StudioPaon\Scenari6.1\dev-core\Data_AppDev\DEV-SCbuilder\working\.ivy\cache\org.scenari.core\sc-wui-help\ivy-6.1.10.202401191026.xml.original" origin-is-local="false" origin-location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-wui-help/6.1.10.202401191026/sc-wui-help-6.1.10.202401191026.pom"/>
+				<caller organisation="org.scenari.core" name="sc-wui-wsp" conf="compile, runtime" rev="6.1.10.202401191026" rev-constraint-default="6.1.10.202401191026" rev-constraint-dynamic="6.1.10.202401191026" callerrev="6.1.10.202401191026"/>
+				<artifacts>
+					<artifact name="sc-wui-help" type="wui.zip" ext="wui.zip" status="no" details="" size="44662" time="0" location="F:\Nextcloud\Devs_AVH\StudioPaon\Scenari6.1\dev-core\Data_AppDev\DEV-SCbuilder\working\.ivy\cache\org.scenari.core\sc-wui-help\wui.zips\sc-wui-help-6.1.10.202401191026.wui.zip">
+						<origin-location is-local="false" location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-wui-help/6.1.10.202401191026/sc-wui-help-6.1.10.202401191026.wui.zip"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="org.scenari.core" name="sc-wui-edit">
+			<revision name="6.1.10.202401191026" status="release" pubdate="20240119103012" resolver="scBuild-snapshots" artresolver="scBuild-snapshots" homepage="" downloaded="false" searched="false" default="false" conf="master(*), compile, runtime(*), runtime, compile(*), master" position="4">
+				<license name="Scenari LICENSE (MPL2.0 or GPL3.0  or LGPL3.0 or CeCILL 2.1)" url="https://scenari.software/license"/>
+				<metadata-artifact status="no" details="" size="2878" time="0" location="F:\Nextcloud\Devs_AVH\StudioPaon\Scenari6.1\dev-core\Data_AppDev\DEV-SCbuilder\working\.ivy\cache\org.scenari.core\sc-wui-edit\ivy-6.1.10.202401191026.xml" searched="false" original-local-location="F:\Nextcloud\Devs_AVH\StudioPaon\Scenari6.1\dev-core\Data_AppDev\DEV-SCbuilder\working\.ivy\cache\org.scenari.core\sc-wui-edit\ivy-6.1.10.202401191026.xml.original" origin-is-local="false" origin-location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-wui-edit/6.1.10.202401191026/sc-wui-edit-6.1.10.202401191026.pom"/>
+				<caller organisation="org.scenari.core" name="sc-wui-wsp" conf="compile, runtime" rev="6.1.10.202401191026" rev-constraint-default="6.1.10.202401191026" rev-constraint-dynamic="6.1.10.202401191026" callerrev="6.1.10.202401191026"/>
+				<caller organisation="org.scenari.core" name="sc-wui-modeling" conf="default, compile, runtime, master" rev="6.1.10.202401191026" rev-constraint-default="6.1.10.202401191026" rev-constraint-dynamic="6.1.10.202401191026" callerrev="6.1.10.202401191026"/>
+				<caller organisation="org.scenari.core" name="sc-wui-store" conf="default, compile, runtime, master" rev="6.1.10.202401191026" rev-constraint-default="6.1.10.202401191026" rev-constraint-dynamic="6.1.10.202401191026" callerrev="6.1.10.202401191026"/>
+				<artifacts>
+					<artifact name="sc-wui-edit" type="wui.zip" ext="wui.zip" status="no" details="" size="1320089" time="0" location="F:\Nextcloud\Devs_AVH\StudioPaon\Scenari6.1\dev-core\Data_AppDev\DEV-SCbuilder\working\.ivy\cache\org.scenari.core\sc-wui-edit\wui.zips\sc-wui-edit-6.1.10.202401191026.wui.zip">
+						<origin-location is-local="false" location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-wui-edit/6.1.10.202401191026/sc-wui-edit-6.1.10.202401191026.wui.zip"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="org.scenari.core" name="sc-wuir-codemirror">
+			<revision name="6.1.10.202401191026" status="release" pubdate="20240119103035" resolver="scBuild-snapshots" artresolver="scBuild-snapshots" homepage="" downloaded="false" searched="false" default="false" conf="master(*), compile, runtime(*), runtime, compile(*), master" position="5">
+				<license name="BSD-3-Clause" url="https://raw.githubusercontent.com/codemirror/codemirror.next/master/LICENSE-MIT"/>
+				<metadata-artifact status="no" details="" size="2381" time="0" location="F:\Nextcloud\Devs_AVH\StudioPaon\Scenari6.1\dev-core\Data_AppDev\DEV-SCbuilder\working\.ivy\cache\org.scenari.core\sc-wuir-codemirror\ivy-6.1.10.202401191026.xml" searched="false" original-local-location="F:\Nextcloud\Devs_AVH\StudioPaon\Scenari6.1\dev-core\Data_AppDev\DEV-SCbuilder\working\.ivy\cache\org.scenari.core\sc-wuir-codemirror\ivy-6.1.10.202401191026.xml.original" origin-is-local="false" origin-location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-wuir-codemirror/6.1.10.202401191026/sc-wuir-codemirror-6.1.10.202401191026.pom"/>
+				<caller organisation="org.scenari.core" name="sc-wui-edit" conf="compile, runtime" rev="6.1.10.202401191026" rev-constraint-default="6.1.10.202401191026" rev-constraint-dynamic="6.1.10.202401191026" callerrev="6.1.10.202401191026"/>
+				<artifacts>
+					<artifact name="sc-wuir-codemirror" type="wui.zip" ext="wui.zip" status="no" details="" size="523813" time="0" location="F:\Nextcloud\Devs_AVH\StudioPaon\Scenari6.1\dev-core\Data_AppDev\DEV-SCbuilder\working\.ivy\cache\org.scenari.core\sc-wuir-codemirror\wui.zips\sc-wuir-codemirror-6.1.10.202401191026.wui.zip">
+						<origin-location is-local="false" location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-wuir-codemirror/6.1.10.202401191026/sc-wuir-codemirror-6.1.10.202401191026.wui.zip"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="org.scenari.core" name="sc-wui-core">
+			<revision name="6.1.10.202401191026" status="release" pubdate="20240119102958" resolver="scBuild-snapshots" artresolver="scBuild-snapshots" homepage="" downloaded="false" searched="false" default="false" conf="master(*), compile, runtime(*), runtime, compile(*), master" position="3">
+				<license name="Scenari LICENSE (MPL2.0 or GPL3.0  or LGPL3.0 or CeCILL 2.1)" url="https://scenari.software/license"/>
+				<metadata-artifact status="no" details="" size="2561" time="0" location="F:\Nextcloud\Devs_AVH\StudioPaon\Scenari6.1\dev-core\Data_AppDev\DEV-SCbuilder\working\.ivy\cache\org.scenari.core\sc-wui-core\ivy-6.1.10.202401191026.xml" searched="false" original-local-location="F:\Nextcloud\Devs_AVH\StudioPaon\Scenari6.1\dev-core\Data_AppDev\DEV-SCbuilder\working\.ivy\cache\org.scenari.core\sc-wui-core\ivy-6.1.10.202401191026.xml.original" origin-is-local="false" origin-location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-wui-core/6.1.10.202401191026/sc-wui-core-6.1.10.202401191026.pom"/>
+				<caller organisation="org.scenari.core" name="sc-wui-wsp" conf="compile, runtime" rev="6.1.10.202401191026" rev-constraint-default="6.1.10.202401191026" rev-constraint-dynamic="6.1.10.202401191026" callerrev="6.1.10.202401191026"/>
+				<caller organisation="org.scenari.core" name="sc-wui-store" conf="default, compile, runtime, master" rev="6.1.10.202401191026" rev-constraint-default="6.1.10.202401191026" rev-constraint-dynamic="6.1.10.202401191026" callerrev="6.1.10.202401191026"/>
+				<caller organisation="org.scenari.core" name="sc-wui-edit" conf="compile, runtime" rev="6.1.10.202401191026" rev-constraint-default="6.1.10.202401191026" rev-constraint-dynamic="6.1.10.202401191026" callerrev="6.1.10.202401191026"/>
+				<artifacts>
+					<artifact name="sc-wui-core" type="wui.zip" ext="wui.zip" status="no" details="" size="531756" time="0" location="F:\Nextcloud\Devs_AVH\StudioPaon\Scenari6.1\dev-core\Data_AppDev\DEV-SCbuilder\working\.ivy\cache\org.scenari.core\sc-wui-core\wui.zips\sc-wui-core-6.1.10.202401191026.wui.zip">
+						<origin-location is-local="false" location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-wui-core/6.1.10.202401191026/sc-wui-core-6.1.10.202401191026.wui.zip"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="org.scenari.core" name="sc-wui-commons">
+			<revision name="6.1.10.202401191026" status="release" pubdate="20240119102953" resolver="scBuild-snapshots" artresolver="scBuild-snapshots" homepage="" downloaded="false" searched="false" default="false" conf="master(*), compile, runtime(*), runtime, compile(*), master" position="1">
+				<license name="Scenari LICENSE (MPL2.0 or GPL3.0  or LGPL3.0 or CeCILL 2.1)" url="https://scenari.software/license"/>
+				<metadata-artifact status="no" details="" size="2568" time="0" location="F:\Nextcloud\Devs_AVH\StudioPaon\Scenari6.1\dev-core\Data_AppDev\DEV-SCbuilder\working\.ivy\cache\org.scenari.core\sc-wui-commons\ivy-6.1.10.202401191026.xml" searched="false" original-local-location="F:\Nextcloud\Devs_AVH\StudioPaon\Scenari6.1\dev-core\Data_AppDev\DEV-SCbuilder\working\.ivy\cache\org.scenari.core\sc-wui-commons\ivy-6.1.10.202401191026.xml.original" origin-is-local="false" origin-location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-wui-commons/6.1.10.202401191026/sc-wui-commons-6.1.10.202401191026.pom"/>
+				<caller organisation="org.scenari.core" name="sc-wui-wsp" conf="compile, runtime" rev="6.1.10.202401191026" rev-constraint-default="6.1.10.202401191026" rev-constraint-dynamic="6.1.10.202401191026" callerrev="6.1.10.202401191026"/>
+				<caller organisation="org.scenari.core" name="sc-wui-store" conf="default, compile, runtime, master" rev="6.1.10.202401191026" rev-constraint-default="6.1.10.202401191026" rev-constraint-dynamic="6.1.10.202401191026" callerrev="6.1.10.202401191026"/>
+				<caller organisation="org.scenari.core" name="sc-wui-core" conf="compile, runtime" rev="6.1.10.202401191026" rev-constraint-default="6.1.10.202401191026" rev-constraint-dynamic="6.1.10.202401191026" callerrev="6.1.10.202401191026"/>
+				<caller organisation="org.scenari.core" name="sc-wui-help" conf="compile, runtime" rev="6.1.10.202401191026" rev-constraint-default="6.1.10.202401191026" rev-constraint-dynamic="6.1.10.202401191026" callerrev="6.1.10.202401191026"/>
+				<caller organisation="org.scenari.core" name="sc-wui-edit" conf="compile, runtime" rev="6.1.10.202401191026" rev-constraint-default="6.1.10.202401191026" rev-constraint-dynamic="6.1.10.202401191026" callerrev="6.1.10.202401191026"/>
+				<artifacts>
+					<artifact name="sc-wui-commons" type="wui.zip" ext="wui.zip" status="no" details="" size="541563" time="0" location="F:\Nextcloud\Devs_AVH\StudioPaon\Scenari6.1\dev-core\Data_AppDev\DEV-SCbuilder\working\.ivy\cache\org.scenari.core\sc-wui-commons\wui.zips\sc-wui-commons-6.1.10.202401191026.wui.zip">
+						<origin-location is-local="false" location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-wui-commons/6.1.10.202401191026/sc-wui-commons-6.1.10.202401191026.wui.zip"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="org.scenari.core" name="sc-wuir-litHtml">
+			<revision name="6.1.10.202401191026" status="release" pubdate="20240119103036" resolver="scBuild-snapshots" artresolver="scBuild-snapshots" homepage="" downloaded="false" searched="false" default="false" conf="master(*), compile, runtime(*), runtime, compile(*), master" position="2">
+				<license name="BSD-3-Clause" url="http://polymer.github.io/LICENSE.txt"/>
+				<metadata-artifact status="no" details="" size="2332" time="0" location="F:\Nextcloud\Devs_AVH\StudioPaon\Scenari6.1\dev-core\Data_AppDev\DEV-SCbuilder\working\.ivy\cache\org.scenari.core\sc-wuir-litHtml\ivy-6.1.10.202401191026.xml" searched="false" original-local-location="F:\Nextcloud\Devs_AVH\StudioPaon\Scenari6.1\dev-core\Data_AppDev\DEV-SCbuilder\working\.ivy\cache\org.scenari.core\sc-wuir-litHtml\ivy-6.1.10.202401191026.xml.original" origin-is-local="false" origin-location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-wuir-litHtml/6.1.10.202401191026/sc-wuir-litHtml-6.1.10.202401191026.pom"/>
+				<caller organisation="org.scenari.core" name="sc-wui-commons" conf="compile, runtime" rev="6.1.10.202401191026" rev-constraint-default="6.1.10.202401191026" rev-constraint-dynamic="6.1.10.202401191026" callerrev="6.1.10.202401191026"/>
+				<artifacts>
+					<artifact name="sc-wuir-litHtml" type="wui.zip" ext="wui.zip" status="no" details="" size="113626" time="0" location="F:\Nextcloud\Devs_AVH\StudioPaon\Scenari6.1\dev-core\Data_AppDev\DEV-SCbuilder\working\.ivy\cache\org.scenari.core\sc-wuir-litHtml\wui.zips\sc-wuir-litHtml-6.1.10.202401191026.wui.zip">
+						<origin-location is-local="false" location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-wuir-litHtml/6.1.10.202401191026/sc-wuir-litHtml-6.1.10.202401191026.wui.zip"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+	</dependencies>
+</ivy-report>

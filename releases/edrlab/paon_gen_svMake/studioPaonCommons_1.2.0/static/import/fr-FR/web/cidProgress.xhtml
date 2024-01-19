@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<!--
+Paramètres en QueryString : 
+- fileName : [optional] pré-renseigne le nom du fichier à uploader (meta standrard CID)
+- processing : [optional] sélection en amont du processing à executer (non modifiable).
+
+-->
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta charset="UTF-8" />
+<title>Import - Import d&apos;une ressource</title>
+
+
+<!-- Librairies -->
+
+					<script>
+						CustomElements = { flags: { register: true } }
+					</script>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/x-tag.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/commons.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/areas.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/extPoints.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/security.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/root_Perms.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/actions.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/enums.js"/>
+				
+<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/authProv/defaultAuthProv.js"/>
+
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/desk/desk_Perms.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/desk/utils/deskUtils.js"/>
+				
+
+<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/store/store_Perms.js"/>
+<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/store/store.js"/>
+<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/store/facets.js"/>
+				
+<!-- Components -->
+<link rel="import" href="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/desk/widgets.html" />
+<link rel="import" href="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/store/widgets/cidProgress.html" />
+
+<!-- Config -->
+<script id="cidAuthCanal">window.basicAuthCanal="httpHeader";</script>
+<script src="../config.js"></script>
+
+<script xml:space="preserve">
+	deskUtils.createDesk(window);
+	deskUtils.addFeatureCanCloseDesk(window);
+	deskUtils.addFeatureUserMgr(window, false);
+</script>
+
+<script xml:space="preserve">
+	extPoints.addToList("event:load:cidProgress", "init", 1, function() {
+		var vInitParams = io.parseQueryString(window.location.search);
+		var vCidProgress = sc$("cid-progress");
+		var vCb = function(pResult){
+			if(pResult.status == "ok"){
+				var vResult = pResult.returnProps ? pResult.returnProps : {};
+				vResult.cidInteraction = "ended";
+				this.parent.postMessage(vResult, '*');
+			}
+			else{
+				sc$("closeButton").disabled=false;
+			}
+		};
+		vCidProgress.setOnTaskEnded(vCb, window);
+		vCidProgress.initProgress(window.storeProv, vInitParams.scCidSessId, vInitParams.returnProps)
+	}, 10);
+</script>
+</head>
+
+<body is="sc-desk" orient="vertical">
+	<sc-hbox align="center">
+		<sc-hbox flex="1" pack="center">Import</sc-hbox>
+	</sc-hbox>
+	<cid-progress id="cid-progress" flex="1"/>
+	<div class="hbox pack-end">
+		<button type="button" id="closeButton" disabled="true" onclick="window.parent.postMessage({'cidInteraction':'aborted'}, '*')">Fermer</button>
+	</div>
+</body>
+<script>
+	deskUtils.launchDesk(window);		
+</script>
+
+<!-- Skin -->
+
+
+</html>

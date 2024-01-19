@@ -1,0 +1,150 @@
+<!-- TAG res-editfields
+Panneau d'édition des champs d'une ressource.
+
+Doit être intialisé via  initEditFields(pCtx, pOptions) avec pCtx : 
+ - processing [objet store.Processing] [required]
+ - defaultProps [optionnal] Si null, processing.buildDefaultProps(pCtx) sera appelé.
+ 
+ Note : respecte la même api que res-editaccess.
+ 
+ @see store.Processing.buildBodyEditor(pContext, pOptions)
+ -->
+<script>
+xtag.register('res-editfields', {
+	mixins: [ 'vbox', 'flex' ],
+	
+	lifecycle: {
+		'created:mixins(before)': function() {}
+	},
+	
+	methods: {
+		initEditFields: function (pContext, pOptions) {
+			var vPrc = pContext.processing;
+			//Construction des champs
+			this.fFieldNodes = vPrc.buildBodyEditor(dom.newBd(this).clear(), pContext, pOptions);
+			if(pContext.defaultProps) {
+				//Init des inputs.
+				this.xInitFields(pContext);
+			} else {
+				//Init des propriétés par défaut, puis init des inputs.
+				vPrc.buildDefaultProps(pContext, this.xInitFields, this);
+			}
+			return this.fFieldNodes;
+		},
+		checkValidity: function(){
+			for(var vKey in this.fFieldNodes) {
+				if( ! this.fFieldNodes[vKey].checkValidity()) return false;
+			}
+			return true;
+		},
+		getNewProps: function(pForceGetAllProps){
+			var vValue = Object.create(this.fDefaultProps);
+			//XXX Parcours dynamique  des fields dans le Dom ?
+			for(var vKey in this.fFieldNodes) this.fFieldNodes[vKey].fillValue(vValue, !pForceGetAllProps);
+			return vValue;
+		},
+		xInitFields :  function(pContext) {
+			//Affectation des valeurs par défaut dans les champs. 
+			this.fDefaultProps = pContext.defaultProps;
+			//XXX Parcours dynamique  des fields dans le Dom ?
+			for(var vKey in this.fFieldNodes) 	this.fFieldNodes[vKey].extractValue(this.fDefaultProps);
+		}
+	}
+});
+
+</script>
+
+<!-- 
+Panneau de consultation des champs d'une ressource.
+
+Doit être intialisé via  initShowFields(pCtx, pOptions) avec pCtx : 
+ - nodeInfos [required]
+ 
+ @see store.Processing.buildBodyView(pContext, pOptions)
+ -->
+<script>
+xtag.register('res-showfields', {
+	mixins: [ 'vbox', 'flex' ],
+ 	lifecycle: {
+		'created:mixins(before)': function() {}
+	},
+	methods: {
+		initShowFields: function (pContext, pOptions) {
+			var vBd = dom.newBd(this).clear();
+			var vPrc = store.getProcessingFromNodeInfos(pContext.nodeInfos);
+			var vFieldNodes = vPrc.buildBodyView(vBd, pContext, pOptions);
+			//Initialisation des areas de type InpuArea affichés en lecture seule.
+			for(var vKey in vFieldNodes) 	{
+				var vField = vFieldNodes[vKey];
+				if("extractValue" in vField) vField.extractValue(pContext.nodeInfos.metas);
+			}
+			return vFieldNodes;
+		}
+	}
+});
+</script>
+
+<style>
+res-editfields {
+	overflow: auto;
+}
+input.fieldValue{
+	width: 90%;
+	border: 1px solid lightgrey;
+	margin: 0;
+}
+input.fieldValue[type="checkbox"]{
+	width: inherit;
+}
+textarea.fieldValue{
+	width: 90%;
+	border: 1px solid lightgrey;
+	margin: 0;
+	resize: none;
+	padding: 0;
+}
+select.fieldValue{
+	-webkit-appearence: none;
+	-moz-appearance: none;
+	border: 1px solid lightgrey;
+	margin: 0;
+}
+
+input.fieldValue[readonly]{
+	border: none;
+	font-weight: bold;
+	background: none;
+	padding: 1px;
+}
+textarea.fieldValue[readonly]{
+	border: none;
+	font-weight: bold;
+	background: none;
+	padding: 1px;
+}
+select.fieldValue[readonly]{
+	-webkit-appearence: none;
+	-moz-appearence: none;
+	border: none;
+	font-weight: bold;
+	background: none;
+	padding: 1px;
+	color: #000;
+}
+
+a.fieldValue,
+span.fieldValue{
+	font-weight: bold;
+	-moz-user-select: text;
+	-webkit-user-select: text;
+	-ms-user-select: text;
+	-o-user-select: text;
+	user-select: text;
+}
+
+.download,
+.inputCellValue > span > a{
+	margin: 0.6em;
+}
+
+</style>

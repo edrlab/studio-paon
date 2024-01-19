@@ -1,0 +1,435 @@
+<!-- 
+mixins : inputAreaNode
+tags : input[is=input-text], select[is=input-select]
+
+** API InputAreaNode **
+Tout tag correspondant à un inputAreaNode doit implémenter les méthodes et accessors du mixin "inputAreaNode"
+et toutes les propriétés / méthodes HTML 5 concernant la validation (https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/Forms_in_HTML#Constraint_Validation_API)
+
+Les attributs standards (optionnels) sont : 
+- hidden
+- readonly
+- required
+ -->
+<script>
+	xtag.mixins.inputAreaNode = {
+		accessors: {
+			key: {
+				attribute: {name: "key"}
+			},
+			disabled: {
+				attribute: {'boolean': true}
+			}
+			//Le champ "this.value" est utilisé en interne pour la valeur courante de l'input.
+		},
+		methods: {
+
+			/** Récupération du contexte à l'origine de l'intanciation de ce node. */
+			initBuildContext: function (pInputArea, pContext, pOptions) {},
+
+			/** Affectation initiale de la valeur à l'input (pas de dispatch d'events). */
+			initValue: function (pValue) {
+				this.value = pValue;
+				//if(this.willValidate) this.checkValidity();
+			},
+
+			/** Extrait la(es) valeur(s) de l'input à partir de l'objet parent. */
+			extractValue: function (pParentValue) { if (pParentValue[this.key]) this.initValue(pParentValue[this.key]);},
+
+			/** Force une nouvelle valeur (dispatch les events). */
+			updateValue: function (pValue) {
+				if (this.getValue() != pValue) {
+					this.value = pValue;
+					//if(this.willValidate) this.checkValidity();
+					this.dispatchDirtyEvent();
+				}
+			},
+
+			/** Accès à la valeur de l'input. */
+			getValue: function () {return this.value;},
+
+			/** L'input renseigne la (les) propriété(s) de l'objet parent. */
+			fillValue: function (pParentValue, pOnlyIfNewValue) {
+				if(!pOnlyIfNewValue || this.fDirty)
+					pParentValue[this.key] = this.getValue();
+			},
+
+			/** Méthode utilitaire pour envoyer un event inputDirty lors de la 1ère modification de l'input. */
+			dispatchDirtyEvent: function () {
+				if (this.fDirty) return;
+				dom.createAndDispatchEvent(this, 'inputDirty');
+				this.fDirty = true
+			},
+			/** Méthode utilitaire pour envoyer un event invalid lorsque l'input n'est pas valide. */
+			dispatchInvalidEvent: function () {dom.createAndDispatchEvent(this, 'invalid')}
+		}
+	};
+
+	/**
+	 * Mixin pour implémenter l'API HTML5 constraint validation. A utiliser pour des widget qui n'étendent pas les éléments input natifs.
+	 * (https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/Forms_in_HTML#Constraint_Validation_API)
+	 *
+	 * willValidate property, which is false if the element has constraints that are not satisfied.
+	 * validity property, which is a ValidityState object representing the validity states that the element is in (i.e., constraint failure or success conditions).
+	 * validationMessage property, which is a message describing any constraint failures that pertain to the element.
+	 * checkValidity() method, which returns false if the element fails to satisfy any of its constraints, or true otherwise.
+	 * setCustomValidity() method, which sets a custom validation message, allowing for constraints to be imposed and validated beyond those that are predefined.
+	 */
+	xtag.mixins.inputHTML5 = {
+		accessors: {
+			willValidate: {
+				get: function () {return true}
+			},
+			validity: {
+				get: function () {return this.fValidationMessage ? {valid: true} : {customError: true, valid: false}}
+			},
+			validationMessage: {
+				get: function () {return this.fValidationMessage}
+			}
+		},
+		methods: {
+			checkValidity: function(){return !this.fValidationMessage},
+			setCustomValidity: function (pMsg) {this.fValidationMessage = pMsg}
+		}
+	};
+
+	xtag.register('input-text', {
+		'extends': 'input',
+		mixins: ['flex', 'inputAreaNode'],
+		events: {
+			'input': function (pEvent) {this.dispatchDirtyEvent();},
+			'change': function (pEvent) {this.dispatchDirtyEvent();}
+		}
+	});
+
+	xtag.register('input-text-password', {
+		'extends': 'input',
+		mixins: ['flex', 'inputAreaNode'],
+		lifecycle: {
+			'created:mixins(before)': function () {
+				this.setAttribute('type', 'password');
+			}
+		},
+		events: {
+			'input': function (pEvent) {this.dispatchDirtyEvent();},
+			'change': function (pEvent) {this.dispatchDirtyEvent();}
+		}
+	});
+
+	xtag.register('input-textarea', {
+		'extends': 'textarea',
+		mixins: ['flex', 'inputAreaNode'],
+		events: {
+			'input': function (pEvent) {this.dispatchDirtyEvent();},
+			'change': function (pEvent) {this.dispatchDirtyEvent();}
+		}
+	});
+
+	xtag.register('input-checkbox', {
+		'extends': 'input',
+		mixins: ['flex', 'inputAreaNode'],
+		lifecycle: {
+			'created:mixins(before)': function () {
+				this.setAttribute('type', 'checkbox');
+			},
+			attributeChanged: function (pName, pOldValue, pNewValue) {
+				if (pName == "readonly") this.setAttribute("disabled", pNewValue == "readonly");
+			}
+		},
+		events: {
+			'change': function (pEvent) {this.dispatchDirtyEvent();}
+		},
+		methods: {
+			initValue: function (pValue) {
+				this.checked = pValue;
+			},
+
+			getValue: function () {
+				return this.checked;
+			}
+		},
+		accessors: {
+			readonly: {
+				attribute: {},
+				set: function (pValue) {
+					this.setAttribute("disabled", pValue == "readonly");
+				},
+				get: function () {
+					this.getAttribute("disabled") === "true";
+				}
+			}
+		}
+	});
+
+	xtag.register('input-radio', {
+		'extends': 'input',
+		mixins: ['flex', 'inputAreaNode'],
+		lifecycle: {
+			'created:mixins(before)': function () {
+				this.setAttribute('type', 'radio');
+			},
+			attributeChanged: function (pName, pOldValue, pNewValue) {
+				if (pName == "readonly") this.setAttribute("disabled", pNewValue == "readonly");
+				else if (pName == "group") this.setAttribute("name", pNewValue);
+			}
+		},
+		events: {
+			'change': function (pEvent) {this.dispatchDirtyEvent();}
+		},
+		methods: {
+			initValue: function (pValue) {
+				this.checked = pValue;
+			},
+
+			getValue: function () {
+				return this.checked;
+			}
+		},
+		accessors: {
+			group: {
+				attribute: {},
+				set: function (pValue) {
+					this.setAttribute("name", pValue);
+				},
+				get: function () {
+					this.getAttribute("name");
+				}
+			},
+			readonly: {
+				attribute: {},
+				set: function (pValue) {
+					this.setAttribute("disabled", pValue == "readonly");
+				},
+				get: function () {
+					this.getAttribute("disabled") === "true";
+				}
+			}
+		}
+	});
+
+	/**
+	 * Ensemble de checkbox / radio populant un tableau json pour chaque option cochée / sélectionnée (usage type : roles d'un user).
+	 * Propriétés :
+	 * - inputsList : liste extPoints d'areas.InputArea qui doivent produire des input-checkbox, input-checkbox-array ou input-radio-array (TODO).
+	 * - inputsLayout : [optionnel] Dom spécifiant le layout de structuration des inputs (utilisé en clone, donc expressions conditionnelles possible)
+	 *
+	 * ATTENTION : pour les inputs fils, le chargement auto asynchrone des libs (Area.loadLibs()) ne peut être utilisé, l'init devant être synchrone.
+	 * Les libs des inputs doivent donc préalablement chargées.
+	 * TODO implémenter un areas.InputArea dédié de type container d'autres areas.InputArea pour gérer les appels récursifs dans Area.loadLibs().
+	 */
+	xtag.register('input-checkbox-array', {
+		mixins: ['flex', 'inputAreaNode', 'inputHTML5'],
+		lifecycle: {
+			'created:mixins(before)': function () {
+				this.fInputs = [];
+			},
+			attributeChanged: function (pName, pOldValue, pNewValue) {
+				if (pName === "readonly") this.fInputs.forEach(function (pInput) {pInput.readonly = pNewValue === "readonly"});
+			}
+		},
+		methods: {
+			initBuildContext: function (pInputArea, pContext, pOptions) {
+				var vOptsAreas = extPoints.getList(this.inputsList || this.getAttribute("inputsList"));
+				//On impose une construction des labels après l'input.
+				var vOptions = Object.create(pOptions);
+				vOptions.labelFrame = "inlineAfter";
+				this.fInputs = areas.cloneLayout(this.inputsLayout, this, vOptsAreas, pContext, vOptions);
+			},
+
+			/** @param pValue Tableau JS contenant les keys des inputs descendants. */
+			initValue: function (pValue) {
+				this.fInputs.forEach(function (pInput) {
+					if (pInput.name.indexOf('-array') > 0) {
+						//sous-groupe de checkbox ou de radio buttons.
+						pInput.initValue(pValue);
+					} else {
+						pInput.initValue(pValue.indexOf(pInput.key) >= 0);
+					}
+				});
+			},
+
+			getValue: function () {
+				var vValues = [];
+				this.fInputs.forEach(function (pInput) {
+					if (pInput.name.indexOf('-array') > 0) {
+						//on concatène les tableaux.
+						Array.prototype.push.apply(vValues, pInput.getValue());
+					} else {
+						if (pInput.getValue()) vValues.push(pInput.key);
+					}
+				});
+				return vValues;
+			}
+		},
+		accessors: {
+			readonly: {
+				attribute: {}
+			}
+		}
+	});
+
+	xtag.register('input-select', {
+		'extends': 'select',
+		mixins: ['flex', 'inputAreaNode'],
+		lifecycle: {
+			'created:mixins(before)': function () {},
+
+			attributeChanged: function (pName, pOldValue, pNewValue) {
+				if (pName == "readonly") this.setAttribute("disabled", pNewValue == "readonly");
+			}
+		},
+		accessors: {
+			svcEnum: {
+				attribute: {name: 'svcEnum'},
+				set: function (pSvcCd) {
+					var vEnum = extPoints.getSvc(pSvcCd);
+					if (vEnum) vEnum.fillSelectOptions(this);
+				}
+			},
+			readonly: {
+				attribute: {},
+				set: function (pValue) {
+					this.setAttribute("disabled", pValue == "readonly");
+				},
+				get: function () {
+					this.getAttribute("disabled") === "true";
+				}
+			}
+		},
+		events: {
+			'change': function (pEvent) {this.dispatchDirtyEvent();}
+		}
+	});
+	
+	// @return array json
+	xtag.register('input-select-multiple', {
+		'extends': 'select',
+		mixins: ['flex', 'inputAreaNode'],
+		lifecycle: {
+			'created:mixins(before)': function () {
+				 this.setAttribute("multiple", "multiple");
+			},
+			attributeChanged: function (pName, pOldValue, pNewValue) {
+				if (pName == "readonly") this.setAttribute("disabled", pNewValue == "readonly");
+			}
+		},
+		accessors: {
+			svcEnum: {
+				attribute: {name: 'svcEnum'},
+				set: function (pSvcCd) {
+					var vEnum = extPoints.getSvc(pSvcCd);
+					if (vEnum) vEnum.fillSelectOptions(this);
+				}
+			},
+			readonly: {
+				attribute: {},
+				set: function (pValue) {
+					this.setAttribute("disabled", pValue == "readonly");
+				},
+				get: function () {
+					this.getAttribute("disabled") === "true";
+				}
+			}
+		},
+		methods: {
+			initValue: function (pValuesArray) {
+				if(pValuesArray){
+					Array.from(this.options).forEach(function(pOption) {
+						if(pValuesArray.indexOf(pOption.value)>-1)
+							pOption.selected = true;
+					});
+				}
+			},
+			updateValue: function (pValue) {
+				if (this.getValue() != pValue) {
+					this.initValue(pValue);
+					this.dispatchDirtyEvent();
+				}
+			},
+			getValue: function () {
+				var vValues = [];
+				Array.from(this.selectedOptions).forEach(function(pOption) {
+					vValues.push(pOption.value);
+				});
+				return vValues;
+			}
+		},
+		events: {
+			'change': function (pEvent) {this.dispatchDirtyEvent();}
+		}
+	});
+
+	xtag.register('input-datalist', {
+		'extends': 'input',
+		mixins: ['flex', 'inputAreaNode'],
+		lifecycle: {
+			'inserted:mixins(before)': function () {
+				var vDomBd = dom.newBd(this);
+				vDomBd.att("list", extPoints.getSvc(this.getAttribute("svcEnum")).getId());
+			}
+		},
+		accessors: {
+			svcEnum: {
+				attribute: {name: 'svcEnum'},
+				set: function (pSvcCd) {
+					var vEnum = extPoints.getSvc(pSvcCd);
+					if (vEnum) {
+						var vDomBd = dom.newBd(this);
+						vDomBd.elt("datalist").att("id", vEnum.getId());
+						vEnum.fillSelectOptions(vDomBd);
+						vDomBd.up().att("list", vEnum.getId());
+					}
+				}
+			}
+		},
+		events: {
+			'input': function (pEvent) {this.dispatchDirtyEvent();},
+			'change': function (pEvent) {this.dispatchDirtyEvent();}
+		}
+	});
+
+</script>
+
+<!-- Styles génériques pour la structuration des labels des inputs. voir areas.buildLabelFrame()-->
+<style>
+	.inputTable {
+		display: table;
+		width: 100%;
+		margin-top: 0.5em;
+	}
+
+	.inputRow {
+		display: table-row;
+	}
+
+	.inputCellLabel {
+		display: table-cell;
+		vertical-align: middle;
+		text-align: right;
+		width: 10em;
+		color: grey;
+	}
+
+	.inputCellValue {
+		display: table-cell;
+		vertical-align: middle;
+		margin: .2em 0;
+		padding: 0.2em 0 0.2em 1em;
+	}
+
+	input:invalid,
+	textarea:invalid,
+	select:invalid {
+		box-shadow: 0 0 3px red;
+	}
+
+	.inlineLabel,
+	.inlineLabelAfter {
+		margin: 0 .5em 0 0;
+	}
+
+	span.inlineInput > * {
+		display: inline;
+		margin: 0 .5em 0 0;
+	}
+</style>

@@ -1,0 +1,16 @@
+import{REG}from"https://studio-paon.edrlab.org/~~static/scCore/fr-FR/-wlb/6.1.10.202401191026/commons/registry.js"
+export function ovrReg(reg){reg.overlaySkin("box-ptritem",REG.LEVELAUTH_RTL_OVR,`\n\t  wed-diff-mark {\n\t\t  left: unset;\n\t\t  right: -5px;\n\t  }\n\t`)
+reg.overlaySkin("wsp-src-tab",REG.LEVELAUTH_RTL_OVR,`\n\t  #close {\n\t\t  left: 0;\n\t\t  right: unset;\n\t  }\n\t`)
+reg.overlaySkin("itemMain/c-tabs",REG.LEVELAUTH_RTL_OVR,`\n\t  :host(.pinned) > div {\n\t\t  background-position: left;\n\t  }\n\n\t  c-tab {\n\t\t  border-radius: 0 5px 5px 0;\n\t  }\n\n\t  c-tab.selected {\n\t\t  background: linear-gradient(to right, var(--tabf-bgcolor), var(--tabf-off-bgcolor));\n\t  }\n\t`)
+reg.overlaySkin("wsp-list/cellInList",REG.LEVELAUTH_RTL_OVR,`\n\t  .wsp.public {\n\t\t  background: url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/-wsk/6.1.10.202401191026/wsp/objects/lockOpen.svg') no-repeat top left/.7em, url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/-wsk/6.1.10.202401191026/wsp/objects/wsp/wsp.svg') no-repeat center/contain;\n\t  }\n\n\t  .drf.public {\n\t\t  background: url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/-wsk/6.1.10.202401191026/wsp/objects/lockOpen.svg') no-repeat top left/.7em, url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/-wsk/6.1.10.202401191026/wsp/objects/wsp/wspDrf.svg') no-repeat center/contain;\n\t  }\n\n\t  .drv.public {\n\t\t  background: url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/-wsk/6.1.10.202401191026/wsp/objects/lockOpen.svg') no-repeat top left/.7em, url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/-wsk/6.1.10.202401191026/wsp/objects/wsp/wspDrv.svg') no-repeat center/contain;\n\t  }\n\t`)
+reg.overlaySkin("wsp-bookmarks/grid",REG.LEVELAUTH_RTL_OVR,`\n\t  .current {\n\t\t  background-position: left;\n\t  }\n\t`)
+reg.overlaySkin("wsp-space-tree/grid",REG.LEVELAUTH_RTL_OVR,`\n\t  .current {\n\t\t  background-position: left;\n\t  }\n\t`)
+reg.overlaySkin("wsp-src-grid",REG.LEVELAUTH_RTL_OVR,`\n\t  .current {\n\t\t  background-position: left;\n\t  }\n\t`)
+reg.overlaySkin("wsp-finddoc",REG.LEVELAUTH_RTL_OVR,`\n\t  #search {\n\t\t  background-position: right;\n\t  }\n\t`)
+reg.overlaySkin("wsps-list-wspsmgr",REG.LEVELAUTH_RTL_OVR,`\n\t  #search {\n\t\t  background-position: right;\n\t  }\n\t`)
+reg.overlaySkin("wsp-space-tree",REG.LEVELAUTH_RTL_OVR,`\n\t  #search {\n\t\t  background-position: right;\n\t  }\n\t`)
+reg.overlaySkin("wsp-list",REG.LEVELAUTH_RTL_OVR,`\n\t  #search {\n\t\tbackground-position: right;\n\t}\n\t`)
+reg.overlaySkin("wed-diff-histoitem",REG.LEVELAUTH_RTL_OVR,`\n\t  #frontArrowEnd {\n\t\ttransform: scaleX(-1);\n\t}\n\t`)
+reg.overlaySkin("wsp-fastfind-item",REG.LEVELAUTH_RTL_OVR,`\n\t  input {\n\t\t  background-position: right;\n\t  }\n\t`)
+reg.overlaySkin("wsp-toc",REG.LEVELAUTH_RTL_OVR,`\n\t  wsp-toc-twisty[state=closed] {\n\t\t  background-image: url(https://studio-paon.edrlab.org/~~static/scCore/fr-FR/-wsk/6.1.10.202401191026/wsp/views/toc/closed-rtl.svg);\n\t  }\n\t`)}
+//# sourceMappingURL=wspRTL.js.map

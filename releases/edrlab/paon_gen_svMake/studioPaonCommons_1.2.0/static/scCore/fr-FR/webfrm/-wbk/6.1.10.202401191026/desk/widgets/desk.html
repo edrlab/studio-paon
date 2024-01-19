@@ -1,0 +1,495 @@
+<!--
+mixins :  view
+tags: sc-desk, sc-view, sc-viewlazy, sc-viewtabs
+ -->
+<script>
+xtag.register('sc-desk', {
+	'extends': 'body',
+	mixins: [ 'vbox' ],
+ 	lifecycle: {
+		'created:mixins(before)': function() {
+		}
+	},
+	accessors: {
+		loading: {
+			attribute: { },
+			get: function () {
+				return this._loadingMask != null;
+			},
+			set: function (pValue) {
+				if (!pValue) {
+					if (this._loadingMask) this.removeChild(this._loadingMask);
+					this._loadingMask = null;
+				} else if (!this._loadingMask) {
+					this._loadingMask = dom.newBd(this).elt("div", "loadingMask").elt("div", "loadingSpinner").up().current();
+				}
+			}
+		}
+	}
+});
+
+/**
+ * API IView
+ * Attributs standards d'une view : 
+ * - icon
+ * - label
+ * - labelTitle
+ */
+xtag.mixins.view = {
+	lifecycle: {
+		inserted : function() {
+			if (!this.hidden) {
+				this.hidden = true;
+				this.show();
+			}
+		},
+		removed : function() {
+			if (!this.hidden) this.hide(); //XXX Quid si refusé ?
+		}
+	},
+	
+	methods: {
+		//Affiche la view : ne retourne rien pour permettre des chargement asynchrones.
+		show: function() {
+			if(!this.hidden) return;
+			this.hidden = false;
+			dom.createAndDispatchEvent(this, 'SCViewShown');
+		},
+		
+		//Masque la view. Retourne false si ce masquage est refusé.
+		hide: function() {
+			if(this.hidden) return true;
+			if (dom.createAndDispatchEvent(this, 'SCViewHide')) {
+				this.hidden = true;
+				dom.createAndDispatchEvent(this, 'SCViewHidden');
+				return true;
+			}
+			return false;
+		}
+	},
+	
+	accessors: {
+		desk: {
+			get: function() {
+				var vParent = this.parentNode;
+				while (vParent && vParent != document) {
+					if (vParent.getAttribute('is') == 'sc-desk') return vParent;
+					vParent = vParent.parentNode; 
+				}
+				return null;
+			}
+		}
+	}
+}
+
+xtag.register('sc-view', {
+	mixins: [ 'vbox', 'flex', 'view' ],
+ 	lifecycle: {
+		'created:mixins(before)': function() {}
+	}
+});
+
+/**
+ * Définit une view avec un chargement asynchrone de son contenu.
+ *
+ * Attributs :
+ * subTagName : nom du tag à créer.
+ * subTagIs : attribut "is" du tag à créer.
+ * subTagLibUrl : url de la lib contenant le tag.
+ * 
+ * TODO remontée des changements dynamiques d'attributs de la view.
+ */
+xtag.register('sc-viewlazy', {
+	mixins: [ 'vbox', 'flex', 'view' ],
+ 	lifecycle: {
+		'created:mixins(before)': function() {}
+	},
+	methods: {
+		show: function() {
+			if(!this.hidden) return true;
+			if(!this.fWrapped) {
+				vToLoad = {};
+				vToLoad[this.getAttribute("subTagIs") || this.getAttribute("subTagName")] = this.getAttribute("subTagLibUrl");
+				page.loadTags(vToLoad, function(pErrors){
+					if(pErrors) {
+						console.log("Loading libs failed : "+pErrors);
+					} else {
+						this.fWrapped = dom.newBd(this).elt(this.getAttribute("subTagName"), this.getAttribute("subTagIs")).current();
+						var vAtts = this.attributes;
+						for(var i=0; i<vAtts.length; i++) {
+							var vAtt = vAtts.item(i);
+							if(vAtt.localName.substring(0, 6)!="subTag") this.fWrapped.setAttribute(vAtt.localName, vAtt.value);
+						}
+						this.show();
+					}
+				}, this);
+			} else {
+				if("show" in this.fWrapped) {
+					this.hidden = false;
+					this.fWrapped.show();
+				} else {
+					this.fWrapped.hidden = false;
+					this.hidden = false;
+					dom.createAndDispatchEvent(this.fWrapped, 'SCViewShown');
+				}
+			}
+		},
+		
+		hide: function() {
+			if(this.hidden) return true;
+			if(this.fWrapped && ("hide" in this.fWrapped)) return this.fWrapped.hide();
+			var vFrom = this.fWrapped || this;
+			if (dom.createAndDispatchEvent(vFrom, 'SCViewHide')) {
+				this.hidden = true;
+				dom.createAndDispatchEvent(vFrom, 'SCViewHidden');
+				return true;
+			}
+			return false;
+		}
+	}
+});
+
+/**
+ * Affiche un set de views en onglets.
+ * Attributs sur les elements views fils : 
+ *  - tabOrder permet d'ordonner les onglets.
+ *  - tabHidden si "true", masque l'onglet. 
+ */
+xtag.register('sc-viewtabs', {
+	mixins: [ 'vbox', 'flex' ],
+	
+	lifecycle: {
+		'created:mixins(before)': function() {
+			this.fSelectedIndex = -1;
+			var vOrient = this.getAttribute('orient'); 
+			var vBd = dom.newBd(this);
+			this._tabs = vBd.elt('div', 'tabs').currentUp();
+			this._tabs.setAttribute("orient", vOrient=="horizontal" ? "vertical" : "horizontal");
+			this._views = vBd.elt('sc-vbox', 'views').att('flex', '1').currentUp();
+			//hack api DOM
+			this.appendChild = function(pNode) {
+				this.addView(pNode);
+				return pNode;
+			};
+			var vView = this.firstElementChild;
+			for(; vView; vView=vView.nextElementSibling) if(!vView.hidden && vView.getAttribute("tabHidden")!="true") break;
+			this.redrawTabs(vView);
+		},
+		'attributeChanged:mixins(before)': function(pName, pOldValue, pNewValue) {
+			if (this._tabs && pName == "orient") this._tabs.setAttribute("orient", pNewValue=="horizontal" ? "vertical" : "horizontal");
+		}
+	},
+	
+	methods: {
+		addView : function(pView) {
+			this.xAddView(pView);
+			if(!pView.hidden) {
+				if(!this.fSelectedTab) this.selectedView = pView;
+				else pView.hidden = true;
+			}
+		},
+		removeAllViews : function() {
+			this.xSetSelectTab(null);
+			this._tabs.innerHTML="";
+			this._views.innerHTML="";
+		},
+		redrawTabs : function(pViewToSelect) {
+			this.xSetSelectTab(null);
+			if(this._tabs.hasChildNodes()) this._tabs.innerHTML="";
+			for(var vView = this._views.firstElementChild; vView; vView=vView.nextElementSibling) this.addView(vView);
+			for(var vView = this.firstElementChild, vNext; vView; vView=vNext) {
+				vNext = vView.nextElementSibling;
+				if (vView != this._tabs && vView != this._views) this.addView(vView);
+			}
+			if(typeof pViewToSelect === 'number') {
+				this.selectedIndex = pViewToSelect;
+			} else {
+				this.selectedView = pViewToSelect;
+			}
+		},
+		getViews : function(){
+			return Array.prototype.slice.call(this._views.children, 0);
+		},
+
+		xAddView : function(pView) {
+			if(pView.getAttribute("tabHidden")=="true") {
+				if(pView.parentNode !== this._views) this._views.appendChild(pView);
+				return;
+			}
+			var vBtn = document.createElement("sc-btn");
+			vBtn.fView = pView;
+			vBtn.addEventListener("click", this.xClickTab, false);
+			vBtn.setAttribute("data-action",pView.localName+'Open');
+			if (pView.hasAttribute("icon")) vBtn.setAttribute("icon", pView.getAttribute("icon"));
+			if (pView.hasAttribute("label")) vBtn.setAttribute("label", pView.getAttribute("label"));
+			if (pView.hasAttribute("labelTitle")) vBtn.setAttribute("title", pView.getAttribute("labelTitle"));
+			var vOrder = parseInt(pView.getAttribute("tabOrder") || "0", 10);
+			var vNextBtn = this._tabs.firstElementChild;
+			var vOffset = 0;
+			while(vNextBtn && vOrder >= parseInt(vNextBtn.fView.getAttribute("tabOrder") || "0", 10)) {vNextBtn = vNextBtn.nextElementSibling; vOffset++;}
+			this._tabs.insertBefore(vBtn, vNextBtn);
+			if(vOffset <= this.fSelectedIndex) this.fSelectedIndex++;
+			if(pView.parentNode !== this._views) this._views.appendChild(pView);
+		},
+		
+		xSetSelectTab : function(pTab){
+			if(this.fSelectedTab) {
+				if("hide" in this.fSelectedTab.fView) {
+						if( ! this.fSelectedTab.fView.hide()) return;
+				} 	else this.fSelectedTab.fView.hidden = true;
+				this.fSelectedTab.removeAttribute("selected");
+				this.fSelectedTab.fView.removeAttribute("selected");
+			}
+			this.fSelectedTab = pTab;
+			if(pTab) {
+				pTab.setAttribute("selected", "true");
+				pTab.fView.setAttribute("selected", "true");
+				if("show" in pTab.fView) pTab.fView.show();
+				else pTab.fView.hidden = false;
+			}
+		},
+	
+		xClickTab : function(pEvt){
+			this.parentNode.parentNode.selectedView = this.fView;
+		}
+	},
+	
+	accessors: {
+		selectedIndex: {
+			get: function() {
+				if( ! this.fSelectedTab) return -1;
+				var vOffset = 0;
+				for(var vP = this.fSelectedTab.previousElementSibling; vP; vP = vP.previousElementSibling) vOffset++;
+				return vOffset;
+			},
+			
+			set: function(pIndex) {
+				this.xSetSelectTab(this._tabs.children.item(pIndex));
+			}
+		},
+		
+		selectedView: {
+			get: function() {
+				return this.fSelectedTab ? this.fSelectedTab.fView : null;
+			},
+			set: function(pView) {
+				for (var vTab = this._tabs.firstElementChild; vTab; vTab = vTab.nextElementSibling) {
+					if (vTab.fView === pView) {
+						this.xSetSelectTab(vTab);
+						return pView;
+					}
+				}
+				this.xSetSelectTab(null);
+				return null;
+			}
+		}
+	}
+});
+</script>
+<style>
+@font-face {
+	font-family: 'fontello';
+	src: url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.eot');
+	src: url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.eot') format('embedded-opentype'),
+	url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.woff') format('woff'),
+	url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.ttf') format('truetype'),
+	url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.svg') format('svg');
+	font-weight: normal;
+	font-style: normal;
+}
+
+html {
+	width:100%;
+	height:100%;
+	margin: 0;
+	padding: 0;
+	cursor: default;
+}
+body{
+	margin: 0;
+	padding: 0;
+	font: 9pt Arial, Helvetica, sans-serif; 
+	background-color: white;
+}
+
+a {
+    color: #00669A;
+    text-decoration: none;
+}
+
+a:hover{
+	text-decoration:underline;
+}
+
+[is="sc-desk"] {
+	width: 100%;
+	height: 100%;
+	
+	-moz-user-select: none;
+	-webkit-user-select: none;
+	-ms-user-select: none;
+	-o-user-select: none;
+	user-select: none;
+	
+	background-color: #fff /*Window*/;
+}
+
+[is="sc-desk"] > sc-hbox {
+    box-shadow: 0 1px 1px #e6e6e6;
+    height: 60px;
+}
+
+[is="sc-desk"] > sc-hbox > [pack="center"] {
+    color: #737373 !important;
+    font-size: 30px !important;
+    font-weight: normal !important;
+}
+
+.selectable {
+	-moz-user-select: text;
+	-webkit-user-select: text;
+	-ms-user-select: text;
+	-o-user-select: text;
+	user-select: text;
+	cursor: text;
+}
+
+.thinBorder {
+	background-color: #fff /*Window*/;
+	padding:1em;
+}
+
+sc-viewtabs > .tabs {
+	z-index: 1;
+	position: relative;
+}
+
+sc-viewtabs > .tabs[orient=horizontal] {
+	margin-bottom: -1px;
+}
+
+sc-viewtabs > .tabs[orient="vertical"] {
+    border-right: 1px solid #cccccc;
+	padding: 1em 0;
+}
+
+sc-viewtabs > .tabs > sc-btn {
+	padding: 1ex;
+	border: solid 1px #ccc;
+	cursor: pointer;
+	text-align: center;
+	background-color: #E5E5E5;
+	text-overflow: ellipsis;
+	color: grey;
+}
+
+sc-viewtabs > .tabs[orient=horizontal] > sc-btn {
+	border-bottom-left-radius: 0;
+	border-bottom-right-radius: 0;
+}
+
+sc-viewtabs > .tabs[orient=vertical] > sc-btn {
+	border-top-right-radius: 0;
+	border-bottom-right-radius: 0;
+}
+
+sc-viewtabs > .tabs > sc-btn[selected] {
+	background-color: #F5F5F5;
+}
+
+sc-viewtabs > .tabs[orient=horizontal] > sc-btn:not(:last-child) {
+	border-right: none;
+}
+
+sc-viewtabs > .tabs[orient=horizontal] > sc-btn[selected] {
+	border-bottom-color: transparent;
+
+}
+
+sc-viewtabs > .tabs[orient=vertical] > sc-btn:not(:last-child) {
+	border-bottom: none;
+}
+
+sc-viewtabs > .tabs[orient=vertical] > sc-btn[selected] {
+	border-right-color: transparent;
+}
+
+sc-viewtabs > .views {
+	border: solid 1px #ccc;
+	overflow: auto;
+}
+
+#tabs > .views {
+    border: medium none;
+	padding:1em;
+}
+
+#tabs > .views lnf-dashgrid[orient="vertical"] {
+    margin-right: 1em;
+}
+
+#tabs > .tabs > sc-btn {
+	border-color: transparent;
+    border-style: none solid none none;
+    border-width: medium 2px medium medium;
+    padding: 1em;
+	background-color:transparent;
+}
+
+#tabs > .tabs > sc-btn > img{
+	display:none;
+}
+
+#tabs > .tabs > sc-btn:hover, #tabs > .tabs > sc-btn[selected] {
+    border-color: #00669A;
+	box-shadow:none;
+	color:#00669A;
+}
+
+#tabs > .tabs > sc-btn[data-action="sc-searchviewOpen"]::before{
+	font-family:"fontello";
+	content:"\e832";
+	font-size:25px;
+	width:20px;
+}
+
+#tabs > .tabs > sc-btn[data-action="sc-browseviewOpen"]::before{
+	font-family:"fontello";
+	content:"\e801";
+	font-size:25px;
+	width: 20px;
+}
+
+#tabs > .tabs > sc-btn[data-action="sc-adminusersviewOpen"]::before {
+	font-family: "fontello";
+	content: "\e802";
+	font-size: 20px;
+	width: 20px;
+}
+
+#tabs > .tabs > sc-btn[data-action="sc-adminltitcviewOpen"]::before {
+	font-family: "fontello";
+	content: "\e819";
+	font-size: 15px;
+	width: 20px;
+}
+
+#tabs > .tabs > sc-btn[data-action="sc-adminsaasinstsviewOpen"]::before {
+	font-family: "fontello";
+	content: "\e815";
+	font-size: 20px;
+	width: 20px;
+}
+
+#tabs > .tabs > sc-btn[data-action="sc-adminviewOpen"]::before {
+	font-family: "fontello";
+	content:"\e805";
+	font-size:25px;
+	width:20px;
+}
+
+#uploadRes #tabs {
+    border: 1px solid #cccccc;
+}
+
+</style>

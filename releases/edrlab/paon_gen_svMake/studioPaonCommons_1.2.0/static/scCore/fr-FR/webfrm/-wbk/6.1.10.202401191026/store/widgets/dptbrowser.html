@@ -1,0 +1,793 @@
+<!--
+Attributs de sc-dptbrowser :
+- folderPath : [optional] Dossier à ouvrir à l'init
+- fileNameToSelect : [optional] Fichier à sélectionner à l'init.
+- hideTrashRows : [optional] si true masque les items en corbeille dans la liste
+- hideMovedRows : [optional] si true masque les items déplacés dans la liste
+- globalActionsLists : nom de l'extPoints liste des actions globales. Valeur par défaut : "dptbrowser:global:actions"
+- rowActionsLists : nom de l'extPoints liste des actions applicables sur une (ou n ?) ligne. Valeur par défaut : "dptbrowser:rows:actions"
+
+Contexte (window par défaut) :
+- storeProv
+
+Listes extPoints exploitées par défaut :
+- dptbrowser:global:actions
+- dptbrowser:rows:actions
+
+Events générés :
+- SCResSelected  : detail.nodeInfos = nodeInfos selectionné.
+- SCFolderSelected : detail.nodeInfos = nodeInfos selectionné.
+
+ -->
+<script>
+	xtag.register('sc-dptbrowser', {
+		mixins: [ 'vbox', 'flex' ],
+
+		lifecycle: {
+			'created:mixins(after)': function() {}
+		},
+
+		methods:{
+
+			initDptBrowser : function(pCtx){
+				this.fContext = pCtx;
+				this.fColumnListName = "dptbrowser:columns"; //TODO rendre paramtrable ?
+				//Chargement api grid, puis du widget
+				extPoints.getSvcLazy("grid", function(grid, pErrors){
+					if(pErrors) {
+						console.log("Svc grid not found: "+pErrors);
+					} else {
+						this.grid = grid;
+						var vDptBrowser = this;
+						function CellBuilderName(){
+							this.fDataKey = "n";
+							this.fBd = dom.newBd();
+						}
+						CellBuilderName.prototype = {
+							__proto__ : grid.CellBuilderString.prototype,
+							redrawCell : function(pGridDataRow, pRootNode) {
+								var vEntry = pGridDataRow.getDatas();
+								this.fBd.setCurrent(pRootNode).clear();
+								if(vEntry.msg) {
+									this.fBd.elt("div", "dptbrMsg").text(vEntry.msg).up();
+								} else {
+									this.fBd.elt("div", "dptbrRow  flex align-center" +(vEntry.trashed?" trashed":"")+(vEntry.unlisted?"  unlisted":"")).prop("fNodeInfos", vEntry)
+										.elt("img").att("src", vEntry.t=="moved" ? vDptBrowser.xGetIconMoved() : vDptBrowser.xGetIcon(vEntry.prc, vEntry.n, vEntry.cdView)).up()
+										.elt("span", "nm flex").text(vEntry.n).up();
+									//if(vEntry.v) vBd.elt("span", "vers").text(vEntry.v).up();
+									//if(vEntry.s) vBd.elt("span", "size").text(this.xFormatSize(vEntry.s)).up();
+									//if(vEntry.m>0) this.xCreateDate(vBd, new Date(vEntry.m), vNow);
+								}
+							},
+						}
+						extPoints.addToList(this.fColumnListName, "name", 1,
+							new grid.ColumnDef("name").setLabel("Nom").setFlex("20em", 1, 1).setCellBuilderFactory(function(){
+								return new CellBuilderName()})
+							, 10);
+
+						//Chargement du widget grid
+						page.loadTags({
+							"sc-grid": "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/commons/widgets/grid.html"
+						}, this.xInitDptBrowser, this);
+					}
+				}, this, "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/svcs/grid.js");
+			},
+
+			xInitDptBrowser : function(){
+				desk.authListeners.add(this);
+
+				var vDptBrowser = this;
+				var vBd = dom.newBd(this);
+				this.fCtxNode = vBd.elt("sc-hbox", "dptbrCtx").current();
+				vBd.elt("sc-toolbar", "tbLite").att("icononly", "true");
+				vBd.elt("sc-btn").prop("onclick", this.xOnGotoRoot.bind(this))
+					.att("title", "Afficher la racine")
+					.att("data-action","dptBrowserGoToRoot")
+					.att("icon", "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/store/img/folderHome.png")
+					.up();
+
+				this.fViewTrashBtn = vBd.elt("sc-btn")
+					.att("svcAction", "actionViewTrashedRes")
+					.att("title", "Afficher / cacher les fichiers supprimés")
+					.att("data-action","dptBrowserToggleTrash")
+					.att("icon", "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/store/img/trash.png")
+					.currentUp();
+				this.fViewTrashBtn.actionContext = js.create(this.fContext, {browser: this });
+
+				vBd.up();
+				vBd.elt("sc-hbox").att("flex", "1").up();//spacer : plutot un alignement à droite des btns de la toolbar ?
+				this.fGlobalActions = vBd.elt("sc-toolbar", "tbLite").att("icononly", "true").currentUp();
+				vBd.up();
+				this.fFolderNode = vBd.elt("sc-vbox", "dptbrFolders").currentUp();
+
+				this.fNodesGrid = vBd.elt("sc-grid", "dptbrGrid").att("hideColumnHeader", "true").att("flex", 1).currentUp();
+				this.fDatasHandler = new this.grid.GridDataHandlerJsonArray();
+				this.fNodesGrid
+					.initColumDefs(extPoints.getList(this.fColumnListName))
+					.initGridDataHandler(this.fDatasHandler);
+				//Sélection
+				this.fNodesGrid.addEventListener("gridSelect", function(pEvent){
+					if(vDptBrowser.fNodesGrid !== pEvent.target) return;
+					pEvent.stopPropagation();
+					var vSelRow = vDptBrowser.fNodesGrid.getSelectedRow();
+					if(isNaN(vSelRow)) {
+						vDptBrowser.openFolder(vDptBrowser.fCurrentPath);
+					} else {
+						var vNodeInfos = vDptBrowser.fDatasHandler.getRow(vSelRow).getDatas();
+						if(!vNodeInfos || vNodeInfos.msg) return;
+						vDptBrowser.xPopulateNodeInfos(vNodeInfos);
+						if(vNodeInfos.t=="repos" || vNodeInfos.t=="moved") {
+							//Noeud sélectionnable
+							dom.createAndDispatchEvent(vDptBrowser, "SCResSelected", {nodeInfos : vNodeInfos});
+						} else {
+							//Dossier
+							vDptBrowser.openFolder(vNodeInfos.path);
+						}
+					}
+				}, false);
+
+				//Survol : affichage toolbar
+				this.fNodesGrid.addEventListener("mouseover", function(pEvent){
+					//console.log("originalTarget ::"+log.getXml(pEvent.target));
+					var vdptbrRow = pEvent.target;
+					if(vdptbrRow.classList.contains("gridCell")) vdptbrRow = vdptbrRow.firstElementChild; //Firefox: le contenu de la cell n'occupe pas tout l'espace
+					while(vdptbrRow && !vdptbrRow.fNodeInfos) {
+						if(vdptbrRow===vDptBrowser) return;
+						vdptbrRow = vdptbrRow.parentNode;
+					}
+					if(vdptbrRow && !vdptbrRow.fTb) {
+						vdptbrRow.fTb = dom.newBd(vdptbrRow.parentNode).elt("sc-toolbar", "tbLite dptbrRowCmds").att("icononly", "true").currentUp();
+						vdptbrRow.fTb.actionContext = js.create(vDptBrowser.fGlobalActions.actionContext);
+						vdptbrRow.fTb.actionContext.nodeInfos = vdptbrRow.fNodeInfos;
+						vdptbrRow.fTb.actionContext.actionCb = function(){this.browser.openFolder(this.browser.fCurrentPath);}
+						vdptbrRow.fTb.actionContext.actionCbThis = vdptbrRow.fTb.actionContext;
+						vdptbrRow.fTb.actionsLists = vDptBrowser.fRowActionsLists || "dptbrowser:rows:actions";
+					}
+				}, false);
+
+				this.fNodesGrid.addEventListener("dragover", function(pEvent){
+					pEvent.preventDefault();
+				}, false);
+				var vSelf = this;
+				this.fNodesGrid.addEventListener("drop", function(pEvent){
+					pEvent.preventDefault();
+					var vDatas = pEvent.dataTransfer;
+					if(!vDatas) return;
+					if(!vSelf.fCurrentDatas) return;
+					if(!scSecurityCtx.hasPerm(security.getGPerm("action.depot#add.resource"), vSelf.fCurrentDatas.roles)) {
+						alert("Vous n'avez pas les droits pour ajouter une ressource à cet emplacement.");
+						return;
+					}
+					var vFiles = vDatas.files;
+					if(vFiles && vFiles.length==1) {
+						var vBd = dom.newBd(document.body);
+						var vDialog = vBd.elt('sc-dialog').current();
+						function createRes(pErrors){
+							if(pErrors) { alert("Chargement en erreur. Recommencez ultérieurement."); vDialog.removeDialog(); return;}
+							var vCreateRes = vBd.elt('sc-uploadres', 'thinBorder').currentUp();
+							vCreateRes.addEventListener('SCCancel', function(){vDialog.removeDialog()}, false);
+							vCreateRes.addEventListener('SCSubmit', function(pEvt) {
+								vDialog.removeDialog();
+								var vP = new store.StPath(pEvt.detail.newPath);
+								vSelf.openFolder(vP.extractPermaFolder(), vP.extractLiveName());
+							}, false);
+							vBd.up();
+							var vContext = {
+								window : window,
+								storeProv : vSelf.fContext.storeProv,
+								currentFolderPath: vSelf.fCurrentPath + (vSelf.fCurrentDatas && vSelf.fCurrentDatas.v ? "@"+vSelf.fCurrentDatas.v : ""),
+								file: vFiles[0]
+							}
+							vCreateRes.initUploadRes(vContext);
+						}
+
+						if(!xtag.tags["sc-uploadres"]) page.loadLibs("https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/store/dialogs/uploadRes.html", createRes);
+						else createRes();
+
+					} else if(vFiles && vFiles.length>1) {
+
+					}
+				}, false);
+
+				this.fProcessings = extPoints.getList("store:prcs");
+
+				//Si trash not enable, on affiche les nœuds pour compat ascendante
+				this.setAttribute("hideTrashRows", storeProv.canTrashRes());
+				this.fGlobalActions.actionContext = js.create(this.fContext, {browser: this });
+				this.fGlobalActions.actionsLists = "dptbrowser:global:actions";
+
+				this.fDptBrowserInited = true;
+				this.openFolder(this.getAttribute("folderPath") || "/", this.getAttribute("fileNameToSelect"));
+			},
+
+			openFolder : function(pPath, pNameToSel){
+				if(this.fDptBrowserInited) {
+					this.fCurrentPath = pPath || "/";
+					this.fContext.storeProv.dialogAdminUrlTree(this.fCurrentPath, "listChildren", this.xCbOpenFolder.bind(this, pNameToSel));
+				} else {
+					this.setAttribute("folderPath", pPath);
+					this.setAttribute("fileNameToSelect", pNameToSel || "");
+				}
+			},
+
+			/** A utiliser à la place de openFolder quand on ne sait pas si pPath est un folder ou une res. */
+			selectPath : function(pPath){
+				if(!this.fDptBrowserInited) return;
+				var vThis = this;
+				this.fContext.storeProv.dialogAdminUrlTree(pPath, "listChildren", function(pEvt) {
+					if (pEvt.target.status != 200) {
+						vThis.xCbOpenFolder(null, pEvt);
+					} else {
+						var vResult = JSON.parse(pEvt.target.responseText);
+						if(!vResult.prc) vResult.prc = "folder";
+						if(vResult.t != "moved" && store.getProcessing(vResult.prc).isFolder()) {
+							vThis.xCbOpenFolder(null, pEvt, vResult);
+						} else {
+							var vStPath = new store.StPath(pPath);
+							vThis.openFolder(vStPath.extractPermaFolder(), vStPath.extractLiveName());
+						}
+					}
+				});
+			},
+
+			refresh : function(){
+				if(!this.fDptBrowserInited) return;
+				this.openFolder(this.fCurrentPath, this.fLastSel ? this.fLastSel.fContext.nodeInfos.n : null);
+			},
+
+			/** listener desk.authListener : on recharge. */
+			onCurrentUserChange : function(pNewUser) {
+				this.refresh();
+			},
+
+			xCbOpenFolder : function(pNameToSel, pEvent, pJsonResult) {
+				//var vBd = dom.newBd(this.fListNode).clear();
+				var vDatas;
+				var vRowToFocus;
+				this.fFullDatas = null;
+				if (pEvent.target.status == 200) {
+					//console.log("xCbOpenFolder.responseText::\n"+pEvent.target.responseText);
+					var vResult = pJsonResult || JSON.parse(pEvent.target.responseText);
+					if(!vResult.prc) vResult.prc = "folder";
+					this.fCurrentDatas = vResult;
+					if(this.fCurrentPath != vResult.path && this.fCurrentPath != vResult.permaPath){
+						this.fCurrentPath = vResult.path+"/";
+						this.openFolder(this.fCurrentPath);
+
+					}
+					this.xRedrawFolderSelected(vResult.permaPath);
+					if(vResult.ch && vResult.ch.length>0){
+						var vHideTrash = this.getAttribute("hideTrashRows")=="true";
+						var vHideMoved = this.getAttribute("hideMovedRows")=="true";
+						vDatas = vResult.ch.filter(function(pEntry){
+							if(pEntry.n.charAt(0)=='?') return false;
+							if(vHideTrash && pEntry.trashed) return false;
+							if(vHideMoved && pEntry.t == "moved") return false;
+							if(pEntry.t != "moved" && !pEntry.prc) return false;
+							return true;
+						}, this);
+						vDatas.sort(function (p1, p2) {
+							var vN1 = p1.n.toLowerCase();
+							var vN2 = p2.n.toLowerCase();
+							if(vN1==vN2) return p1.n == p2.n ? 0 : p1.n > p2.n ? 1 : -1;
+							return vN1 > vN2 ? 1 : -1;
+						});
+						if(pNameToSel) {
+							for(var i=0; i<vDatas.length; i++) {
+								if(vDatas[i].n == pNameToSel) {
+									vRowToFocus = i;
+									break;
+								}
+							}
+						}
+						this.fFullDatas = vDatas;
+					} else {
+						//Dossier vide
+						vDatas = [{msg:"Ce dossier est vide"}];
+					}
+				} else if (pEvent.target.status == 403) {
+					//Forbidden
+					this.fCurrentDatas = null;
+					this.xRedrawFolderSelected(this.fCurrentPath);
+					vDatas = [{msg:i18n.formatStr("Accès non autorisé pour '%s'", authProv.getAccount())}];
+				} else if (pEvent.target.status == 404) {
+					//Ce path n'existe pas
+					this.fCurrentDatas = null;
+					this.xRedrawFolderSelected(this.fCurrentPath);
+					vDatas = [{msg:"Ce chemin n'existe pas"}];
+				} else {
+					//Erreur
+					this.xRedrawFolderSelected(null);
+					vDatas = [{msg:"Le serveur est inaccessible"}];
+				}
+				this.fDatasHandler.setGridDatas(vDatas);
+				if(vRowToFocus>=0) {
+					this.fNodesGrid.setSelectedRows(vRowToFocus);
+				} else {
+					dom.createAndDispatchEvent(this, "SCFolderSelected", {nodeInfos : this.fCurrentDatas});
+				}
+			},
+
+			xRedrawFolderSelected : function (pFolderPath){
+				var vBd = dom.newBd(this.fFolderNode).clear();
+				if(pFolderPath!=null) {
+					var vParts = pFolderPath.split("/");
+					var vPath = "";
+					for(var i=0; i < vParts.length; i++) {
+						if(vParts[i]) {
+							var vPart = vBd.elt("sc-btn", "dptbrFolderBtn")
+								.att("label", vParts[i])
+								.att("data-action","dptBrowserShowFolder")
+								.att("title", "Afficher ce dossier")
+								.att("icon", "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/store/img/folder.png").prop("onclick", this.xOnGotoRoot.bind(this))
+								.currentUp()
+							vPart.onclick = this.xOnClickPart.bind(this);
+							vPath += "/" + vParts[i];
+							vPart.fPath = vPath;
+						}
+					}
+				}
+				this.fGlobalActions.refresh();
+			},
+
+			xPopulateNodeInfos : function(pNodeInfos) {
+				if(!pNodeInfos.path) pNodeInfos.path = store.buildPath(this.fCurrentPath, pNodeInfos.n);
+				if(!pNodeInfos.permaPath) pNodeInfos.permaPath = store.buildPath(this.fCurrentPath, pNodeInfos.n, pNodeInfos.v);
+			},
+
+			/* 		xCreateDate: function(pBd, pDate, pNow) {
+						pBd.elt("span", "modif").att("title", pDate.toLocaleString());
+						if (pDate.getYear() == pNow.getYear() && pDate.getMonth() == pNow.getMonth() && pDate.getDate() == pNow.getDate()) {
+							pBd.text(pDate.toLocaleTimeString());
+						} else {
+							pBd.text(pDate.toLocaleDateString());
+						}
+						pBd.up();
+					},
+					xFormatSize : function (pSize) {
+						var vSize;
+						vSize = isNaN(vSize = parseFloat(pSize))? 0 : vSize;
+						if (vSize<1024) return vSize + " Octet";
+						else if (vSize<1048576) return  Math.round(vSize/1024*10)/10 + " Ko";
+						else if (vSize<1073741824) return  Math.round(vSize/1048576*10)/10 + " Mo";
+						else return Math.round(vSize/1073741824*10)/10 + " Go";
+					}, */
+			xGetExt : function (pFileName) {
+				if(pFileName) {
+					var vPointIdx = pFileName.lastIndexOf(".");
+					if(vPointIdx>=0) return pFileName.substring(vPointIdx+1).toLowerCase();
+				}
+				return null;
+			},
+			xGetIcon : function (pProcessing, pFileName, pCdView) {
+				if(pProcessing) {
+					var vPrc = store.getProcessing(pProcessing);
+					if(vPrc) return vPrc.getIcon();
+				}
+				var vExt = this.xGetExt(pFileName) || this.xGetExt(pCdView);
+				for (var i=0; i<this.fProcessings.length; i++) {
+					var vPrc = this.fProcessings[i];
+					if (vPrc.handleExt(vExt)) {
+						return vPrc.getIcon();
+					}
+				}
+				return "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/fileIcon/web.png";
+			},
+			xGetIconMoved : function () {
+				return "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/fileIcon/moved.png";
+			},
+
+			xOnGotoRoot : function (pEvt){
+				this.openFolder("/");
+				pEvt.stopPropagation();
+			},
+
+			xOnViewTrash : function (pEvt) {
+				var vHideTrash = this.getAttribute("hideTrashRows")=="true";
+				this.setAttribute("hideTrashRows", !vHideTrash);
+				if (vHideTrash) this.fViewTrashBtn.setAttribute("checked", true);
+				else this.fViewTrashBtn.removeAttribute("checked");
+				this.openFolder(this.fCurrentPath);
+			},
+
+			xOnClickPart : function (pEvt){
+				var vTarget = pEvt.target;
+				while (vTarget && !vTarget.fPath) vTarget = vTarget.parentNode;
+				this.openFolder(vTarget.fPath);
+			}
+		},
+
+		accessors: {
+			globalActionsLists: {
+				attribute: { name: 'globalActionsLists' },
+				set: function(pActions) {
+					this.fGlobalActions.actionsLists = pActions || "dptbrowser:global:actions";
+				}
+			},
+
+			rowActionsLists: {
+				attribute: { name: 'rowActionsLists' },
+				set: function(pActions) {
+					this.fRowActionsLists = pActions;
+				}
+			},
+
+			currentPath: {
+				get: function () {
+					return this.fCurrentPath;
+				},
+			}
+		}
+	});
+</script>
+<script>
+	(function() {
+
+		function GlobalAction (pId) {
+			this.fId = pId;
+		}
+		GlobalAction.prototype = {
+			__proto__ : actions.Action.prototype,
+			isEnabled : function (pContext) {
+				if(!this.fPerms) return true;
+				if(!scSecurityCtx) return true;
+				if(!pContext.browser.fCurrentDatas) return false;
+				//console.log("pContext.browser.fCurrentDatas:::::::::::::"+log.listProps(pContext.browser.fCurrentDatas));
+				return scSecurityCtx.hasPerm(this.fPerms, pContext.browser.fCurrentDatas.roles);
+			},
+			isVisible : function (pContext) {
+				if(!this.fVisPerms) return true;
+				if(!scSecurityCtx) return true;
+				if(!pContext.browser.fCurrentDatas) return false;
+				return scSecurityCtx.hasPerm(this.fVisPerms, pContext.browser.fCurrentDatas.roles);
+			}
+		}
+
+		var addResource = new GlobalAction("actionAddResource")
+			.setGroup("update")
+			.setLabel("Ajouter une ressource...")
+			.setIcon("https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/store/img/addResource.png")
+			.requirePermission(security.getGPerm("action.depot#add.resource"));
+		addResource.execute = function(pEvent, pContext) {
+			var vCounter = 1;
+			function asyncExec(){
+				vCounter--;
+				if(vCounter>0) return;
+				var vBd = dom.newBd(document.body);
+				var vDialog = vBd.elt('sc-dialog').current();
+				var vCreateRes = vBd.elt('sc-uploadres', 'thinBorder').currentUp();
+				var vCloseCreateRes = function() {
+					vFileInput.value = null;
+					document.body.removeChild(vDialog);
+				}
+				vCreateRes.addEventListener('SCCancel', vCloseCreateRes, false);
+				vCreateRes.addEventListener('SCSubmit', function(pEvt) {
+					vCloseCreateRes();
+					var vP = new store.StPath(pEvt.detail.newPath);
+					pContext.browser.openFolder(vP.extractPermaFolder(), vP.extractLiveName());
+				}, false);
+				vBd.up();
+				var vContext = {
+					window : window,
+					storeProv : pContext.storeProv, //pContext.browser.fContext.storeProv
+					currentFolderPath: pContext.browser.fCurrentDatas.permaPath || pContext.browser.fCurrentPath,
+					file: vFileInput.files[0]
+				}
+				vCreateRes.initUploadRes(vContext);
+			}
+			if(!xtag.tags["sc-uploadres"]) {
+				vCounter++;
+				page.loadLibs("https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/store/dialogs/uploadRes.html", function(pErrors){
+					if(pErrors) { alert("Chargement en erreur. Recommencez ultérieurement."); return;}
+					asyncExec();
+				});
+			}
+
+			var vFileInput = pEvent.target;
+			vFileInput.onchange = asyncExec;
+		}
+		addResource.initButtonNode = function(pButtonNode, pContext) {
+			pButtonNode.style.position = 'relative';
+			dom.newBd(pButtonNode).elt('input').att('type', 'file').att('style', 'position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden; opacity: 0;').att('title','Ajouter une ressource...');
+		}
+
+
+		var createFolder = new GlobalAction("actionCreateFolder")
+			.setGroup("update")
+			.setLabel("Créer un dossier...")
+			.setDescription("Créer un dossier...")
+			.setIcon("https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/store/img/addFolder.png")
+			.requirePermission(security.getGPerm("action.depot#add.folder"));
+		createFolder.execute = function(pEvent, pContext) {
+			utils.prompt("Nom du dossier :", null, function(pFolderName) {
+				if(!pFolderName) return;
+				var vFolderPath = store.buildPath(pContext.browser.fCurrentDatas.permaPath, pFolderName);
+				function targetCheckCb(pJson, pErr) {
+					if(pErr == 204) pJson = {};
+					if(!pJson) {
+						alert("Accès au serveur impossible. Recommencez ultérieurement.");
+						console.log(pErr);
+						return;
+					}
+					if(pJson.path == vFolderPath)  {
+						//la res existe
+						if(!pJson.trashed && (pJson.t == "noContent" || pJson.t == "home")){
+							alert("Ce dossier existe déjà, création impossible.");
+							pContext.browser.openFolder(pContext.browser.fCurrentPath); //on rafraichit au cas où il ne serait affiché.
+							return;
+						}
+						else if(pJson.trashed && (pJson.t == "noContent" || pJson.t == "home")) {
+							if(!confirm("Ce dossier est en corbeille, souhaitez-vous le restaurer ?")) return;
+						}
+						else if(pJson.trashed && !(pJson.t == "noContent" || pJson.t == "home")) {
+							if(!confirm("Vous allez remplacer une ressource actuellement en corbeille par un nouveau dossier, souhaitez vous poursuivre ?"))return;
+						}
+						else {
+							if(!confirm(i18n.formatStr("Souhaitez-vous vraiment remplacer la ressource '%s' par un dossier ?",pJson.path))) return;
+						}
+					}
+					var vParams = "?synch=true&scContent=none&createMetas=true&processing="+(pContext.processing || "folder")+"&path=" + encodeURIComponent(vFolderPath);
+					pContext.storeProv.dialogCid(vParams, null, function(pEvent) {
+						//log.debug("createFolder.pEvent.target.status::"+pEvent.target.status);
+						if(pEvent.target.status == 204) {
+							pContext.browser.openFolder(vFolderPath);
+						} else {
+							alert("Échec à la création du dossier");
+							pContext.browser.openFolder(pContext.browser.fCurrentPath);
+						}
+					});
+				}
+				pContext.storeProv.dialogAdminUrlTree(vFolderPath, "nodeInfos&props=path*trashed*t&persistMetas=&historyProps=", io.jsonXhrCb(targetCheckCb, this));
+			})
+		}
+
+		var viewTrashedRes = new GlobalAction("actionViewTrashedRes")
+			.setGroup("update")
+			.setLabel("Afficher / cacher les fichiers supprimés")
+			.setIcon("https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/store/img/trash.png");
+
+		viewTrashedRes.isVisible = function(pContext) {
+			if(pContext.storeProv && !pContext.storeProv.canTrashRes()) return false;
+			return GlobalAction.prototype.isVisible.call(this, pContext);
+		}
+		viewTrashedRes.execute = function(pEvent, pContext) {
+			pContext.browser.xOnViewTrash.call(pContext.browser)
+		}
+
+		/**
+		 * Action dispo mais pas injectée par défaut dans dptbrowser:global:actions
+		 */
+		var createCustomFolder = new GlobalAction("actionCreateCustomFolder")
+			.setGroup("update")
+			.setLabel("Créer un dossier...")
+			.setDescription("Créer un dossier...")
+			.setIcon("https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/store/img/addFolder.png")
+			.requirePermission(security.getGPerm("action.depot#add.folder"));
+		createCustomFolder.execute = function(pEvent, pContext) {
+			var vProcessings = extPoints.mergeLists(['uploadRes:prcs', 'store:prcs']);
+			var vCountFolderProc = 0;
+			var vFolderProc = null;
+			for (var i=0; i<vProcessings.length; i++) {
+				if(vProcessings[i].isFolder()){
+					vCountFolderProc++;
+					vFolderProc = vProcessings[i];
+				}
+			}
+			if(vCountFolderProc==1){
+				pContext.processing = vFolderProc.getCode();
+				createFolder.execute.call(this, pEvent, pContext);
+			}else{
+				utils.prompt("Nom du dossier :", null, function(pFolderName) {
+					if(!pFolderName) return;
+					var vFolderPath = store.buildPath(pContext.browser.fCurrentPath, pFolderName);
+					function createCustomFolderFct(){
+						var vBd = dom.newBd(document.body);
+						var vDialog = vBd.elt('sc-dialog').current();
+						var vCreateRes = vBd.elt('sc-uploadres', 'thinBorder').currentUp();
+						var vCloseCreateRes = function() {
+							document.body.removeChild(vDialog);
+						}
+						vCreateRes.addEventListener('SCCancel', vCloseCreateRes, false);
+						vCreateRes.addEventListener('SCSubmit', function(pEvt) {
+							vCloseCreateRes();
+							var vP = new store.StPath(pEvt.detail.newPath);
+							pContext.browser.openFolder(vP.extractPermaFolder(), vP.extractLiveName());
+						}, false);
+						vBd.up();
+						var vContext = {
+							window : window,
+							storeProv : pContext.storeProv, //pContext.browser.fContext.storeProv
+							currentFolderPath: vFolderPath,
+							noContent: true,
+							uploadFolder: true
+						}
+						vCreateRes.initUploadRes(vContext);
+					}
+					if(!xtag.tags["sc-uploadres"]) {
+						page.loadLibs("https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/store/dialogs/uploadRes.html", function(pErrors){
+							if(pErrors) { alert("Chargement en erreur. Recommencez ultérieurement."); return;}
+							createCustomFolderFct();
+						});
+					}
+					else createCustomFolderFct();
+				});
+			}
+		}
+
+		extPoints.registerSvc("actionViewTrashedRes", 1, viewTrashedRes);
+
+		extPoints.registerSvc("actionAddResource", 1, addResource);
+		extPoints.addSvcToList("dptbrowser:global:actions", "actionAddResource", 1, "actionAddResource" ,10);
+
+		extPoints.registerSvc("actionCreateFolder", 1, createFolder);
+		extPoints.addSvcToList("dptbrowser:global:actions", "actionCreateFolder", 1, "actionCreateFolder", 20);
+
+		extPoints.registerSvc("actionCreateCustomFolder", 1, createCustomFolder);
+
+		extPoints.addSvcToList("dptbrowser:rows:actions", "actionStoreUnlist", 1, "actionStoreUnlist", 10);
+		extPoints.addSvcToList("dptbrowser:rows:actions", "actionStoreRelist", 1, "actionStoreRelist", 10);
+
+		extPoints.addSvcToList("dptbrowser:rows:actions", "actionStoreMoveToTrash", 1, "actionStoreMoveToTrash", 30);
+		extPoints.addSvcToList("dptbrowser:rows:actions", "actionStoreRestoreFromTrash", 1, "actionStoreRestoreFromTrash", 30);
+		extPoints.addSvcToList("dptbrowser:rows:actions", "actionStoreRemoveRes", 1, "actionStoreRemoveRes", 50);
+	})();
+</script>
+
+<style>
+	@font-face {
+		font-family: 'fontello';
+		src: url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.eot');
+		src: url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.eot') format('embedded-opentype'),
+		url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.woff') format('woff'),
+		url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.ttf') format('truetype'),
+		url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.svg') format('svg');
+		font-weight: normal;
+		font-style: normal;
+	}
+
+	.dptbrCtx {
+		background-color: #f5f5f5;
+		border-left: 1px solid silver;
+		border-right: 1px solid silver;
+		border-top: 1px solid silver;
+	}
+
+	.dptbrFolders{
+		border:1px solid silver;
+		border-radius: 3px 3px 0 0;
+	}
+
+	.dptbrFolders:empty{
+		border-bottom: none;
+		background-color: white;
+	}
+
+	.dptbrFolderBtn {
+		border: 1px solid silver;
+		border-radius: 0;
+		box-shadow: 0 0 2px silver;
+	}
+
+	.dptbrFolders .dptbrFolderBtn img {
+		display: none;
+	}
+
+	.dptbrFolders .dptbrFolderBtn:hover{
+		background-image:none;
+		box-shadow: 0 0 2px #00669A;
+	}
+
+	.dptbrFolders .dptbrFolderBtn::before {
+		color: grey;
+		content: "\e804" " " "\e800";
+		font-family: "fontello";
+		margin-right: 5px;
+		font-size:1.5em;
+		white-space:nowrap;
+	}
+
+	.dptbrGrid {
+		border:1px solid silver;
+		border-top: none;
+		background-color: white;
+		overflow-y: auto;
+		display: -moz-box;
+		-moz-box-orient: vertical;
+		padding-top: 1em;
+	}
+
+	.dptbrMsg {
+		text-align: center;
+		font-style: italic;
+		background-color: #FFF7DF;
+		color:#95875E;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: pre;
+		padding: 3px 0;
+	}
+
+	.dptbrRow {
+		color:black;
+		text-decoration: none;
+		padding: 2px 0;
+		min-height: 18px;
+	}
+	.dptbrRow > img{
+		vertical-align: middle;
+		margin: 0 2px;
+		max-height: 1.5em;
+	}
+	.dptbrRow > img:-moz-loading{
+		visibility: hidden;
+		width:16px;
+		height:16px;
+	}
+	.dptbrRow > .nm{
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: pre;
+		margin: 2px;
+	}
+
+	.dptbrRow.unlisted > img{
+		opacity:0.5;
+	}
+	.dptbrRow.unlisted > .nm {
+		opacity:0.5;
+	}
+
+	.dptbrRow.trashed > img{
+		opacity:0.5;
+	}
+	.dptbrRow.trashed > .nm {
+		text-decoration: line-through;
+		opacity:0.5;
+	}
+
+	.gridCell {
+		position: relative;
+	}
+	.dptbrRowCmds{
+		opacity:0;
+		position: absolute;
+		right:0;
+		top:0;
+	}
+	.gridCell:hover > .dptbrRowCmds{
+		opacity:1;
+	}
+
+	.gridLine:hover {
+		background-color: #F7F7F7;
+	}
+
+	a.part{
+		margin: 2px;
+		padding:2px;
+		vertical-align:middle;
+	}
+	a.part span.label{
+		display:inline-block;
+	}
+	a.part span.icon{
+		display:inline-block;
+		background-image: url(https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/store/img/folder.png);
+		background-repeat:no-repeat;
+		background-position:center left;
+		width:16px;
+		height:16px;
+		margin-right:2px;
+		vertical-align:middle;
+	}
+	a.root{
+		font-style: italic;
+	}
+	a.root span.icon{
+		background-image: url(https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/store/img/folderHome.png);
+	}
+
+	.label {
+		overflow-wrap: break-word;
+	}
+</style>

@@ -1,0 +1,299 @@
+<!--
+component sc-updateinst  : Création ou upate d'une instance ou d'un set d'instances.
+
+Doit être initialisé via  initUpdateInst(pContext, pUiOptions)
+pContext :
+ - svcAdminInstsUrl : url du svc de gestion des instances
+ - instId : [optionnel] id de l'instance à mettre à jour.
+ - updateInstCb & updateInstCbThis : [optionnel] callback avec l'instId (ou un instId du set) créé ou modifié.
+ - action :createSet ou reloadSet ou deleteSet ou
+
+pUiOptions :
+ - fields : tableau de areas.InputArea
+ - layout : [optionnel] areas.Area structurant les fields
+
+Evènements produits :
+"SCSubmit" avec en "detail" de l'event le(s) compte(s) modifié(s) / créé(s) / supprimé(s).
+"SCCancel" abandon par l'utilisateur.
+ 
+ -->
+<script>
+
+
+	if(extPoints.getPref("saas.handleInstsBySet",false)) {
+		/**
+		 * Contexte set
+		 */
+		//Fields par défaut.
+		extPoints.addToList("saas:fields:inst:delete", "setId", 1, new areas.InputArea("setId")
+				.setLabel("ID du jeu d'instance")
+				.setTag("select", "input-select", {class: 'fieldValue -uu', svcEnum: 'saas:fields:setIdEnum'})
+			, 10);
+
+		extPoints.registerSvc('saas:fields:setIdEnum', 10, new enums.StaticEnum('setId'),true);
+	}
+	else{
+		//Fields par défaut.
+		extPoints.addToList("saas:fields:inst:create", "instId", 1, new areas.InputArea("instId")
+				.setLabel("Id de l'instance")
+				.setTag("input", "input-text", {"class": "fieldValue -uu"})
+			, 10);
+
+		//Fields par défaut.
+		extPoints.addToList("saas:fields:inst:update", "instId", 1, new areas.InputArea("instId")
+				.setLabel("Id de l'instance")
+				.setReadOnly(true)
+				.setTag("input", "input-text", {"class": "fieldValue -uu"})
+			, 10);
+
+		//Fields par défaut.
+		extPoints.addToList("saas:fields:inst", "instType", 1, new areas.InputArea("instType")
+				.setLabel("Type")
+				.setTag("select", "input-select", {class: 'fieldValue -uu', svcEnum: 'saas:fields:instType:enum'})
+			, 20);
+	}
+
+	xtag.register('sc-updateinst', {
+		mixins: ['vbox', 'flex'],
+		lifecycle: {
+			'created:mixins(before)': function () {}
+		},
+
+		methods: {
+
+			initUpdateInst: function (pContext, pUiOptions) {
+				this.fUiOptions = pUiOptions;
+				this.fContext = js.create(pContext);
+
+				if(this.fContext.action == "create") this.xInitOnEnumLoadeds();
+				else if(extPoints.getPref("saas.handleInstsBySet",false)) this.xLoadSetIdListOnDataLoadeds();
+				else this.xInitOnEnumLoadeds();
+			},
+
+			xLoadSetIdListOnDataLoadeds : function(){
+				var vThis = this;
+				var vReq = io.openHttpRequest(this.fContext.svcAdminInstsUrl + "?cdaction=GetInfo");
+				vReq.onloadend = io.jsonXhrCb(function (pInfos, pErrors) {
+					if (pErrors) {
+						alert("Chargement en erreur. Recommencez ultérieurement.");
+						throw pErrors;
+					}
+					extPoints.getSvc("saas.set").refreshEnumSetId(pInfos.instances);
+
+					vThis.xInitOnEnumLoadeds();
+				}, this);
+				vReq.send();
+			},
+
+			xInitOnEnumLoadeds: function () {
+				var vSelf = this;
+
+				var vBd = dom.newBd(this).clear();
+				this.fErrorNode = vBd.elt('sc-hbox', 'error -uu').att("pack", "center").currentUp();
+				this.fFieldsRoot = vBd.elt('sc-stack', 'instFields -uu').att('flex', '1 1 auto').current();
+				(this.fUiOptions.layout || this).buildBody(vBd, this.fContext, this.f);
+				vBd.setCurrent(this);
+				vBd.elt('sc-hbox', 'btns -uu').att('pack', 'end');
+				vBd.elt('sc-btn', 'cancel -uu').att('label', "Annuler").listen("click", function () {vSelf.cancel()}).up();
+				this.fSaveBtn = vBd.elt('sc-btn', 'save -uu').att('label', this.fContext.action=="deleteSet"?"Supprimer":"Déployer").listen("click", function () {vSelf.submit();}).currentUp();
+				vBd.up();
+
+				this.fFieldNodes = areas.applyLayout(vBd.setCurrent(this.fFieldsRoot), this.fUiOptions.fields, this.fContext, this.fUiOptions);
+				for (var vKey in this.fFieldNodes) this.fFieldNodes[vKey].extractValue(this.fContext);
+			},
+
+			submit: function () {
+				if (!this.checkValidity()) {
+					alert("Des propriétés sont incorrectes.");
+					return;
+				}
+				var vNewProps = this.getNewProps();
+
+				var set = extPoints.getSvc("saas.set");
+
+				//DELETE - contexte Set uniquement
+				if(this.fContext.action == "deleteSet"){
+					if (!confirm("Souhaitez-vous supprimer ce jeu d'instances ?\nATTENTION cette suppression est définitive.")) return;
+					this.fFieldsRoot.disabled = true;
+					this.fSaveBtn.disabled = true;
+
+					var setId = vNewProps.setId
+
+					var instTypes = set.getInstTypes(), cbs=[],errors=false;
+					instTypes.forEach(function(instType){
+						var instId = set.buildInstIdFromSetId(setId,instType);
+						var vReq = io.openHttpRequest(io.appendParamsToUrl(this.fContext.svcAdminInstsUrl + "?cdaction=RemoveInst",
+							"instId",instId
+						));
+						vReq.onloadend = io.jsonXhrCb(function(pJson, pError){
+							cbs.push(instType);
+							if(pError) errors = true;
+							if(cbs.length == instTypes.length) this.xOnUpdate(null,errors);
+						}, this);
+						vReq.send();
+					},this);
+				}
+				else{
+					if(extPoints.getPref("saas.handleInstsBySet",false)) {
+						if (!confirm(i18n.formatStr("Confirmer le déploiement d'un jeu d'instances d'Id '%s'. Si cet id existe déjà, les instances seront mises à jour.", set.buildSetId(vNewProps)))) return;
+					} else {
+						if (!confirm(i18n.formatStr("Confirmer le déploiement d'une instance de type '%s' et d'Id '%s'. Si cette instance existe déjà, elle sera mise à jour.", vNewProps["instType"], vNewProps["instId"]))) return;
+					}
+					this.fFieldsRoot.disabled = true;
+					this.fSaveBtn.disabled = true;
+
+					//CREATE ou UPDATE
+					if(extPoints.getPref("saas.handleInstsBySet",false)){
+						//Contexte SET -> CREATE UNIQUEMENT
+						var instTypes = set.getInstTypes(), cbs=[],errors=false;
+						instTypes.forEach(function(instType){
+							var instId = set.buildInstId(vNewProps,instType);
+							var vReq = io.openHttpRequest(io.appendParamsToUrl(this.fContext.svcAdminInstsUrl + "?cdaction=CloneInst",
+								"instId",instId,
+								"instType",instType,
+								"vars",JSON.stringify(vNewProps),
+								"startInst", extPoints.getPref("saas.startInstOnCreate",false)
+							));
+							vReq.onloadend = io.jsonXhrCb(function(pJson, pError){
+								cbs.push(instType);
+								if(pError) errors = true;
+								if(cbs.length == instTypes.length) this.xOnUpdate(instId,errors);
+							}, this);
+							vReq.send();
+						},this);
+					}
+					else{
+						var vReq = io.openHttpRequest(io.appendParamsToUrl(this.fContext.svcAdminInstsUrl + "?cdaction=CloneInst",
+							"instId",vNewProps.instId,
+							"instType",vNewProps.instType,
+							"vars",JSON.stringify(vNewProps),
+							"startInst", extPoints.getPref("saas.startInstOnCreate",false)
+						));
+						vReq.onloadend = io.jsonXhrCb(function(pJson, pError){
+							this.xOnUpdate(vNewProps.instId,pError);
+						}, this);
+						vReq.send();
+					}
+				}
+
+			},
+
+			setError: function (pMsg) {
+				this.fErrorNode.textContent = pMsg;
+			},
+
+			xOnUpdate: function (pInstId, pError) {
+				this.fFieldsRoot.disabled = false;
+				this.fSaveBtn.disabled = false;
+				if (pError) {
+					alert("Une erreur est survenue. Recommencez ultérieurement.");
+					return;
+				}
+				//Cas ok.
+				dom.createAndDispatchEvent(this, 'SCSubmit', pInstId);
+				if (this.fContext.updateInstCb) this.fContext.updateInstCb.call(this.fContext.updateInstCbThis, pInstId);
+			},
+
+			cancel: function () {
+				dom.createAndDispatchEvent(this, 'SCCancel');
+				if (this.fContext.updateInstCb) this.fContext.updateInstCb.call(this.fContext.updateInstCbThis);
+			},
+
+			checkValidity: function () {
+				var set = extPoints.getSvc("saas.set");
+				for (var vKey in this.fFieldNodes) {
+					if (!this.fFieldNodes[vKey].checkValidity()) return false;
+					if (this.fFieldNodes[vKey].key != "setId" && this.fFieldNodes[vKey].getValue().indexOf(set.getSep()) != -1) return false;
+				}
+				return true;
+			},
+			getNewProps: function () {
+				var vNewProps = {};
+				for (var vKey in this.fFieldNodes) this.fFieldNodes[vKey].fillValue(vNewProps);
+				return vNewProps;
+			},
+
+
+			/** Construction du layout (api Area). */
+			buildBody: function (pBd, pContext, pUiOptions) {
+				var vRoot = pBd.elt('div', 'inputTable -uu').currentUp();
+				vRoot.setAttributeNS("scenari.eu:areaLayout:1.0", "sal:areaIds", "*");
+				return vRoot;
+			}
+		}
+	});
+</script>
+
+<style>
+	sc-updateinst {
+		margin: 0.5ex;
+	}
+	sc-hbox.btns.-uu {
+		border-top: solid 1px silver;
+		margin: 0.5ex 2ex 0 2ex;
+	}
+	sc-hbox.btns.-uu > sc-btn {
+		margin: 0.5ex 0.5ex;
+	}
+
+	.error.-uu {
+		color: red;
+		font-weight: bold;
+		margin: 1em;
+	}
+
+	input.fieldValue.-uu {
+		width: 90%;
+		border: 1px solid lightgrey;
+	}
+
+	input.fieldValue.-uu[type="radio"] {
+		width: inherit;
+		margin-left:0;
+	}
+
+	input.fieldValue.-uu[type="checkbox"] {
+		width: inherit;
+		margin-left:0;
+	}
+
+	textarea.fieldValue.-uu {
+		width: 90%;
+		border: 1px solid lightgrey;
+		margin: 0;
+		resize: none;
+		padding: 0;
+	}
+
+	select.fieldValue.-uu {
+		-webkit-appearence: none;
+		-moz-appearance: none;
+		border: 1px solid lightgrey;
+		margin: 0;
+	}
+
+	input.fieldValue[readonly] {
+		border: none;
+		font-weight: bold;
+		background: none;
+		padding: 1px;
+	}
+
+	textarea.fieldValue.-uu[readonly] {
+		border: none;
+		font-weight: bold;
+		background: none;
+		padding: 1px;
+	}
+
+	select.fieldValue.-uu[readonly] {
+		-webkit-appearence: none;
+		-moz-appearence: none;
+		border: none;
+		font-weight: bold;
+		background: none;
+		padding: 1px;
+		color: #000;
+	}
+
+</style>

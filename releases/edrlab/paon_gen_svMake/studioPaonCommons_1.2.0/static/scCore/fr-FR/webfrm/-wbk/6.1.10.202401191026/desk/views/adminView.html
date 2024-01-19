@@ -1,0 +1,227 @@
+<!--
+View qui affiche une liste d'actions "adminView:actions" issus de l'extPoints courant.
+Chaque action dispose dans son contexte d'exécution :
+- window,
+- adminView.getConfPanel() : rend visible un panneau de configuration détaillé à construire.
+- adminView.getResultFrame() ou adminView.getResultPanel() : rend visible une zone d'affichage de résultat
+		(sous forme d'une iframe OU d'un sc-box de cette frame à renseigner).
+- toute autre propriété initilisée lors de la configuration de la view (serverUrl...) via getActionContext()
+
+Par défaut, cette vue ajoute des actions génériques d'administration d'un server à condition qu'une propriété "serverUrl"
+soit renseigné dans getActionContext().
+-->
+<script>
+xtag.register('sc-adminview', {
+	mixins: [ 'hbox', 'flex', 'view' ],
+	lifecycle: {
+		'created:mixins(before)': function() {
+			this.fActionsList = "adminView:actions";
+			this.fActionContext = {
+				window : window,
+				adminView : this
+			}
+		}
+	},
+
+	methods: {
+
+		getActionContext : function(){
+			return this.fActionContext;
+		},
+		getConfPanel : function(){
+			this.fConfPanel.removeAttribute("hidden");
+			return this.fConfPanel;
+		},
+		getResultFrame : function(){
+			this.fResultPanel.setAttribute("hidden", "true");
+			this.fResultFrame.removeAttribute("hidden");
+			return this.fResultFrame;
+		},
+		getResultPanel : function(){
+			this.fResultFrame.setAttribute("hidden", "true");
+			this.fResultPanel.removeAttribute("hidden");
+			return this.fResultPanel;
+		},
+
+		xInitDefaultServerActions : function(pErrors){
+			if(!this.getActionContext().serverUrl) return;
+			//Jobs
+			extPoints.addToList(this.fActionsList, "jobs", 1,
+				new actions.Action("jobs").setLabel("Traitements de masse").override("execute", function(pEvent, pContext){
+					var vDateFields=["created", "started", "finished"];
+					var vJsonRdr = pContext.adminView.jsonRdr.newJsonRdr().addRenderers([
+						new pContext.adminView.jsonRdr.DateRdr(function(pJsonRdr, pValue, pAncestors){
+							return vDateFields.indexOf(pAncestors[pAncestors.length-1])>=0;
+						})
+					]);
+					var vHeadBd = dom.newBd(pContext.adminView.getConfPanel());
+					vHeadBd.elt("div");
+					var vBd = dom.newBd(pContext.adminView.getConfPanel());
+					vBd.elt("form");
+					
+					// Contexte : tag Form
+					function doFindJobs(pEvt){
+						if(pEvt) pEvt.preventDefault();
+						var vForm = this.form;
+						var vStatuses = [];
+						if(vForm.waiting.checked) vStatuses.push("'waiting'");
+						if(vForm.launched.checked) vStatuses.push("'launched'");
+						if(vForm.pending.checked) vStatuses.push("'pending'");
+						if(vForm.failed.checked) vStatuses.push("'failed'");
+						if(vForm.done.checked) vStatuses.push("'done'");
+						if(vForm.planned.checked) vStatuses.push("'planned'");
+						var vUrl = pContext.serverUrl+"/u/executor?cdaction=FindJobs&criterions=(statuses*"+vStatuses.join(".")+"-)";
+						//pContext.adminView.getResultFrame().setAttribute("src", vUrl);
+						dom.newBd(pContext.adminView.getResultPanel()).clear().elt("sc-json").call("setJsonRdr", vJsonRdr).call("renderFromUrl", vUrl).att("flex", "1");
+						return false;
+					}
+					
+					// Zone de création de Job
+					var vJobs = extPoints.getList('adminView:jobs');
+					if(vJobs){
+						for (var i=0; i<vJobs.length; i++) {
+							var vContext = {
+								window : pContext.window,
+								serverUrl : pContext.serverUrl,
+								newJobCb : function(pSuccess){
+									doFindJobs.call(vBd.current());
+								},
+								newJobCbThis : vBd.current()
+							}
+							vJobs[i].buildBody(vHeadBd, vContext);
+						}
+					}
+					// Zone d'affichage des jobss
+					vBd.att("style", "padding:5px; text-align:end;"); //.elt("fieldset").elt("legend").text("Statuts des traitements").up();
+					vBd.elt("label").elt("input").att("type", "checkbox").att("checked", "true").att("name", "waiting").up().text("en attente").up();
+					vBd.elt("label").elt("input").att("type", "checkbox").att("checked", "true").att("name", "launched").up().text("lancés").up();
+					vBd.elt("label").elt("input").att("type", "checkbox").att("checked", "true").att("name", "pending").up().text("en cours").up();
+					vBd.elt("label").elt("input").att("type", "checkbox").att("checked", "true").att("name", "failed").up().text("en échec").up();
+					vBd.elt("label").elt("input").att("type", "checkbox").att("checked", "true").att("name", "done").up().text("achevés").up();
+					vBd.elt("label").elt("input").att("type", "checkbox").att("checked", "true").att("name", "planned").up().text("planifiés").up();
+					vBd.elt("button").style("margin-left", "5px").listen("click", doFindJobs).text("Actualiser");
+					var vUrl = pContext.serverUrl+"/u/executor?cdaction=FindJobs&criterions=(statuses*'waiting'.'launched'.'pending'.'failed'.'done'.'planned'-)";
+					dom.newBd(pContext.adminView.getResultPanel()).elt("sc-json").call("setJsonRdr", vJsonRdr).call("renderFromUrl", vUrl).att("flex", "1");
+				})
+			, "common-70");
+
+			//Logs systèmes
+			extPoints.addToList(this.fActionsList, "systemLogs", 1,
+					new actions.Action("systemLogs").setLabel("Logs systèmes").override("execute", function(pEvent, pContext){
+						var vReq = io.openHttpRequest(pContext.serverUrl+"/*u/adminLogs");
+						vReq.onloadend = function(pEvt) {
+							var vError;
+							try {
+								if(pEvt.target.status == 200) {
+									pContext.adminView.getResultFrame().setAttribute("src", pContext.serverUrl+"/u/adminLogs");
+									return;
+								} else if(pEvt.target.status == 404) {
+									vError = "Service d'accès aux logs non déclaré";
+								}
+							}catch(e){console.log(e);}
+							dom.newBd(pContext.adminView.getResultPanel()).clear().elt("p").elt("em").text(vError || "Service non accessible");
+						}
+						vReq.send();
+					})
+					, "common-80");
+
+			//Info server
+			extPoints.addToList(this.fActionsList, "infoServer", 1,
+					new actions.Action("infoServer").setLabel("Informations serveur").override("execute", function(pEvent, pContext){
+						//pContext.adminView.getResultFrame().setAttribute("src", pContext.serverUrl+"/u/adminServer?cdaction=GetServerInfo");
+						dom.newBd(pContext.adminView.getResultPanel()).elt("sc-json").call("renderFromUrl", pContext.serverUrl+"/u/adminServer?cdaction=GetServerInfo").att("flex", "1");
+					})
+					, "common-90");
+
+		},
+
+		xInitAdminView : function(pErrors){
+			if(pErrors) { alert("Chargement en erreur. Recommencez ultérieurement."); throw pErrors;}
+			var vBd = dom.newBd(this, "-aV").att("orient", "horizontal"); //.style("margin", "1em");
+			var vActionsGrid = vBd.elt("sc-gridlite", "actions -aV").att("hideColumnHeader", "true").currentUp();
+			var vListActions = extPoints.getList(this.fActionsList);
+			for(var i=vListActions.length-1; i>=0; i--) {
+				if(!vListActions[i].isVisible(this.getActionContext())) vListActions.splice(i, 1);
+			}
+			var vView = this;
+			var vColDef = new this.grid.ColumnDef("actions").setLabel("Actions").setFlex("10em", 1, 1).setCellBuilderFactory(function(){
+				return new vView.grid.CellBuilderIconLabel(this).override("xGetValue", function(pGridDataRow){
+					return pGridDataRow.getDatas().getLabel(vView.getActionContext());
+				}).override("xGetIcon", function(pGridDataRow){
+					return pGridDataRow.getDatas().getIcon(vView.getActionContext());
+				})
+			});
+			vActionsGrid.initColumDefs([vColDef]).initGridDataHandler(new this.grid.GridDataHandlerJsonArray().setGridDatas(vListActions));
+			vBd.elt("sc-vbox").att("flex", "1");
+			this.fConfPanel = vBd.elt("sc-box", "confPanel -aV").att("hidden", "true").currentUp();
+			this.fResultPanel = vBd.elt("sc-vbox", "resultPanel -aV").att("flex", "1").att("hidden", "true").currentUp();
+			this.fResultFrame = vBd.elt("iframe", "resultPanel -aV", "sc-panel").att("flex", "1").att("hidden", "true").currentUp();
+
+			//vBd.elt("sc-toolbar", "tbLite usersTbTop").att("orient", "vertical").att("icononly", "").prop("actionContext", this).prop("actionsLists", "adminUsers:toolbar:top").up();
+			//vBd.elt("sc-toolbar", "tbLite usersTbBottom flex").att("orient", "vertical").att("pack", "end").att("icononly", "").prop("actionContext", this).prop("actionsLists", "adminUsers:toolbar:bottom").up();
+		}
+	},
+
+	events: {
+		/* Chargement au 1er affichage de la view. */
+		'SCViewShown': function(pEvent) {
+			if(pEvent.target !== this || this.fStarted) return;
+			this.fStarted = true;
+
+			this.xInitDefaultServerActions();
+
+			//init grid
+			extPoints.getSvcLazy("grid", function(pGrid, pErrors){
+				if(pErrors) {
+					this.xInitAdminView(pErrors);
+				} else {
+					this.grid = pGrid;
+					extPoints.getSvcLazy("jsonRdr", function(pJsonRdr, pErrors){
+						if(pErrors) {
+							this.xInitAdminView(pErrors);
+						} else {
+							this.jsonRdr = pJsonRdr;
+							page.loadTags({
+								"sc-grid": "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/commons/widgets/grid.html",
+								"sc-json": "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/commons/widgets/json.html"
+								}, this.xInitAdminView, this);
+						}
+					}, this, "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/svcs/jsonRdr.js");
+				}
+			}, this, "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/svcs/grid.js");
+		},
+		'gridSelect': function(pEvent) {
+			var vScGrid = pEvent.target;
+			var vRow = vScGrid.getGridDataHandler().getRow(vScGrid.getActiveRow());
+			if(vRow) {
+				if(vRow.getDatas().isEnabled(this.getActionContext())) {
+					this.fConfPanel.setAttribute("hidden", "true");
+					this.fConfPanel.textContent="";
+					this.fResultPanel.setAttribute("hidden", "true");
+					this.fResultPanel.textContent="";
+					this.fResultFrame.setAttribute("hidden", "true");
+					this.fResultFrame.setAttribute("src", "about:blank");
+					vRow.getDatas().execute(pEvent, this.getActionContext());
+				} else {
+					alert("Action non autorisée");
+				}
+			}
+		}
+	}
+});
+</script>
+
+<style>
+	.actions.-aV .gridCell{
+		padding: 3px;
+	}
+	.actions.-aV,
+	.confPanel.-aV,
+	.resultPanel.-aV{
+		border: 1px solid silver;
+		margin: 3px;
+	}
+	.resultPanel.-aV{
+		background-color: white;
+	}
+</style>

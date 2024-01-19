@@ -1,0 +1,127 @@
+:root {
+	--font-default: "Segoe UI", "Roboto", "Ubuntu", "Liberation Sans", "Verdana", "Arial", sans-serif;
+	--font-mono: "Segoe UI Mono", "Roboto Mono", "Ubuntu Mono", "Liberation Mono", "Andale Mono", "Arial Monospaced", monospace;
+	--icon-color: #00000000;
+	--icon-size: 1.2rem;
+	--label-size: .9rem;
+
+	--error-color: #970000;
+	--warning-color: #b67300;
+	--valid-color: #008000;
+	--fade-color: #aaaaaa;
+	--info-color: #c1c1c1;
+
+	--form-search-bgcolor: #00000000;
+
+	--dropdown-url: url(https://studio-paon.edrlab.org/~~static/scCore/fr-FR/-wsk/6.1.10.202401191026/commons/widgets/dropdown.svg);
+
+	--pressed-bgcolor: rgba(255,255,255,0.08);
+
+	--scroll-thumb-color: #6a6a6a;
+
+	--tabf-off-bgcolor: none;
+	--tabf-color: var(--color);
+
+	--edit-search-bgcolor: rgba(172, 172, 0, 0.7);
+	--edit-forbidden-bgcolor: rgba(165, 0, 9, 0.21);
+	--edit-diff-bgcolor: rgba(142, 104, 249, .1);
+	--edit-diff-color: rgb(142, 104, 249);
+	--edit-diffadd-bgcolor: rgba(131, 249, 142, 0.24);
+	--edit-diffadd-color: rgb(131, 249, 142);
+	--edit-diffrem-bgcolor: rgba(249, 183, 125, 0.24);
+	--edit-diffrem-color: rgb(249, 183, 125);
+	--edit-box-focus: var(--focus-outline);
+	--edit-input-focus: var(--focus-outline);
+	--edit-caret-focus: var(--focus-outline);
+	--edit-cmt-bgcolor: rgba(54, 51, 32, 0.8);
+	--edit-cmt-color: var(--edit-color);
+	--edit-cmt-border-color: rgb(54, 51, 32);
+	--edit-cmt-shadow-color: #191917;
+	--edit-exclude-bgcolor: #393939;
+	--edit-exclude-shadow-color: #191917;
+	--edit-btn-bgcolor: rgba(255, 255, 255, .10);
+	--edit-btn-color: #18c753;
+	--add-color: var(--edit-btn-color)/*TODOSc7*/;
+
+	--row-bgcolor: #08254A;
+	--row-current-bgcolor: rgba(255, 255, 255, 0.2);
+	--row-highlight-bgcolor: rgba(255, 255, 0, 0.15);
+	--row-assigned-bgcolor: rgba(255, 250, 183, 0.15);
+
+	--filter: contrast(1.5) brightness(.9);
+
+	--inv-pressed-bgcolor: #ffffff20;
+	--inv-filter: brightness(.9);
+	--inv-hover-filter: brightness(.8) opacity(.7);
+	--inv-active-filter: brightness(.7) opacity(.5);
+
+	--item-inv-filter: brightness(1.2);
+	--item-inv-hover-filter: brightness(1.2) opacity(.7);
+	--item-inv-active-filter: brightness(1.2) opacity(.5);
+
+	--page-bgcolor: var(--alt1-bgcolor);
+	--page-color: var(--color);
+	--page-border-color: var(--border-color);
+	--page-icon-color: var(--icon-color);
+	--page-selection-bgcolor: var(--selection-bgcolor);
+	--page-selection-color: var(--selection-color);
+	--page-form-bgcolor: var(--form-bgcolor);
+	--page-form-search-bgcolor: var(--form-search-bgcolor);
+	--page-form-color: var(--form-color);
+	--page-edit-bgcolor: var(--edit-bgcolor);
+	--page-edit-color: var(--edit-color);
+	--page-row-bgcolor: #00000000;
+	--page-row-inSel-bgcolor: var(--row-inSel-bgcolor);
+	--page-row-inSel-unfocus-bgcolor: var(--row-inSel-unfocus-bgcolor);
+	--page-tabf-off-bgcolor: var(--tabf-off-bgcolor);
+	--page-tabf-bgcolor: var(--tabf-bgcolor);
+	--page-tabf-color: var(--tabf-color);
+	--page-tabl-select-color: var(--tabl-select-color);
+	--page-img-filter: var(--filter);
+	--page-img-hover-filter: var(--hover-filter);
+	--page-img-active-filter: var(--active-filter);
+
+	--panel-bgcolor: var(--alt1-bgcolor);
+	--panel-color: var(--color);
+	--panel-border-color: var(--alt1-border-color);
+	--panel-icon-color: var(--icon-color);
+	--panel-selection-bgcolor: var(--selection-bgcolor);
+	--panel-selection-color: var(--selection-color);
+	--panel-form-bgcolor: var(--form-bgcolor);
+	--panel-form-search-bgcolor: var(--form-search-bgcolor);
+	--panel-form-color: var(--form-color);
+	--panel-edit-bgcolor: var(--edit-bgcolor);
+	--panel-edit-color: var(--edit-color);
+	--panel-row-bgcolor: #00000000;
+	--panel-row-inSel-bgcolor: var(--row-inSel-bgcolor);
+	--panel-row-inSel-unfocus-bgcolor: var(--row-inSel-unfocus-bgcolor);
+	--panel-tabf-off-bgcolor: var(--tabf-off-bgcolor);
+	--panel-tabf-bgcolor: var(--tabf-bgcolor);
+	--panel-tabf-color: var(--tabf-color);
+	--panel-tabl-select-color: var(--tabl-select-color);
+	--panel-img-filter: var(--filter);
+	--panel-img-hover-filter: var(--hover-filter);
+	--panel-img-active-filter: var(--active-filter);
+
+	--item-bgcolor: var(--alt1-bgcolor);
+	--item-color: var(--color);
+	--item-border-color: var(--border-color);
+	--item-icon-color: var(--icon-color);
+	--item-selection-bgcolor: var(--selection-bgcolor);
+	--item-selection-color: var(--selection-color);
+	--item-form-bgcolor: var(--form-bgcolor);
+	--item-form-search-bgcolor: var(--form-search-bgcolor);
+	--item-form-color: var(--form-color);
+	--item-edit-bgcolor: var(--edit-bgcolor);
+	--item-edit-color: var(--edit-color);
+	--item-row-bgcolor: #00000000;
+	--item-row-inSel-bgcolor: var(--row-inSel-bgcolor);
+	--item-row-inSel-unfocus-bgcolor: var(--row-inSel-unfocus-bgcolor);
+	--item-tabf-off-bgcolor: var(--tabf-off-bgcolor);
+	--item-tabf-bgcolor: var(--tabf-bgcolor);
+	--item-tabf-color: var(--tabf-color);
+	--item-tabl-select-color: var(--tabl-select-color);
+	--item-img-filter: var(--filter);
+	--item-img-hover-filter: var(--hover-filter);
+	--item-img-active-filter: var(--active-filter);
+}

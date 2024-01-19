@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="ivy-report.xsl"?>
+<ivy-report version="1.0">
+	<info
+		organisation="scenari.org"
+		module="scCoreVersion"
+		revision="working@PPC085"
+
+		conf="scPrt_jav"
+		confs="scPrt_jav"
+		date="20240119150406"/>
+	<dependencies>
+		<module organisation="org.scenari.core" name="sc-jav-core">
+			<revision name="6.1.10.202401191026" status="release" pubdate="20240119102909" resolver="scBuild-snapshots" artresolver="scBuild-snapshots" homepage="" downloaded="false" searched="true" default="false" conf="default, compile, runtime, master" position="0">
+				<license name="Scenari LICENSE (MPL2.0 or GPL3.0  or LGPL3.0 or CeCILL 2.1)" url="https://scenari.software/license"/>
+				<metadata-artifact status="no" details="" size="2990" time="0" location="C:\Users\npavie\.ivy2\cache\org.scenari.core\sc-jav-core\ivy-6.1.10.202401191026.xml" searched="true" original-local-location="C:\Users\npavie\.ivy2\cache\org.scenari.core\sc-jav-core\ivy-6.1.10.202401191026.xml.original" origin-is-local="false" origin-location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-jav-core/6.1.10.202401191026/sc-jav-core-6.1.10.202401191026.pom"/>
+				<caller organisation="scenari.org" name="scCoreVersion" conf="scPrt_jav" rev="6.1.10.+" rev-constraint-default="6.1.10.+" rev-constraint-dynamic="6.1.10.+" callerrev="working@PPC085"/>
+				<artifacts>
+					<artifact name="sc-jav-core" type="jar" ext="jar" status="no" details="" size="1129603" time="0" location="C:\Users\npavie\.ivy2\cache\org.scenari.core\sc-jav-core\jars\sc-jav-core-6.1.10.202401191026.jar">
+						<origin-location is-local="false" location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-jav-core/6.1.10.202401191026/sc-jav-core-6.1.10.202401191026.jar"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="javax.websocket" name="javax.websocket-api">
+			<revision name="1.0" status="release" pubdate="20171215182722" resolver="scBuild-libs" artresolver="scBuild-libs" homepage="http://websocket-spec.java.net" downloaded="false" searched="false" default="false" conf="master(*), compile, runtime(*), runtime, compile(*), master" position="24">
+				<license name="                 Dual license consisting of the CDDL v1.1 and GPL v2             " url="https://glassfish.java.net/public/CDDL+GPL_1_1.html"/>
+				<metadata-artifact status="no" details="" size="4304" time="0" location="C:\Users\npavie\.ivy2\cache\javax.websocket\javax.websocket-api\ivy-1.0.xml" searched="false" original-local-location="C:\Users\npavie\.ivy2\cache\javax.websocket\javax.websocket-api\ivy-1.0.xml.original" origin-is-local="false" origin-location="https://artifacts.scenari.software/repository/libs/javax/websocket/javax.websocket-api/1.0/javax.websocket-api-1.0.pom"/>
+				<caller organisation="org.scenari.core" name="sc-jav-core" conf="default, compile, runtime, master" rev="1.0" rev-constraint-default="1.0" rev-constraint-dynamic="1.0" callerrev="6.1.10.202401191026"/>
+				<artifacts>
+					<artifact name="javax.websocket-api" type="bundle" ext="jar" status="no" details="" size="36611" time="0" location="C:\Users\npavie\.ivy2\cache\javax.websocket\javax.websocket-api\bundles\javax.websocket-api-1.0.jar">
+						<origin-location is-local="false" location="https://artifacts.scenari.software/repository/libs/javax/websocket/javax.websocket-api/1.0/javax.websocket-api-1.0.jar"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="net.objecthunter" name="exp4j">
+			<revision name="0.4.8" status="release" pubdate="20171211185749" resolver="scBuild-libs" artresolver="scBuild-libs" homepage="http://www.objecthunter.net/exp4j" downloaded="false" searched="false" default="false" conf="master(*), compile, runtime(*), runtime, compile(*), master" position="23">
+				<license name="Apache License 2.0" url="http://www.apache.org/licenses/LICENSE-2.0"/>
+				<metadata-artifact status="no" details="" size="3341" time="0" location="C:\Users\npavie\.ivy2\cache\net.objecthunter\exp4j\ivy-0.4.8.xml" searched="false" original-local-location="C:\Users\npavie\.ivy2\cache\net.objecthunter\exp4j\ivy-0.4.8.xml.original" origin-is-local="false" origin-location="https://artifacts.scenari.software/repository/libs/net/objecthunter/exp4j/0.4.8/exp4j-0.4.8.pom"/>
+				<caller organisation="org.scenari.core" name="sc-jav-core" conf="default, compile, runtime, master" rev="0.4.8" rev-constraint-default="0.4.8" rev-constraint-dynamic="0.4.8" callerrev="6.1.10.202401191026"/>
+				<artifacts>
+					<artifact name="exp4j" type="jar" ext="jar" status="no" details="" size="46942" time="0" location="C:\Users\npavie\.ivy2\cache\net.objecthunter\exp4j\jars\exp4j-0.4.8.jar">
+						<origin-location is-local="false" location="https://artifacts.scenari.software/repository/libs/net/objecthunter/exp4j/0.4.8/exp4j-0.4.8.jar"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="org.scenari.core" name="sc-jav-transform">
+			<revision name="6.1.10.202401191026" status="release" pubdate="20240119102919" resolver="scBuild-snapshots" artresolver="scBuild-snapshots" homepage="" downloaded="false" searched="false" default="false" conf="master(*), compile, runtime(*), runtime, compile(*), master" position="20">
+				<license name="Scenari LICENSE (MPL2.0 or GPL3.0  or LGPL3.0 or CeCILL 2.1)" url="https://scenari.software/license"/>
+				<metadata-artifact status="no" details="" size="2852" time="0" location="C:\Users\npavie\.ivy2\cache\org.scenari.core\sc-jav-transform\ivy-6.1.10.202401191026.xml" searched="false" original-local-location="C:\Users\npavie\.ivy2\cache\org.scenari.core\sc-jav-transform\ivy-6.1.10.202401191026.xml.original" origin-is-local="false" origin-location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-jav-transform/6.1.10.202401191026/sc-jav-transform-6.1.10.202401191026.pom"/>
+				<caller organisation="org.scenari.core" name="sc-jav-core" conf="default, compile, runtime, master" rev="6.1.10.202401191026" rev-constraint-default="6.1.10.202401191026" rev-constraint-dynamic="6.1.10.202401191026" callerrev="6.1.10.202401191026"/>
+				<artifacts>
+					<artifact name="sc-jav-transform" type="jar" ext="jar" status="no" details="" size="435847" time="0" location="C:\Users\npavie\.ivy2\cache\org.scenari.core\sc-jav-transform\jars\sc-jav-transform-6.1.10.202401191026.jar">
+						<origin-location is-local="false" location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-jav-transform/6.1.10.202401191026/sc-jav-transform-6.1.10.202401191026.jar"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="com.github.librepdf" name="openpdf">
+			<revision name="1.3.35" status="release" pubdate="20240105104431" resolver="scBuild-libs" artresolver="scBuild-libs" homepage="" downloaded="false" searched="false" default="false" conf="master(*), compile, runtime(*), runtime, compile(*), master" position="22">
+				<license name="GNU Lesser General Public License (LGPL), Version 2.1" url="https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html"/>
+				<license name="Mozilla Public License Version 2.0" url="https://www.mozilla.org/en-US/MPL/2.0/"/>
+				<metadata-artifact status="no" details="" size="11798" time="0" location="C:\Users\npavie\.ivy2\cache\com.github.librepdf\openpdf\ivy-1.3.35.xml" searched="false" original-local-location="C:\Users\npavie\.ivy2\cache\com.github.librepdf\openpdf\ivy-1.3.35.xml.original" origin-is-local="false" origin-location="https://artifacts.scenari.software/repository/libs/com/github/librepdf/openpdf/1.3.35/openpdf-1.3.35.pom"/>
+				<caller organisation="org.scenari.core" name="sc-jav-transform" conf="compile, runtime" rev="1.3.35" rev-constraint-default="1.3.35" rev-constraint-dynamic="1.3.35" callerrev="6.1.10.202401191026"/>
+				<artifacts>
+					<artifact name="openpdf" type="jar" ext="jar" status="no" details="" size="2149999" time="0" location="C:\Users\npavie\.ivy2\cache\com.github.librepdf\openpdf\jars\openpdf-1.3.35.jar">
+						<origin-location is-local="false" location="https://artifacts.scenari.software/repository/libs/com/github/librepdf/openpdf/1.3.35/openpdf-1.3.35.jar"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="org.apache.commons" name="commons-imaging">
+			<revision name="1.0-alpha3" status="release" pubdate="20220608114444" resolver="scBuild-libs" artresolver="scBuild-libs" homepage="https://commons.apache.org/proper/commons-imaging/" downloaded="false" searched="false" default="false" conf="master(*), compile, runtime(*), runtime, compile(*), master" position="21">
+				<license name="Apache License, Version 2.0" url="https://www.apache.org/licenses/LICENSE-2.0.txt"/>
+				<metadata-artifact status="no" details="" size="18306" time="0" location="C:\Users\npavie\.ivy2\cache\org.apache.commons\commons-imaging\ivy-1.0-alpha3.xml" searched="false" original-local-location="C:\Users\npavie\.ivy2\cache\org.apache.commons\commons-imaging\ivy-1.0-alpha3.xml.original" origin-is-local="false" origin-location="https://artifacts.scenari.software/repository/libs/org/apache/commons/commons-imaging/1.0-alpha3/commons-imaging-1.0-alpha3.pom"/>
+				<caller organisation="org.scenari.core" name="sc-jav-transform" conf="compile, runtime" rev="1.0-alpha3" rev-constraint-default="1.0-alpha3" rev-constraint-dynamic="1.0-alpha3" callerrev="6.1.10.202401191026"/>
+				<artifacts>
+					<artifact name="commons-imaging" type="jar" ext="jar" status="no" details="" size="784557" time="0" location="C:\Users\npavie\.ivy2\cache\org.apache.commons\commons-imaging\jars\commons-imaging-1.0-alpha3.jar">
+						<origin-location is-local="false" location="https://artifacts.scenari.software/repository/libs/org/apache/commons/commons-imaging/1.0-alpha3/commons-imaging-1.0-alpha3.jar"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="org.scenari.core" name="sc-jav-src">
+			<revision name="6.1.10.202401191026" status="release" pubdate="20240119102916" resolver="scBuild-snapshots" artresolver="scBuild-snapshots" homepage="" downloaded="false" searched="false" default="false" conf="master(*), compile, runtime(*), runtime, compile(*), master" position="1">
+				<license name="Scenari LICENSE (MPL2.0 or GPL3.0  or LGPL3.0 or CeCILL 2.1)" url="https://scenari.software/license"/>
+				<metadata-artifact status="no" details="" size="2706" time="0" location="C:\Users\npavie\.ivy2\cache\org.scenari.core\sc-jav-src\ivy-6.1.10.202401191026.xml" searched="false" original-local-location="C:\Users\npavie\.ivy2\cache\org.scenari.core\sc-jav-src\ivy-6.1.10.202401191026.xml.original" origin-is-local="false" origin-location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-jav-src/6.1.10.202401191026/sc-jav-src-6.1.10.202401191026.pom"/>
+				<caller organisation="org.scenari.core" name="sc-jav-core" conf="default, compile, runtime, master" rev="6.1.10.202401191026" rev-constraint-default="6.1.10.202401191026" rev-constraint-dynamic="6.1.10.202401191026" callerrev="6.1.10.202401191026"/>
+				<caller organisation="org.scenari.core" name="sc-jav-transform" conf="compile, runtime" rev="6.1.10.202401191026" rev-constraint-default="6.1.10.202401191026" rev-constraint-dynamic="6.1.10.202401191026" callerrev="6.1.10.202401191026"/>
+				<artifacts>
+					<artifact name="sc-jav-src" type="jar" ext="jar" status="no" details="" size="460321" time="0" location="C:\Users\npavie\.ivy2\cache\org.scenari.core\sc-jav-src\jars\sc-jav-src-6.1.10.202401191026.jar">
+						<origin-location is-local="false" location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-jav-src/6.1.10.202401191026/sc-jav-src-6.1.10.202401191026.jar"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="org.scenari.core" name="sc-jav-l10n">
+			<revision name="6.1.10.202401191026" status="release" pubdate="20240119102913" resolver="scBuild-snapshots" artresolver="scBuild-snapshots" homepage="" downloaded="false" searched="false" default="false" conf="master(*), compile, runtime(*), runtime, compile(*), master" position="19">
+				<license name="Scenari LICENSE (MPL2.0 or GPL3.0  or LGPL3.0 or CeCILL 2.1)" url="https://scenari.software/license"/>
+				<metadata-artifact status="no" details="" size="2686" time="0" location="C:\Users\npavie\.ivy2\cache\org.scenari.core\sc-jav-l10n\ivy-6.1.10.202401191026.xml" searched="false" original-local-location="C:\Users\npavie\.ivy2\cache\org.scenari.core\sc-jav-l10n\ivy-6.1.10.202401191026.xml.original" origin-is-local="false" origin-location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-jav-l10n/6.1.10.202401191026/sc-jav-l10n-6.1.10.202401191026.pom"/>
+				<caller organisation="org.scenari.core" name="sc-jav-src" conf="compile, runtime" rev="6.1.10.202401191026" rev-constraint-default="6.1.10.202401191026" rev-constraint-dynamic="6.1.10.202401191026" callerrev="6.1.10.202401191026"/>
+				<artifacts>
+					<artifact name="sc-jav-l10n" type="jar" ext="jar" status="no" details="" size="131462" time="0" location="C:\Users\npavie\.ivy2\cache\org.scenari.core\sc-jav-l10n\jars\sc-jav-l10n-6.1.10.202401191026.jar">
+						<origin-location is-local="false" location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-jav-l10n/6.1.10.202401191026/sc-jav-l10n-6.1.10.202401191026.jar"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="org.scenari.core" name="sc-jav-commons">
+			<revision name="6.1.10.202401191026" status="release" pubdate="20240119102908" resolver="scBuild-snapshots" artresolver="scBuild-snapshots" homepage="" downloaded="false" searched="false" default="false" conf="master(*), compile, runtime(*), runtime, compile(*), master" position="2">
+				<license name="Scenari LICENSE (MPL2.0 or GPL3.0  or LGPL3.0 or CeCILL 2.1)" url="https://scenari.software/license"/>
+				<metadata-artifact status="no" details="" size="4198" time="0" location="C:\Users\npavie\.ivy2\cache\org.scenari.core\sc-jav-commons\ivy-6.1.10.202401191026.xml" searched="false" original-local-location="C:\Users\npavie\.ivy2\cache\org.scenari.core\sc-jav-commons\ivy-6.1.10.202401191026.xml.original" origin-is-local="false" origin-location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-jav-commons/6.1.10.202401191026/sc-jav-commons-6.1.10.202401191026.pom"/>
+				<caller organisation="org.scenari.core" name="sc-jav-src" conf="compile, runtime" rev="6.1.10.202401191026" rev-constraint-default="6.1.10.202401191026" rev-constraint-dynamic="6.1.10.202401191026" callerrev="6.1.10.202401191026"/>
+				<caller organisation="org.scenari.core" name="sc-jav-l10n" conf="compile, runtime" rev="6.1.10.202401191026" rev-constraint-default="6.1.10.202401191026" rev-constraint-dynamic="6.1.10.202401191026" callerrev="6.1.10.202401191026"/>
+				<artifacts>
+					<artifact name="sc-jav-commons" type="jar" ext="jar" status="no" details="" size="1687523" time="0" location="C:\Users\npavie\.ivy2\cache\org.scenari.core\sc-jav-commons\jars\sc-jav-commons-6.1.10.202401191026.jar">
+						<origin-location is-local="false" location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-jav-commons/6.1.10.202401191026/sc-jav-commons-6.1.10.202401191026.jar"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="org.apache-extras.beanshell" name="bsh">
+			<revision name="2.0b6" status="release" pubdate="20180116121639" resolver="scBuild-libs" artresolver="scBuild-libs" homepage="https://github.com/beanshell/beanshell/" downloaded="false" searched="false" default="false" conf="master(*), compile, runtime(*), runtime, compile(*), master" position="18">
+				<license name="Apache License, Version 2.0" url="http://www.apache.org/licenses/LICENSE-2.0.txt"/>
+				<metadata-artifact status="no" details="" size="3221" time="0" location="C:\Users\npavie\.ivy2\cache\org.apache-extras.beanshell\bsh\ivy-2.0b6.xml" searched="false" original-local-location="C:\Users\npavie\.ivy2\cache\org.apache-extras.beanshell\bsh\ivy-2.0b6.xml.original" origin-is-local="false" origin-location="https://artifacts.scenari.software/repository/libs/org/apache-extras/beanshell/bsh/2.0b6/bsh-2.0b6.pom"/>
+				<caller organisation="org.scenari.core" name="sc-jav-commons" conf="compile, runtime" rev="2.0b6" rev-constraint-default="2.0b6" rev-constraint-dynamic="2.0b6" callerrev="6.1.10.202401191026"/>
+				<artifacts>
+					<artifact name="bsh" type="jar" ext="jar" status="no" details="" size="389033" time="0" location="C:\Users\npavie\.ivy2\cache\org.apache-extras.beanshell\bsh\jars\bsh-2.0b6.jar">
+						<origin-location is-local="false" location="https://artifacts.scenari.software/repository/libs/org/apache-extras/beanshell/bsh/2.0b6/bsh-2.0b6.jar"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="javax.servlet" name="javax.servlet-api">
+			<revision name="3.1.0" status="release" pubdate="20171211185743" resolver="scBuild-libs" artresolver="scBuild-libs" homepage="http://servlet-spec.java.net" downloaded="false" searched="false" default="false" conf="master(*), compile, runtime(*), runtime, compile(*), master" position="17">
+				<license name="CDDL + GPLv2 with classpath exception" url="https://glassfish.dev.java.net/nonav/public/CDDL+GPL.html"/>
+				<metadata-artifact status="no" details="" size="4396" time="0" location="C:\Users\npavie\.ivy2\cache\javax.servlet\javax.servlet-api\ivy-3.1.0.xml" searched="false" original-local-location="C:\Users\npavie\.ivy2\cache\javax.servlet\javax.servlet-api\ivy-3.1.0.xml.original" origin-is-local="false" origin-location="https://artifacts.scenari.software/repository/libs/javax/servlet/javax.servlet-api/3.1.0/javax.servlet-api-3.1.0.pom"/>
+				<caller organisation="org.scenari.core" name="sc-jav-commons" conf="compile, runtime" rev="3.1.0" rev-constraint-default="3.1.0" rev-constraint-dynamic="3.1.0" callerrev="6.1.10.202401191026"/>
+				<artifacts>
+					<artifact name="javax.servlet-api" type="jar" ext="jar" status="no" details="" size="95806" time="0" location="C:\Users\npavie\.ivy2\cache\javax.servlet\javax.servlet-api\jars\javax.servlet-api-3.1.0.jar">
+						<origin-location is-local="false" location="https://artifacts.scenari.software/repository/libs/javax/servlet/javax.servlet-api/3.1.0/javax.servlet-api-3.1.0.jar"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="com.oopsconsultancy" name="xmltask">
+			<revision name="1.16" status="release" pubdate="20180105140051" resolver="scBuild-libs" artresolver="scBuild-libs" homepage="http://www.oopsconsultancy.com/software/xmltask/" downloaded="false" searched="false" default="false" conf="master(*), compile, runtime(*), runtime, compile(*), master" position="16">
+				<license name="The Apache Software License, Version 1.1" url="http://www.apache.org/licenses/LICENSE-1.1.txt"/>
+				<metadata-artifact status="no" details="" size="2382" time="0" location="C:\Users\npavie\.ivy2\cache\com.oopsconsultancy\xmltask\ivy-1.16.xml" searched="false" original-local-location="C:\Users\npavie\.ivy2\cache\com.oopsconsultancy\xmltask\ivy-1.16.xml.original" origin-is-local="false" origin-location="https://artifacts.scenari.software/repository/libs/com/oopsconsultancy/xmltask/1.16/xmltask-1.16.pom"/>
+				<caller organisation="org.scenari.core" name="sc-jav-commons" conf="compile, runtime" rev="1.16" rev-constraint-default="1.16" rev-constraint-dynamic="1.16" callerrev="6.1.10.202401191026"/>
+				<artifacts>
+					<artifact name="xmltask" type="jar" ext="jar" status="no" details="" size="76166" time="0" location="C:\Users\npavie\.ivy2\cache\com.oopsconsultancy\xmltask\jars\xmltask-1.16.jar">
+						<origin-location is-local="false" location="https://artifacts.scenari.software/repository/libs/com/oopsconsultancy/xmltask/1.16/xmltask-1.16.jar"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="ant-contrib" name="ant-contrib">
+			<revision name="1.0b3" status="release" pubdate="20171222094031" resolver="scBuild-libs" artresolver="scBuild-libs" homepage="http://ant-contrib.sourceforge.net" downloaded="false" searched="false" default="false" conf="master(*), compile, runtime(*), runtime, compile(*), master" position="15">
+				<license name="Unknown License" url="http://ant-contrib.sourceforge.net/tasks/LICENSE.txt"/>
+				<metadata-artifact status="no" details="" size="2606" time="0" location="C:\Users\npavie\.ivy2\cache\ant-contrib\ant-contrib\ivy-1.0b3.xml" searched="false" original-local-location="C:\Users\npavie\.ivy2\cache\ant-contrib\ant-contrib\ivy-1.0b3.xml.original" origin-is-local="false" origin-location="https://artifacts.scenari.software/repository/libs/ant-contrib/ant-contrib/1.0b3/ant-contrib-1.0b3.pom"/>
+				<caller organisation="org.scenari.core" name="sc-jav-commons" conf="compile, runtime" rev="1.0b3" rev-constraint-default="1.0b3" rev-constraint-dynamic="1.0b3" callerrev="6.1.10.202401191026"/>
+				<artifacts>
+					<artifact name="ant-contrib" type="jar" ext="jar" status="no" details="" size="224277" time="0" location="C:\Users\npavie\.ivy2\cache\ant-contrib\ant-contrib\jars\ant-contrib-1.0b3.jar">
+						<origin-location is-local="false" location="https://artifacts.scenari.software/repository/libs/ant-contrib/ant-contrib/1.0b3/ant-contrib-1.0b3.jar"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="org.apache.ant" name="ant-jsch">
+			<revision name="1.10.14" status="release" pubdate="20230927130432" resolver="scBuild-libs" artresolver="scBuild-libs" homepage="https://ant.apache.org/" downloaded="false" searched="false" default="false" conf="master(*), compile, runtime(*), runtime, compile(*), master" position="13">
+				<license name="The Apache Software License, Version 2.0" url="https://www.apache.org/licenses/LICENSE-2.0.txt"/>
+				<metadata-artifact status="no" details="" size="3314" time="0" location="C:\Users\npavie\.ivy2\cache\org.apache.ant\ant-jsch\ivy-1.10.14.xml" searched="false" original-local-location="C:\Users\npavie\.ivy2\cache\org.apache.ant\ant-jsch\ivy-1.10.14.xml.original" origin-is-local="false" origin-location="https://artifacts.scenari.software/repository/libs/org/apache/ant/ant-jsch/1.10.14/ant-jsch-1.10.14.pom"/>
+				<caller organisation="org.scenari.core" name="sc-jav-commons" conf="compile, runtime" rev="1.10.14" rev-constraint-default="1.10.14" rev-constraint-dynamic="1.10.14" callerrev="6.1.10.202401191026"/>
+				<artifacts>
+					<artifact name="ant-jsch" type="jar" ext="jar" status="no" details="" size="55149" time="0" location="C:\Users\npavie\.ivy2\cache\org.apache.ant\ant-jsch\jars\ant-jsch-1.10.14.jar">
+						<origin-location is-local="false" location="https://artifacts.scenari.software/repository/libs/org/apache/ant/ant-jsch/1.10.14/ant-jsch-1.10.14.jar"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="com.jcraft" name="jsch">
+			<revision name="0.1.55" status="release" pubdate="20190823143933" resolver="scBuild-libs" artresolver="scBuild-libs" homepage="http://www.jcraft.com/jsch/" downloaded="false" searched="false" default="false" conf="master(*), compile, runtime(*), runtime, compile(*), master" position="14">
+				<license name="Revised BSD" url="http://www.jcraft.com/jsch/LICENSE.txt"/>
+				<metadata-artifact status="no" details="" size="3316" time="0" location="C:\Users\npavie\.ivy2\cache\com.jcraft\jsch\ivy-0.1.55.xml" searched="false" original-local-location="C:\Users\npavie\.ivy2\cache\com.jcraft\jsch\ivy-0.1.55.xml.original" origin-is-local="false" origin-location="https://artifacts.scenari.software/repository/libs/com/jcraft/jsch/0.1.55/jsch-0.1.55.pom"/>
+				<caller organisation="org.apache.ant" name="ant-jsch" conf="compile, runtime" rev="0.1.55" rev-constraint-default="0.1.55" rev-constraint-dynamic="0.1.55" callerrev="1.10.14"/>
+				<artifacts>
+					<artifact name="jsch" type="jar" ext="jar" status="no" details="" size="282591" time="0" location="C:\Users\npavie\.ivy2\cache\com.jcraft\jsch\jars\jsch-0.1.55.jar">
+						<origin-location is-local="false" location="https://artifacts.scenari.software/repository/libs/com/jcraft/jsch/0.1.55/jsch-0.1.55.jar"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="org.apache.ant" name="ant-commons-net">
+			<revision name="1.10.14" status="release" pubdate="20230927130432" resolver="scBuild-libs" artresolver="scBuild-libs" homepage="https://ant.apache.org/" downloaded="false" searched="false" default="false" conf="master(*), compile, runtime(*), runtime, compile(*), master" position="12">
+				<license name="The Apache Software License, Version 2.0" url="https://www.apache.org/licenses/LICENSE-2.0.txt"/>
+				<metadata-artifact status="no" details="" size="3335" time="0" location="C:\Users\npavie\.ivy2\cache\org.apache.ant\ant-commons-net\ivy-1.10.14.xml" searched="false" original-local-location="C:\Users\npavie\.ivy2\cache\org.apache.ant\ant-commons-net\ivy-1.10.14.xml.original" origin-is-local="false" origin-location="https://artifacts.scenari.software/repository/libs/org/apache/ant/ant-commons-net/1.10.14/ant-commons-net-1.10.14.pom"/>
+				<caller organisation="org.scenari.core" name="sc-jav-commons" conf="compile, runtime" rev="1.10.14" rev-constraint-default="1.10.14" rev-constraint-dynamic="1.10.14" callerrev="6.1.10.202401191026"/>
+				<artifacts>
+					<artifact name="ant-commons-net" type="jar" ext="jar" status="no" details="" size="91005" time="0" location="C:\Users\npavie\.ivy2\cache\org.apache.ant\ant-commons-net\jars\ant-commons-net-1.10.14.jar">
+						<origin-location is-local="false" location="https://artifacts.scenari.software/repository/libs/org/apache/ant/ant-commons-net/1.10.14/ant-commons-net-1.10.14.jar"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="org.apache.ant" name="ant-apache-bsf">
+			<revision name="1.10.14" status="release" pubdate="20230927130432" resolver="scBuild-libs" artresolver="scBuild-libs" homepage="https://ant.apache.org/" downloaded="false" searched="false" default="false" conf="master(*), compile, runtime(*), runtime, compile(*), master" position="9">
+				<license name="The Apache Software License, Version 2.0" url="https://www.apache.org/licenses/LICENSE-2.0.txt"/>
+				<metadata-artifact status="no" details="" size="3215" time="0" location="C:\Users\npavie\.ivy2\cache\org.apache.ant\ant-apache-bsf\ivy-1.10.14.xml" searched="false" original-local-location="C:\Users\npavie\.ivy2\cache\org.apache.ant\ant-apache-bsf\ivy-1.10.14.xml.original" origin-is-local="false" origin-location="https://artifacts.scenari.software/repository/libs/org/apache/ant/ant-apache-bsf/1.10.14/ant-apache-bsf-1.10.14.pom"/>
+				<caller organisation="org.scenari.core" name="sc-jav-commons" conf="compile, runtime" rev="1.10.14" rev-constraint-default="1.10.14" rev-constraint-dynamic="1.10.14" callerrev="6.1.10.202401191026"/>
+				<artifacts>
+					<artifact name="ant-apache-bsf" type="jar" ext="jar" status="no" details="" size="10149" time="0" location="C:\Users\npavie\.ivy2\cache\org.apache.ant\ant-apache-bsf\jars\ant-apache-bsf-1.10.14.jar">
+						<origin-location is-local="false" location="https://artifacts.scenari.software/repository/libs/org/apache/ant/ant-apache-bsf/1.10.14/ant-apache-bsf-1.10.14.jar"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="bsf" name="bsf">
+			<revision name="2.4.0" status="release" pubdate="20180105113106" resolver="scBuild-libs" artresolver="scBuild-libs" homepage="http://jakarta.apache.org/bsf" downloaded="false" searched="false" default="false" conf="master(*), compile, runtime(*), runtime, compile(*), master" position="10">
+				<license name="The Apache Software License, Version 2.0" url="http://www.apache.org/licenses/LICENSE-2.0.txt"/>
+				<metadata-artifact status="no" details="" size="2620" time="0" location="C:\Users\npavie\.ivy2\cache\bsf\bsf\ivy-2.4.0.xml" searched="false" original-local-location="C:\Users\npavie\.ivy2\cache\bsf\bsf\ivy-2.4.0.xml.original" origin-is-local="false" origin-location="https://artifacts.scenari.software/repository/libs/bsf/bsf/2.4.0/bsf-2.4.0.pom"/>
+				<caller organisation="org.apache.ant" name="ant-apache-bsf" conf="compile, runtime" rev="2.4.0" rev-constraint-default="2.4.0" rev-constraint-dynamic="2.4.0" callerrev="1.10.14"/>
+				<caller organisation="org.scenari.core" name="sc-jav-commons" conf="compile, runtime" rev="2.4.0" rev-constraint-default="2.4.0" rev-constraint-dynamic="2.4.0" callerrev="6.1.10.202401191026"/>
+				<artifacts>
+					<artifact name="bsf" type="jar" ext="jar" status="no" details="" size="113369" time="0" location="C:\Users\npavie\.ivy2\cache\bsf\bsf\jars\bsf-2.4.0.jar">
+						<origin-location is-local="false" location="https://artifacts.scenari.software/repository/libs/bsf/bsf/2.4.0/bsf-2.4.0.jar"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="commons-logging" name="commons-logging">
+			<revision name="1.0.4" status="release" pubdate="20180105113107" resolver="scBuild-libs" artresolver="scBuild-libs" homepage="http://jakarta.apache.org/commons/logging/" downloaded="false" searched="false" default="false" conf="master(*), compile, runtime(*), runtime, compile(*), master" position="11">
+				<license name="The Apache Software License, Version 2.0" url="/LICENSE.txt"/>
+				<metadata-artifact status="no" details="" size="3227" time="0" location="C:\Users\npavie\.ivy2\cache\commons-logging\commons-logging\ivy-1.0.4.xml" searched="false" original-local-location="C:\Users\npavie\.ivy2\cache\commons-logging\commons-logging\ivy-1.0.4.xml.original" origin-is-local="false" origin-location="https://artifacts.scenari.software/repository/libs/commons-logging/commons-logging/1.0.4/commons-logging-1.0.4.pom"/>
+				<caller organisation="bsf" name="bsf" conf="compile, runtime" rev="1.0.4" rev-constraint-default="1.0.4" rev-constraint-dynamic="1.0.4" callerrev="2.4.0"/>
+				<artifacts>
+					<artifact name="commons-logging" type="jar" ext="jar" status="no" details="" size="38015" time="0" location="C:\Users\npavie\.ivy2\cache\commons-logging\commons-logging\jars\commons-logging-1.0.4.jar">
+						<origin-location is-local="false" location="https://artifacts.scenari.software/repository/libs/commons-logging/commons-logging/1.0.4/commons-logging-1.0.4.jar"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="org.scenari.core" name="sc-res-winRegKey">
+			<revision name="6.1.10.202401191026" status="release" pubdate="20240119102930" resolver="scBuild-snapshots" artresolver="scBuild-snapshots" homepage="" downloaded="false" searched="false" default="false" conf="master(*), compile, runtime(*), runtime, compile(*), master" position="8">
+				<license name="Apache license 2.0" url="http://www.apache.org/licenses/LICENSE-2.0.html"/>
+				<metadata-artifact status="no" details="" size="2343" time="0" location="C:\Users\npavie\.ivy2\cache\org.scenari.core\sc-res-winRegKey\ivy-6.1.10.202401191026.xml" searched="false" original-local-location="C:\Users\npavie\.ivy2\cache\org.scenari.core\sc-res-winRegKey\ivy-6.1.10.202401191026.xml.original" origin-is-local="false" origin-location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-res-winRegKey/6.1.10.202401191026/sc-res-winRegKey-6.1.10.202401191026.pom"/>
+				<caller organisation="org.scenari.core" name="sc-jav-commons" conf="compile, runtime" rev="6.1.10.202401191026" rev-constraint-default="6.1.10.202401191026" rev-constraint-dynamic="6.1.10.202401191026" callerrev="6.1.10.202401191026"/>
+				<artifacts>
+					<artifact name="sc-res-winRegKey" type="jar" ext="jar" status="no" details="" size="5955" time="0" location="C:\Users\npavie\.ivy2\cache\org.scenari.core\sc-res-winRegKey\jars\sc-res-winRegKey-6.1.10.202401191026.jar">
+						<origin-location is-local="false" location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-res-winRegKey/6.1.10.202401191026/sc-res-winRegKey-6.1.10.202401191026.jar"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="org.scenari.core" name="sc-res-jing">
+			<revision name="6.1.10.202401191026" status="release" pubdate="20240119102927" resolver="scBuild-snapshots" artresolver="scBuild-snapshots" homepage="" downloaded="false" searched="false" default="false" conf="master(*), compile, runtime(*), runtime, compile(*), master" position="3">
+				<license name="Jing Copying Conditions" url="http://www.thaiopensource.com/relaxng/copying.html"/>
+				<metadata-artifact status="no" details="" size="2530" time="0" location="C:\Users\npavie\.ivy2\cache\org.scenari.core\sc-res-jing\ivy-6.1.10.202401191026.xml" searched="false" original-local-location="C:\Users\npavie\.ivy2\cache\org.scenari.core\sc-res-jing\ivy-6.1.10.202401191026.xml.original" origin-is-local="false" origin-location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-res-jing/6.1.10.202401191026/sc-res-jing-6.1.10.202401191026.pom"/>
+				<caller organisation="org.scenari.core" name="sc-jav-commons" conf="compile, runtime" rev="6.1.10.202401191026" rev-constraint-default="6.1.10.202401191026" rev-constraint-dynamic="6.1.10.202401191026" callerrev="6.1.10.202401191026"/>
+				<artifacts>
+					<artifact name="sc-res-jing" type="jar" ext="jar" status="no" details="" size="551481" time="0" location="C:\Users\npavie\.ivy2\cache\org.scenari.core\sc-res-jing\jars\sc-res-jing-6.1.10.202401191026.jar">
+						<origin-location is-local="false" location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-res-jing/6.1.10.202401191026/sc-res-jing-6.1.10.202401191026.jar"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="org.scenari.core" name="sc-res-ant">
+			<revision name="6.1.10.202401191026" status="release" pubdate="20240119102925" resolver="scBuild-snapshots" artresolver="scBuild-snapshots" homepage="" downloaded="false" searched="false" default="false" conf="master(*), compile, runtime(*), runtime, compile(*), master" position="4">
+				<license name="Apache /LICENSE 2.0" url="http://www.apache.org/licenses/LICENSE-2.0.html"/>
+				<metadata-artifact status="no" details="" size="2637" time="0" location="C:\Users\npavie\.ivy2\cache\org.scenari.core\sc-res-ant\ivy-6.1.10.202401191026.xml" searched="false" original-local-location="C:\Users\npavie\.ivy2\cache\org.scenari.core\sc-res-ant\ivy-6.1.10.202401191026.xml.original" origin-is-local="false" origin-location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-res-ant/6.1.10.202401191026/sc-res-ant-6.1.10.202401191026.pom"/>
+				<caller organisation="org.scenari.core" name="sc-res-jing" conf="compile, runtime" rev="6.1.10.202401191026" rev-constraint-default="6.1.10.202401191026" rev-constraint-dynamic="6.1.10.202401191026" callerrev="6.1.10.202401191026"/>
+				<artifacts>
+					<artifact name="sc-res-ant" type="jar" ext="jar" status="no" details="" size="42333" time="0" location="C:\Users\npavie\.ivy2\cache\org.scenari.core\sc-res-ant\jars\sc-res-ant-6.1.10.202401191026.jar">
+						<origin-location is-local="false" location="https://artifacts.scenari.software/repository/snapshots/org/scenari/core/sc-res-ant/6.1.10.202401191026/sc-res-ant-6.1.10.202401191026.jar"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="commons-net" name="commons-net">
+			<revision name="3.10.0" status="release" pubdate="20231009175942" resolver="scBuild-libs" artresolver="scBuild-libs" homepage="https://commons.apache.org/proper/commons-net/" downloaded="false" searched="false" default="false" conf="master(*), compile, runtime(*), runtime, compile(*), master" position="7">
+				<license name="Apache-2.0" url="https://www.apache.org/licenses/LICENSE-2.0.txt"/>
+				<metadata-artifact status="no" details="" size="29872" time="0" location="C:\Users\npavie\.ivy2\cache\commons-net\commons-net\ivy-3.10.0.xml" searched="false" original-local-location="C:\Users\npavie\.ivy2\cache\commons-net\commons-net\ivy-3.10.0.xml.original" origin-is-local="false" origin-location="https://artifacts.scenari.software/repository/libs/commons-net/commons-net/3.10.0/commons-net-3.10.0.pom"/>
+				<caller organisation="org.scenari.core" name="sc-res-ant" conf="compile, runtime" rev="3.10.0" rev-constraint-default="3.10.0" rev-constraint-dynamic="3.10.0" callerrev="6.1.10.202401191026"/>
+				<caller organisation="org.apache.ant" name="ant-commons-net" conf="compile, runtime" rev="3.9.0" rev-constraint-default="3.9.0" rev-constraint-dynamic="3.9.0" callerrev="1.10.14"/>
+				<caller organisation="org.scenari.core" name="sc-jav-commons" conf="compile, runtime" rev="3.10.0" rev-constraint-default="3.10.0" rev-constraint-dynamic="3.10.0" callerrev="6.1.10.202401191026"/>
+				<artifacts>
+					<artifact name="commons-net" type="jar" ext="jar" status="no" details="" size="322780" time="0" location="C:\Users\npavie\.ivy2\cache\commons-net\commons-net\jars\commons-net-3.10.0.jar">
+						<origin-location is-local="false" location="https://artifacts.scenari.software/repository/libs/commons-net/commons-net/3.10.0/commons-net-3.10.0.jar"/>
+					</artifact>
+				</artifacts>
+			</revision>
+			<revision name="3.9.0" evicted="latest-revision" evicted-reason="" downloaded="false" searched="false" conf="master(*), compile, runtime(*), runtime, compile(*), master" position="-1">
+				<evicted-by rev="3.10.0"/>
+				<caller organisation="org.apache.ant" name="ant-commons-net" conf="compile, runtime" rev="3.9.0" rev-constraint-default="3.9.0" rev-constraint-dynamic="3.9.0" callerrev="1.10.14"/>
+				<artifacts>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="org.apache.ant" name="ant">
+			<revision name="1.10.14" status="release" pubdate="20230927130431" resolver="scBuild-libs" artresolver="scBuild-libs" homepage="https://ant.apache.org/" downloaded="false" searched="false" default="false" conf="master(*), compile, runtime(*), runtime, compile(*), master" position="5">
+				<license name="The Apache Software License, Version 2.0" url="https://www.apache.org/licenses/LICENSE-2.0.txt"/>
+				<metadata-artifact status="no" details="" size="4079" time="0" location="C:\Users\npavie\.ivy2\cache\org.apache.ant\ant\ivy-1.10.14.xml" searched="false" original-local-location="C:\Users\npavie\.ivy2\cache\org.apache.ant\ant\ivy-1.10.14.xml.original" origin-is-local="false" origin-location="https://artifacts.scenari.software/repository/libs/org/apache/ant/ant/1.10.14/ant-1.10.14.pom"/>
+				<caller organisation="org.scenari.core" name="sc-res-ant" conf="compile, runtime" rev="1.10.14" rev-constraint-default="1.10.14" rev-constraint-dynamic="1.10.14" callerrev="6.1.10.202401191026"/>
+				<caller organisation="org.scenari.core" name="sc-jav-l10n" conf="compile, runtime" rev="1.10.14" rev-constraint-default="1.10.14" rev-constraint-dynamic="1.10.14" callerrev="6.1.10.202401191026"/>
+				<caller organisation="org.apache.ant" name="ant-commons-net" conf="compile, runtime" rev="1.10.14" rev-constraint-default="1.10.14" rev-constraint-dynamic="1.10.14" callerrev="1.10.14"/>
+				<caller organisation="org.apache.ant" name="ant-jsch" conf="compile, runtime" rev="1.10.14" rev-constraint-default="1.10.14" rev-constraint-dynamic="1.10.14" callerrev="1.10.14"/>
+				<caller organisation="org.apache.ant" name="ant-apache-bsf" conf="compile, runtime" rev="1.10.14" rev-constraint-default="1.10.14" rev-constraint-dynamic="1.10.14" callerrev="1.10.14"/>
+				<caller organisation="org.scenari.core" name="sc-jav-commons" conf="compile, runtime" rev="1.10.14" rev-constraint-default="1.10.14" rev-constraint-dynamic="1.10.14" callerrev="6.1.10.202401191026"/>
+				<artifacts>
+					<artifact name="ant" type="jar" ext="jar" status="no" details="" size="2303167" time="0" location="C:\Users\npavie\.ivy2\cache\org.apache.ant\ant\jars\ant-1.10.14.jar">
+						<origin-location is-local="false" location="https://artifacts.scenari.software/repository/libs/org/apache/ant/ant/1.10.14/ant-1.10.14.jar"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="org.apache.ant" name="ant-launcher">
+			<revision name="1.10.14" status="release" pubdate="20230927130431" resolver="scBuild-libs" artresolver="scBuild-libs" homepage="https://ant.apache.org/" downloaded="false" searched="false" default="false" conf="master(*), compile, runtime(*), runtime, compile(*), master" position="6">
+				<license name="The Apache Software License, Version 2.0" url="https://www.apache.org/licenses/LICENSE-2.0.txt"/>
+				<metadata-artifact status="no" details="" size="2956" time="0" location="C:\Users\npavie\.ivy2\cache\org.apache.ant\ant-launcher\ivy-1.10.14.xml" searched="false" original-local-location="C:\Users\npavie\.ivy2\cache\org.apache.ant\ant-launcher\ivy-1.10.14.xml.original" origin-is-local="false" origin-location="https://artifacts.scenari.software/repository/libs/org/apache/ant/ant-launcher/1.10.14/ant-launcher-1.10.14.pom"/>
+				<caller organisation="org.apache.ant" name="ant" conf="compile, runtime" rev="1.10.14" rev-constraint-default="1.10.14" rev-constraint-dynamic="1.10.14" callerrev="1.10.14"/>
+				<artifacts>
+					<artifact name="ant-launcher" type="jar" ext="jar" status="no" details="" size="18871" time="0" location="C:\Users\npavie\.ivy2\cache\org.apache.ant\ant-launcher\jars\ant-launcher-1.10.14.jar">
+						<origin-location is-local="false" location="https://artifacts.scenari.software/repository/libs/org/apache/ant/ant-launcher/1.10.14/ant-launcher-1.10.14.jar"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+	</dependencies>
+</ivy-report>

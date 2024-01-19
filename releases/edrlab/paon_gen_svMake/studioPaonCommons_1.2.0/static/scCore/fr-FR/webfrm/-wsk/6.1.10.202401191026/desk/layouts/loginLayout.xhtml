@@ -1,0 +1,60 @@
+<!-- Layout de l'écran de login.
+areas à inclure : 
+- msgZone
+- errorZone
+- inputAccount
+- inputPassword
+- inputSaveLogin
+- btnPasswordLost
+- btnCancel
+- btnConnect
+
+-->
+<template xmlns="http://www.w3.org/1999/xhtml" xmlns:sal="scenari.eu:areaLayout:1.0">
+	<style>
+	label.-lL{
+		min-width: 15em;
+		margin: 1em;
+	}
+	.-lL input,
+	.-lL select{
+		width: 20em;
+	}
+	
+	.msgZone.-lL{
+		font-weight: bold;
+		text-align: center;
+		margin: 1em;
+	}
+	.errorZone.-lL{
+		color: red;
+		font-weight: bold;
+		text-align: center;
+		margin: 1em;
+	}
+	.loginDialog.-lL{
+		padding: 1em;
+	}
+	.loginDialog.-lL > sc-hbox{
+		margin: 1em;
+	}
+	.toolbar.-lL {
+		min-height: 2em;
+	}
+	</style>
+	<section class="loginDialog vbox thinBorder -lL">
+		<div class="msgZone -lL" sal:areaIds="msgZone"/>
+		<div class="errorZone -lL" sal:areaIds="errorZone"/>
+		<sc-hbox align="center"><label class="hbox flex -lL" for="account">Compte</label><div class="hbox" sal:areaIds="inputAccount"/></sc-hbox>
+		<sc-hbox align="center"><label class="hbox flex -lL" for="password">Mot de passe</label><div class="hbox" sal:areaIds="inputPassword"/></sc-hbox>
+		<sal:if areaId="inputSaveLogin">
+			<sc-hbox align="center"><label class="hbox flex -lL" for="saveLogin">Enregistrer le mot de passe</label><div class="hbox" sal:areaIds="inputSaveLogin"/></sc-hbox>
+		</sal:if>
+		<sc-hbox class="toolbar -lL">
+			<sc-hbox flex="1">
+				<div sal:areaIds="btnPasswordLost"/>
+			</sc-hbox>
+			<sc-hbox sal:areaIds="btnCancel btnConnect"/>
+		</sc-hbox>
+	</section>
+</template>

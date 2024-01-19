@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<!--
+Paramètres en QueryString : 
+- TODO path : [optionnal] chemin pré-renseigné
+- hideAuth
+-->
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta charset="UTF-8" />
+<title>Export</title>
+
+<!-- Librairies -->
+
+					<script>
+						CustomElements = { flags: { register: true } }
+					</script>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/x-tag.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/commons.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/areas.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/extPoints.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/security.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/root_Perms.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/actions.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/enums.js"/>
+				
+<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/authProv/defaultAuthProv.js"/>
+
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/desk/desk_Perms.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/desk/utils/deskUtils.js"/>
+				
+
+<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/store/store_Perms.js"/>
+<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/store/store.js"/>
+<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/store/facets.js"/>
+				
+
+<!-- Components -->
+<link rel="import" href="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/desk/widgets.html" />
+
+<!-- Config -->
+<script src="config.js"></script>
+
+<script xml:space="preserve">//
+deskUtils.createDesk(window);
+deskUtils.addFeatureCanCloseDesk(window);
+deskUtils.addFeatureUserMgr(window, false, security.getGPerm("ui.depotDesk"));
+
+extPoints.addToList("event:load:depot", "initNoUsers", 1, function () {
+	var vLaunchCtx = desk.getLaunchContext();
+	if (vLaunchCtx.hideAuth) {
+		sc$("statusbar").setAttribute("style", "display : none !important;");
+		window.authProv.forceLogin = function (pCb, pCbThis, pLoginOptions) {
+			var vBd = dom.newBd(document.body);
+			vDialog = vBd.elt("sc-dialog").current();
+			vBd.text("Accès non autorisé. Veuillez vérifier vos habilitations ou vous reconnecter.");
+		}
+	}
+}, -1000);
+
+extPoints.addToList("event:load:depot", "initNavigateViews", 1, function () {
+	var vLaunchCtx = desk.getLaunchContext();
+
+	var vBd = dom.newBd(sc$("tabs")).outTree();
+	areas.loadAndApplyLayout(function (pErrors) {
+		if (pErrors) {
+			console.log("loads failed : " + pErrors);
+			alert("Accès au serveur en erreur. Recommencez ultérieurement.");
+			return;
+		}
+		vBd.inTree();
+	}, window, vBd, extPoints.mergeLists(["store:navigateViews", "store:adminViews"]), window);
+}, 10);
+	
+	store.registerActions_All(window);
+//</script>
+</head>
+
+<body is="sc-desk"><!--  loading="true" -->
+	<sc-hbox align="center">
+		<sc-hbox flex="1" pack="center">Export</sc-hbox>
+		<sc-hbox id="statusbar" pack="end" style="margin:3px;">
+			<sc-user/>
+		</sc-hbox>
+	</sc-hbox>
+	<sc-viewtabs id="tabs" orient="horizontal" flex="1"/>
+</body>
+<script xml:space="preserve">
+	
+//	extPoints.addToList("event:load:depot", "endLoading", 1, function() {
+//		document.body.loading=false;
+//	}, 99999);
+
+	deskUtils.launchDesk(window);		
+</script>
+
+<!-- Skin -->
+
+
+</html>

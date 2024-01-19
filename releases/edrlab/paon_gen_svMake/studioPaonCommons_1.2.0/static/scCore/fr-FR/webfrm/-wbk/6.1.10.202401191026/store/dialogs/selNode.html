@@ -1,0 +1,122 @@
+<!-- TAG btn-selNode, dlg-selNode
+
+ -->
+<script id="SelNodeAction">
+function SelNodeAction(pId){
+	this.fId = pId;
+	this.setLabel('Sélectionner...');
+}
+SelNodeAction.prototype = js.create(actions.Action.prototype, {
+	setSelNodeOptions: function(pOptions){
+		this.fOptions = pOptions;
+		return this;
+	},
+
+	/**
+	 * context : {selNodeCb({nodeInfos}), selNodeCbThis}
+	 */
+	execute: function(pEvent, pContext){
+		var vBd = dom.newBd(document.body);
+		var vDialog = vBd.elt('sc-dialog').current();
+		var vSelNode = vBd.elt('dlg-selNode', 'thinBorder').currentUp();
+		var vBtn = pEvent.target;
+		function closeDlg(pEvt) {
+			document.body.removeChild(vDialog);
+			pContext.selNodeCb.call(pContext.selNodeCbThis, pEvt.type=='SCCancel' ? null : pEvt.detail);
+		}
+		vSelNode.addEventListener('SCCancel', closeDlg, false);
+		vSelNode.addEventListener('SCResSelected', closeDlg, false);
+		vSelNode.addEventListener('SCFolderSelected', closeDlg, false);
+		vSelNode.initSelNode(this.fOptions);
+	}
+});
+</script>
+
+<script id="dlg-selNode">
+	xtag.register('dlg-selNode', {
+		mixins: ['vbox', 'flex'],
+		lifecycle: {
+			'created:mixins(before)': function() {}
+		},
+
+		methods: {
+
+			/**
+			 * Options (avec leur valeur par défaut) :
+			 * {
+			 *  ignoreFolder: false
+			 *  ignoreRes: false
+			 *  ignoreMoved: true
+			 * }
+			 */
+			initSelNode : function(pOptions){
+				this.fOptions = pOptions || {};
+				var vThis = this;
+				page.loadTags({"sc-dptbrowser": "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/store/widgets/dptbrowser.html"}, function(pErrors){
+					var vBd = dom.newBd(this);
+					function onSel(pEvt){vThis.xOnSel(pEvt);}
+					this.fBrowser = vBd.elt("sc-dptbrowser", "-dsn").listen("SCResSelected", onSel).listen("SCFolderSelected", onSel).currentUp();
+					this.fBrowser.initDptBrowser(window);
+					vBd.elt('sc-hbox', 'btns -dsn').att('pack', 'end');
+					vBd.elt('sc-btn', 'cancel -dsn').att('label', "Annuler").listen("click", function(){
+						vThis.cancel();
+					}).currentUp();
+					this.fSelectBtn = vBd.elt('sc-btn', 'select -dsn').att('label', "Sélectionner").att("disabled", "disabled").listen("click", function(){
+						vThis.select();
+					}).currentUp();
+					vBd.up();
+				}, this);
+			},
+
+			select: function() {
+				if(this.fLastSel) dom.createAndDispatchEvent(this, this.fLastSel, this.fLastSelDatas);
+			},
+
+			cancel: function() {
+				dom.createAndDispatchEvent(this, 'SCCancel');
+			},
+
+			xOnSel: function(pEvt){
+				pEvt.stopPropagation();
+				if(this.xIsSelectabe(pEvt.detail.nodeInfos)) {
+					this.fLastSel = pEvt.type;
+					this.fLastSelDatas = pEvt.detail;
+				} else {
+					this.fLastSel = null;
+					this.fLastSelDatas = null;
+				}
+				this.fSelectBtn.disabled = !this.fLastSel;
+			},
+			xIsSelectabe: function(pNodeInfos) {
+				if(!pNodeInfos) return false;
+				switch(pNodeInfos.t) {
+					case "moved": return this.fOptions.ignoreMoved == false;
+					case "noContent":
+					case "home": return !this.fOptions.ignoreFolder;
+					case "repos": return !this.fOptions.ignoreRes;
+					default:
+						console.log("nodeType unknown:: "+pNodeInfos.t);
+						return false;
+				}
+			}
+		}
+	});
+</script>
+
+<style>
+dlg-selnode {
+	width: 500px;
+	height: 80vh;
+}
+sc-dptbrowser.-dsn{
+	flex: 1;
+}
+.btns.-dsn{
+	min-height: 3em;
+	padding: 0.2em;
+	flex: 0;
+}
+sc-btn.-dsn{
+	margin: 0.2em;
+}
+</style>

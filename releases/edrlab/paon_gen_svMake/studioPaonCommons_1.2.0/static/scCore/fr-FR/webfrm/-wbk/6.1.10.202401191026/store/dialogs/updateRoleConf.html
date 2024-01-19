@@ -1,0 +1,245 @@
+<!--
+component sc-updateroleconf  : Création ou upate d'une conf de roles.
+
+Doit être initialisé via  initRolesConf(pContext, pUiOptions)
+pContext :
+ - storeProv
+ - nodeInfos
+ - svcUserUrl : url du svc de listing des users (pour l'autocomplete)
+ - userRolesMap : map actuelle des roles sur ce path
+ - roleConfig : objet de type {"account":"xxx","allowedRoles":[]}
+ - updateRoleConfCb & updateRoleConfCbThis : [optionnel] callback avec le compte sélectionné ou null si annulé.
+ - defaultProps props de base pour update (path, prc, olderResId...)
+
+pUiOptions :
+ - fields : tableau de areas.InputArea
+ - layout : [optionnel] areas.Area structurant les fields
+
+ -->
+<script>
+
+	//Fields par défaut.
+	extPoints.addToList("adminRolesConfig:fields:create", "account", 1, new areas.InputArea("account")
+					.setLabel("Utilisateur ou Groupe")
+					.setRequired(true)
+					.setTag("input", "input-datalist", {class: 'fieldValue -uu', svcEnum: 'adminRolesConfig:fields:accountsEnum'})
+			, 10);
+
+	extPoints.addToList("adminRolesConfig:fields:update", "account", 1, new areas.InputArea("account")
+			.setLabel("Utilisateur ou Groupe")
+			.setReadOnly(true)
+			.setTag("input", "input-text", {class:"fieldValue -uu"})
+		, 10);
+
+	extPoints.addToList("adminRolesConfig:fields", "allowedRoles", 1, new areas.InputArea("allowedRoles")
+			.setLabel("Rôles")
+			.setTag("input-checkbox-array", null, {class:"fieldValue -uu"})
+			.overrideTagInput("inputsList", "user:roles")
+		, 20);
+
+	xtag.register('sc-updateroleconf', {
+		mixins: ['vbox', 'flex'],
+		lifecycle: {
+			'created:mixins(before)': function () {}
+		},
+
+		methods: {
+
+			initRolesConf: function (pContext, pUiOptions) {
+				this.fContext = pContext;
+				var vSelf = this;
+				var vSvcUserUrl = this.fContext.svcUserUrl || authProv.getAuthServerUrl()+"/web/u/adminUsers"
+				var vReq = io.openHttpRequest(vSvcUserUrl + "?cdaction=List");
+				vReq.onloadend = io.jsonXhrCb(function (pJson, pErrors) {
+					var vAccounts = [];
+					if (pErrors)  console.error("Unable to autocomplete users : " + pErrors);
+					else if(pJson.userList) pJson.userList.forEach(function (pUser) {vAccounts.push(pUser.account);});
+					var vAccountsEnum = new enums.StaticEnum('accounts');
+					vAccountsEnum.setSimpleMap(vAccounts);
+					extPoints.registerSvc('adminRolesConfig:fields:accountsEnum', 101, vAccountsEnum);
+					this.xOnAccountsEnumLoaded(pUiOptions);
+
+				}, vSelf);
+				vReq.send();
+			},
+
+			xOnAccountsEnumLoaded : function(pUiOptions){
+				var vBd = dom.newBd(this).clear(); //.outTree();
+				var vSelf = this;
+				this.fErrorNode = vBd.elt('sc-hbox', 'error -uu').att("pack", "center").currentUp();
+				this.fFieldsRoot = vBd.elt('sc-stack', 'userFields -uu').att('flex', '1 1 auto').current();
+				(pUiOptions.layout || this).buildBody(vBd, this.fContext, pUiOptions);
+				vBd.setCurrent(this);
+				vBd.elt('sc-hbox', 'btns -uu').att('pack', 'end');
+				vBd.elt('sc-btn', 'cancel -uu').att('label', "Annuler").listen("click", function () {vSelf.cancel()}).up();
+				this.fSaveBtn = vBd.elt('sc-btn', 'save -uu').att('label', "Enregistrer").listen("click", function () {vSelf.submit()}).currentUp();
+				vBd.up(); //.inTree();
+
+				this.fFieldNodes = areas.applyLayout(vBd.setCurrent(this.fFieldsRoot), pUiOptions.fields, this.fContext, pUiOptions);
+				if (this.fContext.roleConfig){
+					for (var vKey in this.fFieldNodes) this.fFieldNodes[vKey].extractValue(this.fContext.roleConfig);
+					//this.fFieldNodes[vKey].account.extractValue(pContext.roleConfig);
+				}
+			},
+
+			submit: function () {
+				if (!this.checkValidity()) {
+					alert("Des propriétés sont incorrectes.");
+					return;
+				}
+				this.fFieldsRoot.disabled = true;
+				this.fSaveBtn.disabled = true;
+				var vNewProps = this.getNewProps();
+
+				this.fContext.userRolesMap[vNewProps.account] = {}
+				if(vNewProps.allowedRoles.length) this.fContext.userRolesMap[vNewProps.account].allowedRoles = vNewProps.allowedRoles;
+
+				var vFormData = new FormData();
+				if (this.fContext.defaultProps){
+					for (var vKey in this.fContext.defaultProps) {
+						var vVal = this.fContext.defaultProps[vKey];
+						if (vVal != null) {
+							if ((typeof vVal !== "object") || (vVal instanceof Blob)) vFormData.append(vKey, vVal);
+							else vFormData.append(vKey, JSON.stringify(vVal));
+						}
+					}
+				} else if (this.fContext.nodeInfos.resId)  vFormData.append("olderResId",this.fContext.nodeInfos.resId);
+				else {
+					if (this.fContext.nodeInfos.path) {
+						vFormData.append("path", this.fContext.nodeInfos.path);
+						if (this.fContext.nodeInfos.prc) vFormData.append("processing", this.fContext.nodeInfos.prc);
+						else vFormData.append("processing","folder");
+					}
+				}
+
+				vFormData.append("userRolesMap", JSON.stringify(this.fContext.userRolesMap));
+				var vSelf = this;
+				this.fContext.storeProv.dialogCid("?synch=true&scContent=none&createMetas=true", vFormData, function(pEvent){
+					var vSt = pEvent.target.status;
+					if(vSt >=400) { 
+						if(vSt==500) alert("Cette modification est impossible.");
+						else alert("Accès au serveur impossible. Recommencez ultérieurement.");
+
+						vSelf.fFieldsRoot.disabled = false;
+						vSelf.fSaveBtn.disabled = false;
+						return;
+					}
+					if(vSelf.fContext.updateRoleConfCb) vSelf.fContext.updateRoleConfCb.call(vSelf.fContext.updateRoleConfCbThis, vNewProps.account);
+
+				});
+			},
+
+			setError: function(pMsg) {
+				this.fErrorNode.textContent = pMsg;
+			},
+
+			cancel: function () {
+				if (this.fContext.updateRoleConfCb) this.fContext.updateRoleConfCb.call(this.fContext.updateRoleConfCbThis);
+			},
+
+			checkValidity: function () {
+				for (var vKey in this.fFieldNodes) {
+					if (!this.fFieldNodes[vKey].checkValidity()) return false;
+				}
+				return true;
+			},
+			getNewProps: function () {
+				var vNewProps = {};
+				for (var vKey in this.fFieldNodes) this.fFieldNodes[vKey].fillValue(vNewProps);
+				return vNewProps;
+			},
+
+			/** Construction du layout (api Area). */
+			buildBody: function(pBd, pContext, pUiOptions){
+				var vRoot = pBd.elt('div', 'inputTable -uu').currentUp();
+				vRoot.setAttributeNS("scenari.eu:areaLayout:1.0", "sal:areaIds", "*");
+				return vRoot;
+			}
+		}
+	});
+</script>
+
+<style>
+	sc-updateuser {
+		margin: 0.5ex;
+	}
+	sc-hbox.btns.-uu {
+		border-top: solid 1px silver;
+		margin: 0.5ex 2ex 0 2ex;
+	}
+	sc-hbox.btns.-uu > sc-btn {
+		margin: 0.5ex 0.5ex;
+	}
+
+	.error.-uu {
+		color: red;
+		font-weight: bold;
+		margin: 1em;
+	}
+
+	input.fieldValue.-uu {
+		width: 90%;
+		border: 1px solid lightgrey;
+	}
+
+	input.fieldValue.-uu[type="checkbox"] {
+		width: inherit;
+		margin-left:0;
+	}
+
+	input.fieldValue.-uu[type="radio"] {
+		width: inherit;
+		margin-left:0;
+	}
+
+	textarea.fieldValue.-uu {
+		width: 90%;
+		border: 1px solid lightgrey;
+		margin: 0;
+		resize: none;
+		padding: 0;
+	}
+
+	select.fieldValue.-uu {
+		-webkit-appearence: none;
+		-moz-appearance: none;
+		border: 1px solid lightgrey;
+		margin: 0;
+	}
+
+	input.fieldValue[readonly] {
+		border: none;
+		font-weight: bold;
+		background: none;
+		padding: 1px;
+	}
+
+	textarea.fieldValue.-uu[readonly] {
+		border: none;
+		font-weight: bold;
+		background: none;
+		padding: 1px;
+	}
+
+	select.fieldValue.-uu[readonly] {
+		-webkit-appearence: none;
+		-moz-appearence: none;
+		border: none;
+		font-weight: bold;
+		background: none;
+		padding: 1px;
+		color: #000;
+	}
+
+	/*
+	a.fieldValue.-uu,
+	span.fieldValue.-uu {
+		font-weight: bold;
+		-moz-user-select: text;
+		-webkit-user-select: text;
+		-ms-user-select: text;
+		-o-user-select: text;
+		user-select: text;
+	}
+	*/
+</style>

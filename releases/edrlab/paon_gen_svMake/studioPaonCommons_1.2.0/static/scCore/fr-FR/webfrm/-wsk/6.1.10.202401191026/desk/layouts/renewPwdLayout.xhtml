@@ -1,0 +1,64 @@
+<!-- Layout de l'écran de login.
+areas à inclure : 
+- msgZone
+- errorZone
+- inputPassword
+- inputNewPwd
+- inputNewPwd2
+- inputSaveLogin
+- btnPasswordLost
+- btnCancel
+- btnSave
+-->
+<template xmlns="http://www.w3.org/1999/xhtml" xmlns:sal="scenari.eu:areaLayout:1.0">
+	<style>
+	label.-rPl{
+		min-width: 15em;
+		margin: 1em;
+	}
+	.-rPl input,
+	.-rPl select{
+		width: 20em;
+	}
+	.-rPl input.error{
+		border: 2px inset red;
+	}
+	
+	.msgZone.-rPl{
+		font-weight: bold;
+		text-align: center;
+		margin: 1em;
+	}
+	.errorZone.-rPl{
+		color: red;
+		font-weight: bold;
+		text-align: center;
+		margin: 1em;
+	}
+	.renewPwdDialog.-rPl{
+		padding: 1em;
+	}
+	.renewPwdDialog.-rPl > sc-hbox{
+		margin: 1em;
+	}
+	.toolbar.-rPl {
+		min-height: 2em;
+	}
+	</style>
+	<section class="renewPwdDialog vbox thinBorder -rPl">
+		<div class="msgZone -rPl" sal:areaIds="msgZone"/>
+		<div class="errorZone -rPl" sal:areaIds="errorZone"/>
+		<sc-hbox align="center"><label class="hbox flex -rPl" for="password">Mot de passe actuel</label><div class="hbox" sal:areaIds="inputPassword"/></sc-hbox>
+		<sc-hbox align="center"><label class="hbox flex -rPl" for="password">Nouveau mot de passe</label><div class="hbox" sal:areaIds="inputNewPwd"/></sc-hbox>
+		<sc-hbox align="center"><label class="hbox flex -rPl" for="password">Confirmation du nouveau mot de passe</label><div class="hbox" sal:areaIds="inputNewPwd2"/></sc-hbox>
+		<sal:if areaId="inputSaveLogin">
+			<sc-hbox align="center"><label class="hbox flex -rPl" for="saveLogin">Mémoriser le mot de passe</label><div class="hbox" sal:areaIds="inputSaveLogin"/></sc-hbox>
+		</sal:if>
+		<sc-hbox class="toolbar -rPl">
+			<sc-hbox flex="1">
+				<div sal:areaIds="btnPasswordLost"/>
+			</sc-hbox>
+			<sc-hbox sal:areaIds="btnCancel btnSave"/>
+		</sc-hbox>
+	</section>
+</template>

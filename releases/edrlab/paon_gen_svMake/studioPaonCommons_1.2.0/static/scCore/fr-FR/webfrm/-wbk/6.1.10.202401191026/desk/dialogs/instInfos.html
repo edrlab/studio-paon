@@ -1,0 +1,216 @@
+<!--
+component sc-updateinst  : Création ou upate d'une instance ou d'un set d'instances.
+
+Doit être initialisé via  initUpdateInst(pContext, pUiOptions)
+pContext :
+ - svcAdminInstsUrl : url du svc de gestion des instances
+ - instId : id de l'instance à mettre à jour.
+ - updateInstCb & updateInstCbThis : [optionnel] callback avec l'instId (ou un instId du set) créé ou modifié.
+
+
+Evènements produits :
+"SCCancel" fermeture par l'utilisateur.
+
+ -->
+<script>
+
+	xtag.register('sc-instInfos', {
+		mixins: ['vbox', 'flex'],
+		lifecycle: {
+			'created:mixins(before)': function () {}
+		},
+
+		methods: {
+
+			initInstInfos: function (pContext) {
+				this.fContext = js.create(pContext);
+				var vThis = this;
+				var vReq = io.openHttpRequest(io.appendParamsToUrl(this.fContext.svcAdminInstsUrl + "?cdaction=GetConsInst",
+					"instId",this.fContext.instId
+				));
+				vReq.onloadend = io.jsonXhrCb(function (pInfos, pErrors) {
+					if (pErrors) {
+						alert("Chargement en erreur. Recommencez ultérieurement.");
+						throw pErrors;
+					}
+					var vSelf = this;
+
+					var vBd = dom.newBd(this).clear();
+
+					vBd.elt('sc-vbox', 'instConsFields -uu').att('flex', '1 1 auto').current();
+					vBd.elt("h3").text(i18n.formatStr("Informations de consommation de l'instance %s", vThis.fContext.instId)).up();
+
+					vBd.elt("div","instDates").elt("span").text(i18n.formatStr("Consommation du %s au %s",(new Date(pInfos.from)).toLocaleDateString("fr-FR"),(new Date(pInfos.to)).toLocaleDateString("fr-FR"))).up().up();
+					vBd.elt("div","consInfos countRequests")
+						.elt("span","label").text("Requêtes HTTP").up()
+						.elt("span","value").text(pInfos.countRequests.toLocaleString("fr-FR")).up()
+					vBd.up();
+
+					vBd.elt("div","consInfos uploadBytes")
+						.elt("span","label").text("Données téléversées").up()
+						.elt("span","value").text(vThis.toHumanReadableSize(pInfos.uploadBytes)).up()
+					vBd.up();
+
+					vBd.elt("div","consInfos downloadBytes")
+						.elt("span","label").text("Données téléchargées").up()
+						.elt("span","value").text(vThis.toHumanReadableSize(pInfos.downloadBytes)).up()
+					vBd.up();
+
+					vBd.elt("div","consInfos filesBytes")
+						.elt("span","label").text("Espace consommé").up()
+						.elt("span","value").text(vThis.toHumanReadableSize(pInfos.filesBytes)).up()
+					vBd.up();
+
+					vBd.elt("div","consInfos countFiles")
+						.elt("span","label").text("Nombre de fichiers").up()
+						.elt("span","value").text(pInfos.countFiles.toLocaleString("fr-FR")).up()
+					vBd.up();
+
+
+
+					vBd.setCurrent(this);
+					vBd.elt('sc-hbox', 'btns -uu').att('pack', 'end');
+					vBd.elt('sc-btn', 'cancel -uu').att('label', "Retour").listen("click", function () {vSelf.cancel()}).up();
+					vBd.up();
+
+
+				}, this);
+				vReq.send();
+
+			},
+
+			cancel: function () {
+				dom.createAndDispatchEvent(this, 'SCCancel');
+				if (this.fContext.updateInstCb) this.fContext.updateInstCb.call(this.fContext.updateInstCbThis);
+			},
+
+			toHumanReadableSize : function(bytes){
+				var scale = 0;
+				while (bytes>1024){
+					bytes = bytes/1024
+					scale++;
+				}
+				switch (scale) {
+					case 0 : scale = "Octet(s)";break;
+					case 1 : scale = "Ko";break;
+					case 2 : scale = "Mo";break;
+					case 3 : scale = "Go";break;
+					case 4 : scale = "To";break;
+					default: scale = "XX";break;
+				}
+
+				if(bytes>=1000) bytes = bytes.toPrecision(4)
+				if(bytes==0) bytes = "0";
+				else bytes = bytes.toPrecision(3)
+
+				return bytes+" "+scale;
+			}
+
+		}
+	});
+</script>
+
+<style>
+	sc-updateinst {
+		margin: 0.5ex;
+	}
+	sc-hbox.btns.-uu {
+		border-top: solid 1px silver;
+		margin: 0.5ex 2ex 0 2ex;
+	}
+	sc-hbox.btns.-uu > sc-btn {
+		margin: 0.5ex 0.5ex;
+	}
+
+	.error.-uu {
+		color: red;
+		font-weight: bold;
+		margin: 1em;
+	}
+
+	input.fieldValue.-uu {
+		width: 90%;
+		border: 1px solid lightgrey;
+	}
+
+	input.fieldValue.-uu[type="radio"] {
+		width: inherit;
+		margin-left:0;
+	}
+
+	input.fieldValue.-uu[type="checkbox"] {
+		width: inherit;
+		margin-left:0;
+	}
+
+	textarea.fieldValue.-uu {
+		width: 90%;
+		border: 1px solid lightgrey;
+		margin: 0;
+		resize: none;
+		padding: 0;
+	}
+
+	select.fieldValue.-uu {
+		-webkit-appearence: none;
+		-moz-appearance: none;
+		border: 1px solid lightgrey;
+		margin: 0;
+	}
+
+	input.fieldValue[readonly] {
+		border: none;
+		font-weight: bold;
+		background: none;
+		padding: 1px;
+	}
+
+	textarea.fieldValue.-uu[readonly] {
+		border: none;
+		font-weight: bold;
+		background: none;
+		padding: 1px;
+	}
+
+	select.fieldValue.-uu[readonly] {
+		-webkit-appearence: none;
+		-moz-appearence: none;
+		border: none;
+		font-weight: bold;
+		background: none;
+		padding: 1px;
+		color: #000;
+	}
+
+	/*
+	a.fieldValue.-uu,
+	span.fieldValue.-uu {
+		font-weight: bold;
+		-moz-user-select: text;
+		-webkit-user-select: text;
+		-ms-user-select: text;
+		-o-user-select: text;
+		user-select: text;
+	}
+	*/
+
+	.instConsFields.-uu {
+		margin: 0.5ex 2ex;
+	}
+	.instConsFields.-uu > h3 {
+		margin-top: 0;
+		color: #737373;
+		text-align: center;
+	}
+	.instConsFields.-uu > div {
+		display: flex;
+		padding: 0.2em 0.5em;
+	}
+	.instConsFields.-uu > div > span:first-child {
+		font-weight: bold;
+		flex: 2 1 auto;
+	}
+	.instConsFields.-uu > div:nth-child(2n+1) {
+		background-color: #f2f2f2;
+	}
+</style>

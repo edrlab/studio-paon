@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>DEPOT tests Import : sélection de fichier</title>
+</head>
+<body>
+<iframe name="selPath" id="selPath" width="100%" height="500"></iframe>
+<div id="result" style="border:1px solid #ccc; margin: 1em;">&nbsp;</div>
+<script>
+window.addEventListener("load", function(){
+	var vSelPathFrame = document.getElementById("selPath");
+	vSelPathFrame.addEventListener("load", function(pE){
+		window.addEventListener("message", function(pEvent){
+			document.getElementById("result").textContent = JSON.stringify(pEvent.data);
+		}, false);
+	}, false);
+	vSelPathFrame.setAttribute("src", "../web/cidSelectPath.xhtml?prcRegExp=%5E(%3F!folder%24)");
+}, false);
+</script>
+</body>
+</html>

@@ -1,0 +1,214 @@
+<!--
+ Attributs :
+ -  svcLtiMgr : url du svc pour obtenir la liste des users.
+-->
+<script>
+	xtag.register('sc-adminltitcview', {
+		mixins: ['hbox', 'flex', 'view'],
+		lifecycle: {
+			'created:mixins(before)': function () {
+			},
+		},
+
+		methods: {
+
+			selectTc: function (pTc) {
+				if(pTc) {
+					var vGrid = this.fGrid;
+					this.fDatasHandler.getGridDatas().some(function (pE, pIdx) {
+						if (pE.key === pTc) {
+							vGrid.setSelectedRows(pIdx);
+							return true;
+						}
+					});
+				} else {
+					this.fGrid.setSelectedRows(-1);
+				}
+			},
+			reloadDatas: function () {
+				var vReq = io.openHttpRequest(this.svcLtiMgr + "?cdaction=ListTCs");
+				vReq.onloadend = io.jsonXhrCb(this.xOnLoadEndDatas, this);
+				vReq.send();
+			},
+			xOnLoadEndDatas: function (pJson) {
+				if (!pJson) {
+					alert("Chargement en erreur. Recommencez ultérieurement.");
+					return;
+				}
+				this.fDatasHandler.setGridDatas(pJson.TCs);
+			},
+
+			xInitAdminLtiTCView: function (pErrors) {
+				if (pErrors) {
+					alert("Chargement en erreur. Recommencez ultérieurement.");
+					throw pErrors;
+				}
+				var vBd = dom.newBd(this).style("margin", "1em");
+				this.fGrid = vBd.elt("sc-grid", "users").att("flex", "1").currentUp();
+				this.fDatasHandler = new this.grid.GridDataHandlerJsonArray();
+				this.fGrid
+						.initColumDefs(extPoints.getList("adminLtiTC:columns"))
+						.initGridDataHandler(this.fDatasHandler);
+				vBd.elt("div").att("orient", "vertical");
+				vBd.elt("sc-toolbar", "tbLite usersTbTop").att("orient", "vertical").att("icononly", "").prop("actionContext", this).prop("actionsLists", "adminLtiTC:toolbar:top").up();
+				vBd.elt("sc-toolbar", "tbLite usersTbBottom flex").att("orient", "vertical").att("pack", "end").att("icononly", "").prop("actionContext", this).prop("actionsLists", "adminLtiTC:toolbar:bottom").up();
+				this.reloadDatas();
+			},
+
+			onTCUpdated: function(pKey){
+				if (!pKey) {
+					alert("La modification a échoué. Recommencez ultérieurement.");
+					return;
+				}
+				var vReq = io.openHttpRequest(this.svcLtiMgr + "?cdaction=ListTCs");
+				vReq.onloadend = io.jsonXhrCb(function(pJson){
+						this.xOnLoadEndDatas(pJson);
+						this.selectTc(pKey);
+					}, this);
+				vReq.send();
+			},
+
+			xInitDefaultActions: function() {
+				function initButtonNode_SelDependant(pButtonNode, pContext) {
+					pButtonNode.refreshState = function () {
+						var vTCData = pContext.fDatasHandler.getGridDatas()[pContext.fGrid.getSelectedRow()];
+						if (vTCData) this.removeAttribute("disabled");
+						else this.setAttribute("disabled", "true");
+					}
+					pContext.addEventListener("gridSelect", function (pEvt) { pButtonNode.refreshState(); }, false);
+					pButtonNode.refreshState();
+				}
+
+				//Ajout d'un TC
+				var vThis = this;
+				extPoints.addToList("adminLtiTC:toolbar:top", "addTC", 1, new actions.Action("addTC")
+						.setDescription("Ajouter un consommateur LTI")
+						.override("execute", function (pEvent, pContext) {
+							page.loadTags({"sc-updateltitc": "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/desk/dialogs/updateLtiTC.html"}, function (pErrors) {
+								if (pErrors) {
+									console.log(pErrors);
+									return;
+								}
+								var vBd = dom.newBd(document.body);
+								var vDialog = vBd.elt('sc-dialog').current();
+								var vUpdtTC = vBd.elt('sc-updateltitc', 'thinBorder').currentUp();
+								var vCtx = {
+									window: window,
+									svcLtiMgr: vThis.svcLtiMgr,
+									updateTCCb: function (pKey) {
+										vDialog.removeDialog();
+										if (pKey) vThis.onTCUpdated(pKey);
+									}
+								};
+								vUpdtTC.initUpdateTC(vCtx,{fields: extPoints.mergeLists(["adminLtiTC:fields:tc:create", "adminLtiTC:fields:tc"])});
+							});
+						}), 10);
+				//Modif d'un TC.
+				extPoints.addToList("adminLtiTC:toolbar:bottom", "updateTC", 1, new actions.Action("updateTC")
+						.setDescription("Modifier ce consommateur LTI")
+						.override("initButtonNode", initButtonNode_SelDependant)
+						.override("execute", function (pEvent, pContext) {
+							page.loadTags({"sc-updateltitc": "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/desk/dialogs/updateLtiTC.html"}, function (pErrors) {
+								if (pErrors) {
+									console.log(pErrors);
+									return;
+								}
+								var vBd = dom.newBd(document.body);
+								var vDialog = vBd.elt('sc-dialog').current();
+								var vUpdtTC = vBd.elt('sc-updateltitc', 'thinBorder').currentUp();
+								var vCtx = {
+									window: window,
+									tc : vThis.fDatasHandler.getGridDatas()[vThis.fGrid.getSelectedRow()],
+									svcLtiMgr: vThis.svcLtiMgr,
+									updateTCCb: function (pKey) {
+										vDialog.removeDialog();
+										if (pKey) vThis.onTCUpdated(pKey);
+									}
+								};
+								vUpdtTC.initUpdateTC(vCtx, {fields: extPoints.mergeLists(["adminLtiTC:fields:tc:update", "adminLtiTC:fields:tc"])});
+							});
+						}), 1);
+			}
+		},
+
+		events: {
+			/* Chargement au 1er affichage de la view. */
+			'SCViewShown': function (pEvent) {
+				if (pEvent.target !== this || this.fStarted) return;
+				this.fStarted = true;
+
+				if (!this.svcLtiMgr) this.svcLtiMgr = this.getAttribute("svcLtiMgr") || authProv.getAuthServerUrl() + "/admin/u/ltiMgr";
+
+				//Actions et fields
+				this.xInitDefaultActions();
+
+				//Colonnes
+				extPoints.getSvcLazy("grid", function (grid, pErrors) {
+					if (pErrors) {
+						this.xInitAdminLtiTCView(pErrors);
+					} else {
+						this.grid = grid;
+						extPoints.addToList("adminLtiTC:columns", "oauthKey", 1,
+								new grid.ColumnDef("oauthKey").setLabel("Clé OAuth").setFlex("10em", 1, 1).setCellBuilderFactory(function () {return new grid.CellBuilderString(this, "oauthKey")})
+								, 10);
+						/*
+						Pas d'affichage du oauthSecret dans l'ihm principale
+						extPoints.addToList("adminLtiTC:columns", "oauthSecret", 1,
+								new grid.ColumnDef("oauthSecret").setLabel("Secret OAuth").setFlex("10em", 1, 1).setCellBuilderFactory(function () {return new grid.CellBuilderString(this, "oauthSecret")})
+								, 20);*/
+						extPoints.addToList("adminLtiTC:columns", "links", 1,
+								new grid.ColumnDef("links").setLabel("Nombre de liens").setFlex("10em", 1, 1).setCellBuilderFactory(function () {return new grid.CellBuilderString(this, "links")})
+								, 30);
+						page.loadTags({
+							"sc-grid": "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/commons/widgets/grid.html"
+						}, this.xInitAdminLtiTCView, this);
+					}
+				}, this, "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/svcs/grid.js");
+			}
+		}
+	});
+</script>
+
+<style>
+@font-face {
+	font-family: 'fontello';
+	src: url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.eot');
+	src: url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.eot') format('embedded-opentype'),
+	url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.woff') format('woff'),
+	url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.ttf') format('truetype'),
+	url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.svg') format('svg');
+	font-weight: normal;
+	font-style: normal;
+}
+
+sc-adminltitcview sc-btn {
+	border:none;
+    padding: 0.5em;
+	background-color:transparent;
+	color:gray;
+}
+
+sc-adminltitcview sc-btn > img{
+	display:none;
+}
+
+sc-adminltitcview sc-btn:hover {
+	box-shadow:none;
+	color:#00669A;
+}
+
+sc-btn[data-action="addTC"]::before{
+	font-family: "fontello";
+	content: "\e80a";
+	font-size: 20px;
+	width: 20px;
+}
+
+sc-btn[data-action="updateTC"]::before {
+	font-family: "fontello";
+	content: "\e80d";
+	font-size: 20px;
+	width: 20px;
+}
+
+</style>

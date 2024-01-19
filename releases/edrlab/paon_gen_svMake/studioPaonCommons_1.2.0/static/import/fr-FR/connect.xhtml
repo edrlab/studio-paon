@@ -1,0 +1,142 @@
+<!DOCTYPE html SYSTEM "about:legacy-compat">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="fr-FR" xml:lang="fr-FR"><head><meta charset="UTF-8"/><title>Connexion - Import</title><script>
+if (!window.customElements || !HTMLElement.prototype.attachShadow || !window.requestIdleCallback) {
+	window.location.href = "login.xhtml" + window.location.search;
+}
+</script><link rel="stylesheet" type="text/css" href="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/-wsk/6.1.10.202401191026/core/themes/light-bluegrey.css"/><style>
+body {
+	color: var(--color);
+	background-color: var(--bgcolor);
+}
+</style><script defer="defer">
+window.desk = null;
+Promise.all([
+	"https://studio-paon.edrlab.org/~~static/scCore/fr-FR/-wlb/6.1.10.202401191026/commons/registry.js",
+	"https://studio-paon.edrlab.org/~~static/scCore/fr-FR/-wlb/6.1.10.202401191026/commons/io/io.js",
+	"https://studio-paon.edrlab.org/~~static/scCore/fr-FR/-wbk/6.1.10.202401191026/core/userSelfForms.js",
+	"https://studio-paon.edrlab.org/~~static/scCore/fr-FR/-wlb/6.1.10.202401191026/core/user.js",
+	"https://studio-paon.edrlab.org/~~static/scCore/fr-FR/-wbk/6.1.10.202401191026/core/dialogs/login.js",
+	"https://studio-paon.edrlab.org/~~static/import/fr-FR/confAuth.js?202401191504",
+].map((src) =&gt; import(src))).then(async (modules) =&gt; {
+	let reg = modules[0].REG.reg;
+	let {IO} = modules[1];
+	let {initLoginForm, initRenewPwdForm, initInitPwdForm} = modules[2];
+	let {USER} = modules[3];
+	modules[5].init(reg);
+	for(let i=6; i&lt; modules.length; i++) modules[i].default(reg);
+
+	reg.installSkin("basis", document);
+	reg.installSkin("form-control-areas", document);
+	reg.setPref("lang", 1, "fr-FR");
+
+	
+
+	let universe = reg.env.universe;
+	let loginForm = document.getElementById("loginFormRoot");
+	let renewPwdForm = document.getElementById("renewPwdFormRoot");
+	let renewPwdEnd = document.getElementById("renewPwdEnd");
+
+	// Inits UI
+	let loginFormContent = reg.getSvc('userLoginForm')(reg);
+loginForm.appendChild(loginFormContent);
+
+let renewPwdFormContent = reg.getSvc('userRenewPwdForm')(reg);
+renewPwdForm.appendChild(renewPwdFormContent);
+
+	await universe.auth.fetchUser();
+
+	function goto(section) {
+		for (let p = section.previousElementSibling; p; p = p.previousElementSibling) p.hidden = true;
+		for (let p = section.nextElementSibling; p; p = p.nextElementSibling) p.hidden = true;
+		section.hidden = false;
+		return section;
+	}
+
+	function gotoConnected() {
+		if(searchParams.get("cid") === "true") window.parent.postMessage({"cidAuth": "succeeded"}, '*');
+		document.getElementById("userInfo").textContent = USER.getPrimaryName(universe.auth.currentUser);
+		document.getElementById("logout").onclick = () =&gt; {
+			universe.userSelf.logout();
+			gotoLogin();
+		};
+		goto(document.getElementById("connected"));
+	}
+
+	function gotoLogin() {
+		goto(loginForm);
+		initLoginForm(loginFormContent, universe.userSelf, universe.auth, {
+			showRenewPwd: () =&gt; goto(renewPwdForm).querySelector('form')
+		});
+	}
+
+	universe.auth.listeners.on('loggedUserChanged', (oldUser, newUser) =&gt; {
+		if (!newUser) return;
+		let url = searchParams.get("r");
+		if (IO.isRedirectValid(url, true)) location.href = url;
+		else gotoConnected();
+	});
+
+	let searchParams = new URLSearchParams(location.search);
+
+	if (searchParams.has("renew")) {
+		goto(renewPwdForm);
+		initRenewPwdForm(renewPwdFormContent, universe.userSelf, universe.auth, {
+			renewPwdDone: () =&gt; goto(loginForm).querySelector('form')
+		});
+	} else if (searchParams.has("updateToken")) {
+		let initPwdForm = document.getElementById("initPwdForm");
+		goto(initPwdForm);
+		initInitPwdForm(initPwdForm, universe.userSelf, universe.auth, {
+			updateToken: searchParams.get("updateToken"),
+			account: searchParams.get("account"),
+			initPwdDone: () =&gt; goto(renewPwdEnd).querySelector('form')
+		});
+	} else if (universe.auth.currentAccount) {
+		gotoConnected();
+	} else {
+		gotoLogin();
+	}
+});
+				</script><style>
+body {
+	font-family: sans-serif;
+	text-align: center;
+	direction : ltr;
+}
+
+.fields {
+	width: 30em;
+	margin: auto;
+	display: grid;
+	grid-template-columns: auto 1fr;
+	grid-row-gap: 0.5em;
+	grid-column-gap: 0.5em;
+}
+
+label {
+	text-align: end;
+}
+
+input:invalid {
+	outline: solid 1px red;
+}
+
+.message {
+	margin: 1em;
+}
+
+.error {
+	color: red;
+	margin: 1em;
+}
+
+.footer {
+	display: flex;
+	justify-content: space-around;
+	margin: 1em;
+}
+
+form.ok button[type = submit] {
+	color: green;
+}
+				</style></head><body><section id="loginFormRoot" hidden=""><h3>Authentification</h3></section><section id="renewPwdFormRoot" hidden=""><h3>Renouvellement de votre mot de passe</h3></section><form id="initPwdForm" hidden="" method="post"><section><h3>Initialisation de votre mot de passe</h3><p class="message" hidden=""/><p class="error" hidden=""/><section class="fields"><label for="initAccount">Compte</label><input name="account" id="initAccount"/><label for="initPwd">Nouveau mot de passe</label><input name="newPwd" type="password" id="initPwd" autocomplete="new-password"/><label for="initConfirmPwd">Confirmation du mot de passe</label><input name="confirmPwd" type="password" id="initConfirmPwd"/></section><div class="footer" id="initPwdActions"><button type="submit">Valider</button></div></section></form><section id="connected" hidden=""><p class="message" id="userInfo"/><p class="message">Vous êtes connecté·e</p><div class="footer" id="connectedActions"><button id="logout">Se déconnecter</button></div></section><section id="renewPwdEnd" hidden=""><h3>Renouvellement de votre mot de passe</h3><p class="message" id="userInfo"/><p class="message">Votre mot de passe a bien été initialisé, merci de vous authentifier avec ce dernier</p></section></body></html>

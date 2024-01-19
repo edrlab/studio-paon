@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>DEPOT tests Export : dépôt de fichier</title>
+</head>
+<body>
+<form>
+<div><label for="processing">Processing</label><input id="processing"></div>
+<div><label for="fileName">FileName</label><input id="fileName"></div>
+<div><label for="uploadFolder">Dossier</label><input type="checkbox" id="uploadFolder"></div>
+<input type="button" onclick="showUpload()" value="Tester">
+</form>
+<iframe id="frame" width="100%" height="500"></iframe>
+<div id="result" style="border:1px solid #ccc; margin: 1em;">&nbsp;</div>
+<script>
+window.addEventListener("load", function(){
+	var vSelPathFrame = document.getElementById("frame");
+	vSelPathFrame.addEventListener("load", function(pE){
+		window.addEventListener("message", function(pEvent){
+				document.getElementById("result").textContent = JSON.stringify(pEvent.data);
+			}, false);
+	}, false);
+}, false);
+
+function showUpload(){
+	var vSelPathFrame = document.getElementById("frame");
+	var vUrl = "../web/cidUpload.xhtml?";
+	var vInputP = document.getElementById("processing");
+	if(vInputP.value) vUrl += "processing="+vInputP.value;
+	var vInputF = document.getElementById("fileName");
+	if(vInputF.value && vInputP.value) vUrl += "&";
+	if(vInputF.value) vUrl += "fileName="+vInputF.value;
+	var vInputFolder = document.getElementById("uploadFolder");
+	if(vInputFolder.checked) vUrl += "&uploadFolder";
+	vSelPathFrame.setAttribute("src", vUrl);
+}
+
+</script>
+</body>
+</html>

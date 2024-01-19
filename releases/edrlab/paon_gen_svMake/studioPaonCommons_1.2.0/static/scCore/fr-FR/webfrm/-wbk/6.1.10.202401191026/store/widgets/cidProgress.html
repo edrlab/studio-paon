@@ -1,0 +1,234 @@
+
+<script>
+xtag.register('cid-progress', {
+	mixins: [ 'vbox', 'flex' ],	
+	lifecycle: {
+		'created:mixins(before)': function() {
+			this.xInitNode();
+		}
+	},
+	methods: {
+		/**
+		callback(pResult)
+		pResult = {
+			status : "ok | failed"
+			returnProps : {...} //si status = ok et returnProps demandés
+		}
+		*/
+		setOnTaskEnded : function(pCb, pCbThis){
+			this.fOnTaskEnded = pCb;
+			this.fOnTaskEndedThis = pCbThis;
+			return this;
+		},
+
+		sendDatas : function(pStoreProv, pFormData, pReturnProps) {
+			this.storeProv = pStoreProv;
+			this.fReturnProps = pReturnProps;
+			this.fNextReqQS = null;
+			if(pReturnProps) {
+				this.fAllProps = "scCidSessId*scCidSessStatus*scCidSessDetails*"+pReturnProps.join("*");
+			} else {
+				this.fAllProps = "scCidSessId*scCidSessStatus*scCidSessDetails";
+			}
+			this.storeProv.dialogCid("?returnProps=" + this.fAllProps + "&addCookies=true&createMetas=true", pFormData,  this.xRedraw.bind(this), this.xRedrawUploading.bind(this));
+			this.xRedrawUploading();
+			return this;
+		},
+		
+		initProgress : function(pStoreProv, pCidSessId, pReturnProps) {
+			this.storeProv = pStoreProv;
+			this.fReturnProps = pReturnProps;
+			var vAllProps;
+			if(pReturnProps) {
+				vAllProps = "scCidSessId*scCidSessStatus*scCidSessDetails*"+pReturnProps;
+			} else {
+				vAllProps = "scCidSessId*scCidSessStatus*scCidSessDetails";
+			}
+			this.fNextReqQS = "?cdaction=RequestSession&returnProps=" + vAllProps+ "&scCidSessId="+pCidSessId;
+			this.xRefresh();
+			return this;
+		},
+		
+		xInitNode : function(){
+			var vBd = dom.newBd(this);
+			vBd.elt("div", "deployStatus vbox flex");
+			this.fStatusNode = vBd.elt("div").text("Statut : ").elt("span").currentUp();
+			vBd.elt("div", "detailsContainer");
+			this.fDetailsBtn = vBd.elt("button", "detailsBtn").prop("onclick", this.xSwitchDetailsZone.bind(this))
+				.att("data-open", "false")
+				.att("title", "Afficher plus d'informations sur l'action en cours...")
+				.att("style", "display:none;").text("Détails...").currentUp();
+			this.fDetailsNode = vBd.elt("div", "detailsBody").att("style", "display:none;").currentUp();
+			vBd.up();
+		},
+		
+		xRedrawUploading : function(pEvent){
+			if(pEvent && pEvent.lengthComputable) {
+				var vPercent = Math.round((pEvent.loaded / pEvent.total) * 100);
+				this.fStatusNode.innerHTML = "envoi en cours : " + vPercent + "%";
+			} else {
+				this.fStatusNode.innerHTML = "envoi en cours...";
+			}
+			this.fStatusNode.setAttribute("data-level", "pending");
+		},
+		xRedraw : function(pEvent){
+			//console.log("pEvent.target.responseText::::"+pEvent.target.responseText);
+			var vFirst = false;
+			var vSt = pEvent.target.status;
+			if(vSt == 200 || vSt == 202) {
+				this.fSessionInfo = JSON.parse(pEvent.target.responseText);
+				if(!this.fNextReqQS) {
+					vFirst = true;
+					this.fNextReqQS = "?cdaction=RequestSession&returnProps=" + this.fAllProps + "&scCidSessId="+this.fSessionInfo.scCidSessId;
+				}
+			} else {
+				this.fSessionInfo = {scCidSessStatus:"failed"};
+			}
+			var vSt = this.fSessionInfo.scCidSessStatus;
+			switch(vSt){
+			case "commited" :
+				this.fStatusNode.innerHTML = "réalisé avec succès";
+				this.fStatusNode.setAttribute("data-level", "ok");
+				break;
+			case "waitingUserInput" :
+				this.fStatusNode.innerHTML = "en attente d'une action utilisateur...";
+				this.fStatusNode.setAttribute("data-level", "pending");
+				break;
+			case "working" :
+			case "commiting" :
+			case "waitingForCommit" :
+			case "rollbacking" :
+				this.fStatusNode.innerHTML = "en cours...";
+				this.fStatusNode.setAttribute("data-level", "pending");
+				break;
+			case "rollbacked" :
+				this.fStatusNode.innerHTML = "abandonné.";
+				this.fStatusNode.setAttribute("data-level", "failed");
+				break;
+			case "failed" :
+				if (pEvent.target.status == 404) {
+					this.fStatusNode.innerHTML = "information plus disponible.";
+				} else {
+					this.fStatusNode.innerHTML = "en échec.";
+				}
+				this.fStatusNode.setAttribute("data-level", "failed");
+				break;
+			default :
+				log.debug("Unknown status : "+vSt);
+			}
+			this.xRedrawDetailsZone();
+			if(vSt=="commited") {
+				if(this.fOnTaskEnded) {
+					var vResult=  {status:"ok"};
+					if(this.fReturnProps) vResult.returnProps = this.fSessionInfo;
+					this.fOnTaskEnded.call(this.fOnTaskEndedThis, vResult);
+				}
+			} else if(vSt=="rollbacked" || vSt=="failed") {
+				if(this.fOnTaskEnded) this.fOnTaskEnded.call(this.fOnTaskEndedThis, {status:"failed"});
+			} else {
+				window.setTimeout(this.xRefresh.bind(this), vFirst ? 500 : 2000);
+			}
+		},
+		
+		xRefresh : function(){
+			this.storeProv.dialogCid(this.fNextReqQS, null, this.xRedraw.bind(this));
+		},
+		
+		xSwitchDetailsZone : function(){
+			if(this.fDetailsBtn.getAttribute("data-open")=="true") {
+				this.fDetailsBtn.setAttribute("data-open", "false");
+				this.fDetailsNode.style.display = 'none';
+			} else {
+				this.fDetailsBtn.setAttribute("data-open", "true");
+				this.fDetailsNode.style.display = 'block';
+				this.xRedrawDetailsZone();
+			}
+		},
+
+		xRedrawDetailsZone : function(){
+			while(this.fDetailsNode.hasChildNodes()) this.fDetailsNode.removeChild(this.fDetailsNode.lastChild);
+			if(!this.fSessionInfo || !this.fSessionInfo.scCidSessDetails) {
+				this.fDetailsBtn.setAttribute("style", "display:none;");
+				return;
+			}
+			if(this.fDetailsBtn.hasAttribute("style")) this.fDetailsBtn.removeAttribute("style");
+			if(this.fDetailsBtn.getAttribute("data-open")!="true") return;
+			var vList = this.fSessionInfo.scCidSessDetails;
+			for(var i=0; i < vList.length; i++) {
+				var vDetail = vList[i];
+				var vLine = this.fDetailsNode.appendChild(document.createElement("div"));
+				vLine.setAttribute("class", vDetail.type);
+				var vMsg = i18n.formatStrArray(vDetail.msg, vDetail.vars);
+				vLine.appendChild(document.createTextNode(vMsg));
+				if(vDetail.details) {
+					var vMore = vLine.appendChild(document.createElement("a"));
+					vMore.setAttribute("class", "more");
+					vMore.appendChild(document.createTextNode("+"));
+					vMore.onclick=function(){
+						alert(vDetail.details);
+					};
+				}
+			}
+		}
+		
+	}
+});
+</script>
+
+<style>
+	cid-progress {
+		min-width: 30em;
+		min-height: 20em;
+	}
+
+	.deployStatus {
+		margin: 10px;
+	}
+	
+	/* Progression */
+	span[data-level=failed]{
+		color : red;
+	}
+	span[data-level=pending]{
+		color : #555;
+		font-style : italic;
+	}
+	span[data-level=ok]{
+		color : #00A170;
+	}
+	
+	/* Details*/
+	.detailsContainer {
+		margin: 5px 0;
+	}
+	
+	.detailsBody{
+		padding: 5px;
+		border: 1px solid grey;
+		overflow: auto;
+	}
+	
+	.stepDone{
+		color: #00A170;
+	}
+	.stepPending{
+		color: #00669a;
+	}
+	.stepForthcoming{
+		color: grey;
+	}
+	.info{
+		color: black;
+	}
+	.warning{
+		color: #F3A200;
+	}
+	.error{
+		color: #F34F00;
+	}
+	
+	.more{
+		border: 1px dotted grey;
+		margin: 3px;
+	}
+</style>

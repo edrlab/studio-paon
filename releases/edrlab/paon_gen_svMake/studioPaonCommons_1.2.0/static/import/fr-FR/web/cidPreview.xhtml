@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<!--
+Paramètres en QueryString : 
+- path ou publicUrl : [required] ressource à afficher.
+-->
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta charset="UTF-8" />
+<title>Import - Visualisation d&apos;une ressource</title>
+
+
+<!-- Librairies -->
+
+					<script>
+						CustomElements = { flags: { register: true } }
+					</script>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/x-tag.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/commons.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/areas.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/extPoints.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/security.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/root_Perms.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/actions.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/enums.js"/>
+				
+<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/authProv/defaultAuthProv.js"/>
+
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/desk/desk_Perms.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/desk/utils/deskUtils.js"/>
+				
+
+<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/store/store_Perms.js"/>
+<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/store/store.js"/>
+<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/store/facets.js"/>
+				
+<!-- Components -->
+<link rel="import" href="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/desk/widgets.html" />
+<link rel="import" href="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/store/views/showResView.html" />
+
+<!-- Config -->
+<script id="cidAuthCanal">window.basicAuthCanal="httpHeader";</script>
+<script src="../config.js"></script>
+<script id="showVersionField">extPoints.setPref("store:showRes:showVersionField", 11, false);</script>
+
+<script><![CDATA[//
+	
+	var msgToPost;
+	
+	function cidAbort(){
+		window.parent.postMessage({cidInteraction : "aborted"}, '*');
+	}
+	
+	function cidSelect(){
+		if(msgToPost) window.parent.postMessage(msgToPost, '*');
+	}
+	
+	deskUtils.createDesk(window);
+	deskUtils.addFeatureUserMgr(window, false, security.getGPerm("ui.depotDesk"));
+	extPoints.addToList("event:load:cidPreview", "initNavigateViews", 1, function() {
+		var vLaunchCtx = desk.getLaunchContext();
+		
+		//Transformation publicUrl en path
+		if(vLaunchCtx.path==null && vLaunchCtx.publicUrl) vLaunchCtx.path = storeProv.extractPathFromUrl(vLaunchCtx.publicUrl);
+
+		var vShowRes = sc$("showRes");
+		vShowRes.initShowRes(window);
+		vShowRes.showResPath(vLaunchCtx.path);
+	}, 10);
+	store.registerActions_All(window);
+//]]></script>
+</head>
+
+<body is="sc-desk" orient="vertical" >
+	<sc-hbox align="center">
+		<sc-hbox flex="1" pack="center">Import</sc-hbox>
+	</sc-hbox>
+	<sc-showresview id="showRes" flex="1" style="margin: 3px;"/>
+</body>
+<script>deskUtils.launchDesk(window);</script>
+
+<!-- Skin -->
+
+
+</html>

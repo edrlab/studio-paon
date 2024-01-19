@@ -1,0 +1,769 @@
+<!-- 
+
+Attributs : 
+- readonly
+
+Contexte (window par défaut) :
+- storeProv
+
+Events générés : 
+- SCResShown : detail : {nodeInfos, infoViews, processing}
+- SCGotoRes : detail : {newPath, isFolder:null/true/false} = path cible de la nouvelle res qui va être affichée.
+- SCResUpdated : detail : {oldPath, newPath, isFolder:null/true/false} = nouveau path résultant de la mise à jour.
+
+Configurations :
+- "store:showRes:areasByNodeType" : extPoints list qui fournit l'area principale en fonction du type de noeud courant (noContent, home, repos, moved).
+- processing.getListShowResTabs() : liste des onglets à afficher en fonction du processing.
+ -->
+
+ <script>
+xtag.register('sc-showresview', {
+	mixins: [ 'hbox', 'flex', 'view' ],
+ 	lifecycle: {
+		'created:mixins(before)': function() {
+			this.fContext = window;
+		}
+	},
+	methods : {
+
+		initShowRes : function(pContext) {
+			this.fContext = pContext;
+		},
+		showResPath : function(pPathNode, pAsHistEntry, pPreserveCurrentTab) {
+			if(!this.fInited) {
+				this.fWaitingShowResPath = arguments;
+				return;
+			}
+			if(!pAsHistEntry) {
+				//tha: à date, aucun moyen de différencier réentrance et refresh car upload d'une nouvelle version.
+
+				//optimisation : évite réentrance sur event des widgets de nav type browser
+				var vCurrent = this.fLoadingPath ? this.fLoadingPath : this.nodeInfos ? this.nodeInfos.permaPath : null;
+				if(vCurrent && (vCurrent == pPathNode || new store.StPath(vCurrent).extractLiveLeaf() == pPathNode)) {
+					return;
+				}
+			}
+			this.xResetDatas();
+			if(!pPathNode) {
+				this.xSetPanel(null);
+				return;
+			}
+			this.fLoadingPath = pPathNode;
+			this.xShowPanelMsg("working", "Chargement en cours...");
+			var vSelf = this;
+			this.fContext.storeProv.dialogAdminUrlTree(pPathNode, "nodeInfos", function(pEvent){
+				try {
+					if (pEvent.target.status == 200) {
+						//console.log("nodeInfos:::::\n"+pEvent.target.responseText);
+						vSelf.nodeInfos = JSON.parse(pEvent.target.responseText);
+						if(!vSelf.nodeInfos.metas) vSelf.nodeInfos.metas={}; //cas particluier du root qui n'a pas nécessairement de metas.
+						vSelf.processing = store.getProcessingFromNodeInfos(vSelf.nodeInfos);
+						if(pAsHistEntry) {
+							vSelf.histCurrent = vSelf.nodeInfos;
+						} else {
+							vSelf.head = vSelf.nodeInfos;
+							vSelf.hist = vSelf.nodeInfos.hist || [];
+							vSelf.histCurrent = vSelf.head;
+						}
+                        vSelf.fContext.storeProv.dialogAdminUrlTree(pPathNode, "infoViews", function(pEvent){
+                            try {
+                                if (pEvent.target.status == 200) {
+                                    //console.log("infoViews::\n"+pEvent.target.responseText);
+                                    vSelf.infoViews = store.migrateInfoViews(JSON.parse(pEvent.target.responseText));
+                                } else {
+                                    //Pas d'infoViews
+                                    vSelf.infoViews = {};
+                                }
+                                if(!vSelf.nodeInfos.prc || extPoints.getListAsMap("store:prcs")[vSelf.nodeInfos.prc].isFolder()){
+									vSelf.fContext.storeProv.dialogAdminUrlTree(pPathNode, "listChildren", function(pEvent){
+										try {
+											//console.log("listChildren::\n"+pEvent.target.responseText);
+											vSelf.listChildren = JSON.parse(pEvent.target.responseText);
+											vSelf.xShowPanelRes(pPreserveCurrentTab);
+										}catch (e) {
+											vSelf.xShowPanelMsg("error", "Ressource inaccessible");
+											throw e;
+										}
+									});
+								}
+                                else vSelf.xShowPanelRes(pPreserveCurrentTab);
+                            }catch(e){
+                                vSelf.xShowPanelMsg("error", "Ressource inaccessible");
+                                throw e;
+                            }
+                        });
+
+					} else {
+						throw pPathNode + "?nodeInfos failed : "+pEvent.target.status;
+					}
+				}catch(e){
+					vSelf.xShowPanelMsg("error", "Ressource inaccessible");
+					throw e;
+				}finally {
+					vSelf.fLoadingPath = null;
+				}
+			});
+		},
+
+		xResetDatas : function(){
+			this.nodeInfos = null;
+			this.processing = null;
+			this.infoViews = null;
+		},
+
+		xInit : function(pErrors) {
+			this.fInited=true;
+			if(pErrors) { this.xShowPanelMsg("error", "Chargement en erreur. Recommencez ultérieurement."); return;}
+			this.xSetPanel(null);
+			this.fResAreas = extPoints.getListAsMap("store:showRes:areasByNodeType");
+			if(this.fWaitingShowResPath) this.showResPath.apply(this, this.fWaitingShowResPath);
+		},
+
+		xShowPanelMsg: function(pTypeMsg, pMsg){
+			if(!this.fPanelMsg) this.fPanelMsg = dom.newBd(this).elt("sc-vbox").att("flex", "1").att("align", "center").att("pack", "center").elt("span").up().current();
+			this.fPanelMsg.className = pTypeMsg;
+			this.fPanelMsg.firstElementChild.innerText= pMsg;
+			this.xSetPanel(this.fPanelMsg);
+		},
+
+		xShowPanelRes: function(pPreserveCurrentTab){
+			var vBd;
+			var vCtx = {
+					window : window,
+					storeProv : this.fContext.storeProv,
+					showResView : this,
+					processing : this.processing,
+					nodeInfos : this.nodeInfos,
+					listChildren : this.listChildren,
+					infoViews : this.infoViews
+			}
+			var vOpts = {};
+			if(this.fPanelRes) {
+				if(pPreserveCurrentTab && ("getCurrentKeyTab" in this.fPanelRes)) vOpts.currentKeyTab = this.fPanelRes.getCurrentKeyTab();
+				this.fPanelRes.parentNode.removeChild(this.fPanelRes);
+			}
+			vBd = new dom.newBd(this);
+			this.fPanelRes = vBd.elt("sc-vbox").att("flex", "1").current();
+			this.xGetResArea().buildBody(vBd, vCtx, vOpts);
+			this.xSetPanel(this.fPanelRes);
+			dom.createAndDispatchEvent(this, "SCResShown", this);
+		},
+
+		xGetResArea : function(){
+			return this.fResAreas[this.nodeInfos ? this.nodeInfos.t : "noContent"];
+		},
+
+		xBuildTitleField: function(pBd) {
+			pBd.elt("res-titlefield").att("flex", "1").current().initTitleField(pBd, this.nodeInfos).up();
+		},
+
+		xBuildVersionField: function(pBd) {
+			if( ! extPoints.getPref("store:showRes:showVersionField", true)) return;
+			pBd.elt("res-versionsfield").current().initVersionsField(pBd, this.head, this.hist, this.histCurrent, this.xOnSelectVers).up();
+		},
+
+		xBuildTabs: function(pBd, pRootArea, pCtx, pOpts) {
+			if(!this.processing) return;
+			var vTabsNode = pBd.elt("sc-viewtabs").att("flex", "1").currentUp();
+			pRootArea.getCurrentKeyTab = function(){
+				var vView = vTabsNode.selectedView;
+				return vView ? vView.getAttribute("key") : null;
+			}
+			var vAreaTabs = this.processing.getListShowResTabs();
+			for(var i=0; i < vAreaTabs.length; i++) {
+				if(vAreaTabs[i].isVisible(pCtx)) vAreaTabs[i].buildBody(dom.newBd(vTabsNode), pCtx, pOpts);
+			}
+			var vView = 0;
+			if(pOpts && pOpts.currentKeyTab) {
+				var vViews = vTabsNode.getViews();
+				for(var i=0; i < vViews.length; i++) if(vViews[i].getAttribute("key")==pOpts.currentKeyTab) {vView=vViews[i]; break;}
+			}
+			vTabsNode.redrawTabs(vView);
+		},
+
+		xSetPanel: function(pPanel){
+			for(var vCh = this.firstElementChild; vCh; vCh = vCh.nextElementSibling) vCh.hidden = vCh!==pPanel;
+		},
+
+		xOnSelectVers : function(pEvt){
+			var vSelect = pEvt.target;
+			var vOption = vSelect.options[vSelect.selectedIndex];
+			var vEntry = vOption.fEntry;
+			var vShowResView = vSelect.parentNode;
+			while(vShowResView.localName != "sc-showresview") vShowResView = vShowResView.parentNode;
+			var vNewPath;
+			if(vShowResView.head === vEntry) {
+				//retour sur le head, on recharge tout.
+				vNewPath = vShowResView.head.path;
+				vShowResView.xResetDatas();
+				vShowResView.showResPath(vNewPath, false, true);
+			} else {
+				//on navigue dans les entrées d'historique
+				var vVers = vEntry.v || "."+vEntry.idx;
+				vNewPath = new store.StPath(vShowResView.head.path).switchResVersion(vVers);
+				vShowResView.showResPath(vNewPath, true, true);
+			}
+			dom.createAndDispatchEvent(vShowResView, "SCGotoRes", {newPath: vNewPath, isFolder: store.getProcessing(vEntry.prc).isFolder()});
+		},
+
+		xAbortEdit : function(pEditResNode){
+			pEditResNode.initEditFields({
+				window : window,
+				storeProv : this.fContext.storeProv,
+				showResView : this,
+				processing : this.processing,
+				nodeInfos : this.nodeInfos,
+				infoViews : this.infoViews
+			});
+			return false;
+		},
+		xSaveEdit : function(pEditResNode){
+			if(!pEditResNode.checkValidity()) {
+				alert("Des propriétés sont incorrectes.");
+				return;
+			}
+			var vOldPermaPath = this.nodeInfos.permaPath;
+			var vOldPath = this.nodeInfos.path;
+			var vNewProps = pEditResNode.getNewProps();
+
+			function sendDatas() {
+				var vFormData = new FormData();
+				for(var vKey in vNewProps) {
+					var vVal = vNewProps[vKey];
+					if(vVal!=null) {
+						if((typeof vVal!=="object") || (vVal instanceof Blob)) vFormData.append(vKey,  vVal);
+						else vFormData.append(vKey,  JSON.stringify(vVal));
+					}
+				}
+				var vSelf = this;
+				this.fContext.storeProv.dialogCid("?synch=true&scContent=none&createMetas=true&returnProps=path*processing", vFormData, function(pEvent){
+					var vSt = pEvent.target.status;
+					if(vSt >=400) {
+						if(vSt==500) {
+							alert("Cette modification est impossible.");
+						} else {
+							alert("Accès au serveur impossible. Recommencez ultérieurement.");
+						}
+						vSelf.xSetPanel(vSelf.fPanelRes);
+						return;
+					}
+					var vResult = JSON.parse(pEvent.target.responseText);
+					vSelf.xResetDatas();
+					vSelf.showResPath(vResult.path);
+					dom.createAndDispatchEvent(vSelf, "SCResUpdated", {oldPath: vOldPermaPath, newPath: vResult.path, isFolder: store.getProcessing(vResult.processing).isFolder()});
+				});
+			}
+			if(new store.StPath(vOldPath).extractLiveLeaf() == vNewProps.path) {
+				sendDatas.call(this);
+			} else {
+				//renommage / déplacement, check de la cible
+				this.fContext.storeProv.dialogAdminUrlTree(vNewProps.path, "nodeInfos&props=path*trashed&persistMetas=&historyProps=", io.jsonXhrCb(function(pJson, pErr){
+					try {
+						if (pErr && pErr!==204) throw pErr;
+						//console.log("nodeInfosTarget for:: '"+vNewProps.path+"':::::\n"+JSON.stringify(pJson));
+						if(pJson && pJson.path == vNewProps.path)  {
+							//la res existe
+							if(pJson.trashed) {
+								if(!confirm("Une ressource avec le même nom est déjà en corbeille, elle va être remplacée. Voulez-vous continuer ?")) {
+									this.xSetPanel(this.fPanelRes);
+									return;
+								}
+							} else {
+								if(!confirm("Cette ressource existe déjà, souhaitez-vous vraiment remplacer la ressource : " + vNewProps.path)) {
+									this.xSetPanel(this.fPanelRes);
+									return;
+								}
+							}
+						}
+						vNewProps.olderPath = vOldPermaPath;
+						sendDatas.call(this);
+					}catch(e){
+						alert("Accès au serveur impossible. Recommencez ultérieurement.");
+						throw e;
+					}
+				}, this));
+			}
+			this.xShowPanelMsg("working", "Enregistrement en cours...");
+		}
+
+	},
+
+	events: {
+		/* Chargement à l'affichage de la view. */
+		'SCViewShown': function(pEvent) {
+			if(pEvent.target !== this || this.fStarted) return;
+			this.fStarted = true;
+			if(!xtag.tags["res-showfields"]) page.loadLibs("https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/store/widgets/resFields.html", this.xInit, this);
+			else this.xInit();
+		}
+	}
+});
+</script>
+
+<!-- image de preview avec resizing auto-->
+<script>
+xtag.register('sc-imageview', {
+	mixins: [ 'hbox', 'flex', 'view' ],
+
+ 	lifecycle: {
+		'created:mixins(before)': function() {
+			var vBd = dom.newBd(this);
+			this.fImg = vBd.elt('img').prop('onload', this.xCheckSize.bind(this)).prop('onclick', function(pEvent) {
+				var vDimensions = pEvent.target.getAttribute('dimensions');
+				if (vDimensions == 'shrinkToFit') pEvent.target.setAttribute('dimensions', 'overflowing');
+				else if (vDimensions == 'overflowing') pEvent.target.setAttribute('dimensions', 'shrinkToFit');
+			}).current();
+		},
+
+		'attributeChanged:mixins(before)': function(pName, pOldValue, pNewValue) {
+        if (pName == "src") this.fImg.setAttribute('src', pNewValue);
+        else if (pName == "imgStyle") this.fImg.setAttribute('style', pNewValue);
+      }
+	},
+
+	methods: {
+		xCheckSize: function() {
+			if (this.fImg.naturalWidth > this.clientWidth || this.fImg.naturalHeight > this.clientHeight){
+				this.fImg.setAttribute('dimensions', 'shrinkToFit');
+			} else this.fImg.removeAttribute('dimensions');
+		}
+	},
+
+	events: {
+		/* Chargement à l'affichage de la view. */
+		'SCViewShown': function(pEvent) {
+			this.xCheckSize();
+		}
+	}
+});
+</script>
+
+<!-- 
+Affichage du titre d'un noeud.
+ -->
+<script>
+xtag.register('res-titlefield', {
+	mixins: ['hbox', 'flex'],
+ 	lifecycle: {
+		'created:mixins(before)': function() {}
+	},
+	methods: {
+		initTitleField: function (pBd, pNodeInfos) {
+			var vTitleResNode = pBd.clear().att("align", "center").elt("h2", "resTitleBox flex").elt("a", "resTitle").att("target", "_blank").currentUp();
+			var vPath =  pNodeInfos.path;
+			vTitleResNode.textContent = vPath.substring(vPath.lastIndexOf('/', vPath.length-2) + 1) || "/";
+			vTitleResNode.href = pNodeInfos.publicUrl;
+			vTitleResNode.setAttribute("class", pNodeInfos.metas.trashed=="true" ? "resTitle trashed" : "resTitle");
+			return pBd.up();
+		}
+	}
+});
+</script>
+
+<!-- 
+Popup des versions d'un noeud.
+ -->
+<script id="res-versionsfield">
+xtag.register('res-versionsfield', {
+	mixins: [ 'vbox'],
+ 	lifecycle: {
+		'created:mixins(before)': function() {}
+	},
+	methods: {
+		initVersionsField: function (pBd, pHistHead, pHistList, pHistCurrent, pOnChangeCb) {
+			var vInput = pBd.clear().att("align", "center")
+				.elt("span", "resVersLabel").text("Version").up()
+				.elt("select", "resVersSelect").listen("change", pOnChangeCb).current();
+			var vNow = new Date();
+			if(pHistList) {
+				this.xAddVersion(pBd, pHistHead, pHistList[0], pHistCurrent, vNow);
+				for(var i=0; i<pHistList.length; i++) this.xAddVersion(pBd, pHistList[i], pHistList[i+1], pHistCurrent, vNow);
+			}
+			if(!vInput.hasChildNodes()) this.hidden = true;
+			return pBd.up();
+		},
+
+		xAddVersion : function(pBd, pEntry, pNextEntry, pHistCurrent, pNow){
+			var vTxt;
+			if(pEntry.v) {
+				var vPrc = store.getProcessing(pEntry.prc);
+				if(vPrc.getVersionning()===store.Versionning.VCB) {
+					//en VCB pas de prefixe v / m.
+					vTxt = "";
+				} else {
+					vTxt = pNextEntry==null || store.extractContentIdFromResId(pEntry.resId) != store.extractContentIdFromResId(pNextEntry.resId) ? "v" : "m";
+				}
+				if(pEntry.m) vTxt += pEntry.v + " (" + this.xCreateDate(new Date(pEntry.m), pNow) + ")";
+				else vTxt += pEntry.v; //cas de la v1 de la racine (pas de pEntry.m)
+			} else if(pEntry.t=="moved") {
+				vTxt = "déplacé (" + this.xCreateDate(new Date(pEntry.m), pNow) + ")";
+			} else if(pEntry.idx) {
+				if(pEntry.idx) {
+					vTxt = pEntry.idx + "(" + this.xCreateDate(new Date(pEntry.m), pNow) + ")";
+				} else {
+					vTxt = ""+pEntry.idx;
+				}
+			} else {
+				return;
+			}
+			pBd.elt("option").att("selected", pEntry.v==pHistCurrent.v ? "selected" : null).prop("fEntry", pEntry).text(vTxt).up();
+		},
+		xCreateDate: function(pDate, pNow) {
+			if (pDate.getYear() == pNow.getYear() && pDate.getMonth() == pNow.getMonth() && pDate.getDate() == pNow.getDate()) return pDate.toLocaleTimeString();
+			return pDate.toLocaleDateString();
+		}
+	}
+});
+</script>
+
+
+<!--Initialisation extPoints. -->
+<script>
+extPoints.addToList("store:showRes:areasByNodeType", "noContent", 1, new areas.Area().setBuildBody(function(pBd, pContext, pOptions){
+	var vShowResView = pContext.showResView;
+	pBd.elt("sc-hbox").att("align", "center");
+	vShowResView.xBuildTitleField(pBd);
+	if(pContext.processing.isVersionnable()) vShowResView.xBuildVersionField(pBd);
+	pBd.up();
+	vShowResView.xBuildTabs(pBd, pBd.current(), pContext, pOptions);
+}), 0);
+
+extPoints.addToList("store:showRes:areasByNodeType", "home", 1, new areas.Area().setBuildBody(function(pBd, pContext, pOptions){
+	var vShowResView = pContext.showResView;
+	pBd.elt("sc-hbox").att("align", "center");
+	vShowResView.xBuildTitleField(pBd);
+	if(pContext.processing.isVersionnable()) vShowResView.xBuildVersionField(pBd);
+	pBd.up();
+	vShowResView.xBuildTabs(pBd, pBd.current(), pContext, pOptions);
+}), 0);
+
+extPoints.addToList("store:showRes:areasByNodeType", "repos", 1, new areas.Area().setBuildBody(function(pBd, pContext, pOptions){
+	var vShowResView = pContext.showResView;
+	pBd.elt("sc-hbox").att("align", "center");
+	vShowResView.xBuildTitleField(pBd);
+	if(pContext.processing.isVersionnable()) vShowResView.xBuildVersionField(pBd);
+	pBd.up();
+	vShowResView.xBuildTabs(pBd, pBd.current(), pContext, pOptions);
+}), 0);
+
+extPoints.addToList("store:showRes:areasByNodeType", "moved", 1, new areas.Area().setBuildBody(function(pBd, pContext, pOptions){
+	var vShowResView = pContext.showResView;
+	pBd.elt("sc-hbox").att("align", "center").elt("h2", "resTitleBox flex").text("Ressource déplacée").up();
+	if(pContext.processing.isVersionnable()) vShowResView.xBuildVersionField(pBd);
+	pBd.up();
+	pBd.elt("sc-vbox", "align-center").elt("div", "inputTable").att("style", "width:70%;");
+	pBd.elt("div", "inputRow")
+		.elt("div", "inputCellLabel").elt("span", "inputLabel").text("Chemin").up().up()
+		.elt("div", "inputCellValue").elt("span", "fieldValue").text(vShowResView.nodeInfos.path).up().up()
+	.up();
+	pBd.elt("div", "inputRow")
+		.elt("div", "inputCellLabel").elt("span", "inputLabel").text("Nouvel emplacement").up().up()
+		.elt("div", "inputCellValue").elt("a", "fieldValue").att("href", "#").listen("click", function(){
+			var vNewPath = vShowResView.nodeInfos.movedPath;
+			if(vNewPath) {
+				vShowResView.xResetDatas();
+				vShowResView.showResPath(vNewPath);
+				dom.createAndDispatchEvent(vShowResView, "SCGotoRes", {newPath: vNewPath});
+			} else {
+				console.log("TODO open moved in new window.");
+			}
+		}).text(vShowResView.nodeInfos.movedPath || vShowResView.nodeInfos.movedRef).up().up()
+	.up();
+}), 0);
+
+//Onglet infos par défaut
+// Pour ajouter cet onglet : extPoints.addSvcToList("store:showRes:tabs:common", "infos", 1, "showResInfosTab", 100);
+extPoints.registerSvc("showResInfosTab", 1, new areas.Area().setLabel("Informations").setBuildBody(function(pBd, pContext, pOptions){
+	var vTab = pBd.elt("res-showfields").att("key", "infos").att("label", this.getLabel(pContext)).att("labelTitle", this.getDescription(pContext)).att("flex", "1").currentUp();
+	vTab.initShowFields(pContext, pOptions);
+}));
+
+//Onglet d'édition par défaut
+//extPoints.addSvcToList("store:showRes:tabs:common", "edit", 1, "showResEditTab", 200);
+extPoints.registerSvc("showResEditTab", 1, new areas.Area().setLabel("Édition")
+.setVisible(function(pContext){
+	var vShowResView = pContext.showResView;
+	if(vShowResView.getAttribute("readonly")=="readonly") return false;
+	//Seul le head est éditable.
+	if(vShowResView.processing && vShowResView.processing.getVersionning()===store.Versionning.VCS && vShowResView.head !== vShowResView.histCurrent) return false;
+	if(!scSecurityCtx.hasPerm(security.getGPerm("action.depot#edit.metas"), vShowResView.nodeInfos.roles)) return false;
+	if(new store.StPath(vShowResView.nodeInfos.path).isRoot()) return false;
+	return this.checkPermissions(pContext);
+}).setBuildBody(function(pBd, pContext, pOptions){
+	var vShowResView = pContext.showResView;
+	var vTab = pBd.elt("sc-view").att("key", "edit").att("label", this.getLabel(pContext)).att("labelTitle", this.getDescription(pContext)).att("orient", "vertical").att("flex", "1").current();
+	var vEditResNode = pBd.elt("res-editfields").att("flex", "1").currentUp();
+	pBd.elt("sc-hbox", "editResFooter").att("align", "center")
+		.elt("sc-toolbar").prop("actionContext", pContext).prop("actionsLists", "store:showRes:editTab:footer:leftButtons").up()
+		.elt("sc-hbox").att("flex", "1").up()
+		.elt("sc-btn", "editResCancel").att("label", "Annuler").att("data-action","editResCancel").listen("click", function(){vShowResView.xAbortEdit(vEditResNode)}).up()
+		.elt("sc-btn", "editResSave").att("label", "Enregistrer").att("data-action","editResSave").listen("click", function(){vShowResView.xSaveEdit(vEditResNode)}).up()
+	.up();
+	vEditResNode.initEditFields(pContext, pOptions);
+	//TODO bloquer le chgt d'onglet ou déchargement de cette resView si édition dirty
+}));
+
+/** Bouton d'accès à l'atelier Scenari d'origine. */
+extPoints.addToList("store:showRes:importTb:common", "scChainOriginOpen", 1,
+		new actions.Action("scChainOriginOpen")
+			.setLabel("Ouvrir la source dans son atelier")
+			.setVisible(function scChainOriginOpen_isVisible(pCtx){
+				try{
+					if(! pCtx.nodeInfos.metas.scChainOrigin) return false;
+					if(! utils.isScenariApp()) return false;
+					return true;
+				}catch(e){
+					console.log("scChainOriginOpen.isVisible:::"+e);
+					return false;
+				}
+			})
+			.override("execute", function(pEvt, pCtx){
+				vOri = pCtx.nodeInfos.metas.scChainOrigin;
+				if(vOri) {
+					var vCmd = {};
+					for (var vK in vOri) vCmd[vK] = vOri[vK];
+					vCmd.action = "openNode";
+					vCmd.user = window.authProv ? authProv.getAccount() : null;
+					var vUrl = "scenari:"+JSON.stringify(vCmd);
+					//console.log("scChainOriginOpen:::::::"+vUrl);
+					io.openHttpRequest(vUrl);
+				}
+			}),
+	"a");
+
+
+//Onglet d'import par défaut
+//extPoints.addSvcToList("store:showRes:tabs:common", "import", 1, "showResImportTab", 300);
+extPoints.registerSvc("showResImportTab", 1, new areas.Area().setLabel("Import")
+.setVisible(function(pContext){
+	var vShowResView = pContext.showResView;
+	if(vShowResView.getAttribute("readonly")=="readonly") return false;
+	//Seul le head est éditable.
+	if(vShowResView.head !== vShowResView.histCurrent) return false;
+	//if(pContext.processing.isNoContent()) return false;
+	if(!scSecurityCtx.hasPerm(security.getGPerm("action.depot#import.resource"), vShowResView.nodeInfos.roles)) return false;
+	return this.checkPermissions(pContext);
+}).setBuildBody(function(pBd, pContext, pOptions){
+	var vTab = pBd.elt("sc-view").att("key", "import").att("label", this.getLabel(pContext)).att("labelTitle", this.getDescription(pContext)).att("orient", "vertical").att("flex", "1").current();
+	var vTb = pBd.elt("sc-toolbar", "importResTb").att("orient", "vertical")
+		.prop("actionContext", pContext)
+		.prop("actionsLists", "store:showRes:importTb:prc:" + pContext.processing.getCode() + " store:showRes:importTb:common").currentUp();
+
+	pBd.elt("div", "importResBks");
+	var vAreas = extPoints.mergeLists(["store:showRes:importTb:areas:prc:"  + pContext.processing.getCode(), "store:showRes:importTb:areas:common" ]);
+
+	//Si la toolbar est vide (aucune action visible) on masque l'onglet
+	if(vTb.isEmpty() && (vAreas == null || vAreas.length==0)) vTab.setAttribute("tabHidden", "true") ;
+
+	areas.applyLayout(pBd, vAreas, pContext, pOptions);
+	pBd.up();
+}));
+
+//Sous menu d'import par défaut
+extPoints.addToList("store:showRes:importTb:areas:common","transform", 11, new areas.Area("areaResImport_transf_common").setBuildBody(function(pBd, pContext) {
+	pBd.elt("div", "importResBk").elt('h3').text(pContext.processing.isFolder()?"Transformer ce dossier" : "Transformer cette ressource").up()
+	pBd.elt("sc-toolbar", "importResBkTb").att("orient", "horizontal")
+		.prop("actionContext", pContext)
+		.prop("actionsLists", "store:showRes:importTb:areas:transform:prc:"+pContext.processing.getCode()+" store:showRes:importTb:areas:transform:common")
+	.up()
+.up();
+}), "i");
+
+//Action d'import par défaut
+extPoints.registerSvc("showResImportAction", 1, new actions.Action("showResImportAction")
+	.setLabel(function importRes_setLabel(pCtx){
+		return pCtx.processing.isFolder() ? "Importer un nouvel accueil du dossier..." : "Importer un nouveau contenu...";
+	})
+	.setVisible(function importRes_isVisible(pCtx){
+		return ! pCtx.processing.isNoContent();
+	})
+	.override("initButtonNode", function importRes_initButtonNode(pButtonNode, pContext){
+		//injection de l'input de type File.
+		pButtonNode.style.position = 'relative';
+		dom.newBd(pButtonNode).elt('input').att('type', 'file').att('style', 'position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden; opacity: 0');
+	})
+	.override("execute", function importRes_execute(pEvent, pContext){
+		if(pContext.processing && pContext.processing.isNoContent()){
+			// supp de l'affochage du sélecteur de file
+			if(pEvent.preventDefault) pEvent.preventDefault();
+			if(pEvent.stopPropagation) pEvent.stopPropagation();
+		}
+		this.doImport(pEvent, pContext, pContext.processing);
+	})
+	.override("doImport", function (pEvent, pContext, pPrc){
+		var vCounter = 1;
+		function asyncExec(){
+			vCounter--;
+			if(vCounter>0) return;
+			var vBd = dom.newBd(document.body);
+			var vDialog = vBd.elt('sc-dialog').current();
+			var vCreateRes = vBd.elt('sc-uploadres', 'thinBorder').currentUp();
+			function closeCreateRes() {
+				if(vFileInput) vFileInput.value = null;
+				document.body.removeChild(vDialog);
+			}
+			vCreateRes.addEventListener('SCCancel', closeCreateRes, false);
+			vCreateRes.addEventListener('SCSubmit', function(pEvt) {
+				closeCreateRes();
+				pContext.showResView.xResetDatas();
+				pContext.showResView.showResPath(pContext.nodeInfos.path, false, false);
+			}, false);
+			try {
+				vBd.up();
+				var vContext = {
+					window : window,
+					storeProv : pContext.storeProv,
+					uploadFolder: pPrc.isFolder(),
+					file: vFileInput ? vFileInput.files[0] : null,
+					processing : pPrc,
+					nodeInfos : pContext.nodeInfos,
+					defaultProps : pContext.defaultProps
+				}
+				if(!vFileInput)
+					vContext.noContent = true;
+				//On laisse la couche serveur récupérer les anciennes metas
+				//Permet de maj les métas extraites du contenu
+				vContext.nodeInfos.metas = {};
+				var vEditFieldsOptions = {
+					pathName : "readonly",
+					pathFolder : "readonly"
+				}
+				vCreateRes.initUploadRes(vContext, vEditFieldsOptions);
+			} catch(e){
+				closeCreateRes();
+			}
+		}
+		if(!xtag.tags["sc-uploadres"]) {
+			vCounter++;
+			page.loadLibs("https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/store/dialogs/uploadRes.html", function(pErrors){
+				if(pErrors) { alert("Chargement en erreur. Recommencez ultérieurement."); return;}
+				asyncExec();
+			});
+		}
+
+		if(pPrc.isNoContent()){
+			asyncExec.call(this);
+		}else{
+			var vFileInput = pEvent.target;
+			vFileInput.onchange = asyncExec;
+		}
+	})
+);
+extPoints.addSvcToList("store:showRes:importTb:areas:transform:common", "importRes", 1, "showResImportAction", "k");
+
+//Action d'import par défaut
+extPoints.registerSvc("showResChangeProcessing", 1, new actions.SvcActionWrapper("showResChangeProcessing")
+	.setWrappedSvcCd("showResImportAction")
+	.setLabel("Modifier le traitement...")
+	.setVisible(true)
+);
+
+//Onglet d'édition des permissions
+//Pour l'activer : extPoints.addSvcToList("store:showRes:tabs:common", "editRoles", 1, "showResEditRoles", 400);
+extPoints.registerSvc("showResEditRoles", 1, new areas.Area("editRoles").setLabel("Accès")
+	.setVisible(function(pContext){
+		var vShowResView = pContext.showResView;
+		if(!scSecurityCtx.hasPerm(security.getGPerm("action.depot#edit.roles"), vShowResView.nodeInfos.roles)) return false;
+		return this.checkPermissions(pContext);
+	}).setBuildBody(function(pBd, pContext, pOptions){
+		var vTab = pBd.elt("sc-viewlazy").att("key", "perms").att("label", this.getLabel(pContext)).att("labelTitle", this.getDescription(pContext)).att("hidden", "true").att("flex", "1")
+						.att("subTagName", "res-editaccess")
+						.att("subTagLibUrl", "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/store/widgets/resAccess.html")
+						.currentUp();
+		var vOnShown = function(pEvt){
+			vTab.removeEventListener("SCViewShown", vOnShown, false);
+			var vEditNode = pEvt.target;
+			vEditNode.initEditFields(pContext, pOptions);
+			//Enregistrement interme à res-editaccess
+			/*dom.newBd(vTab).elt("sc-hbox", "editResFooter").att("pack", "end").att("align", "center")
+				.elt("sc-btn", "editResCancel").att("label", "Annuler").att("data-action","editResCancel").listen("click", function(){pContext.showResView.xAbortEdit(vEditNode)}).up()
+				.elt("sc-btn", "editResSave").att("label", "Enregistrer").att("data-action","editResSave").listen("click", function(){pContext.showResView.xSaveEdit(vEditNode)}).up()
+			.up();*/
+		}
+		vTab.addEventListener("SCViewShown", vOnShown, false);
+	})
+);
+</script>
+
+<style>
+sc-showresview sc-vbox > sc-hbox[orient="horizontal"] {
+    background-color: #f5f5f5;
+    border: 1px solid silver;
+    margin-bottom: 0.5em;
+    padding: 0 0.5em;
+}
+
+.resTitleBox{
+	text-align : center;
+	margin: 0.4em 0.5em;
+}
+
+.resTitle.trashed{
+	text-decoration: line-through;
+}
+
+res-versionsfield {
+    flex-direction: row !important;
+}
+
+.resVersLabel {
+    margin-right: 0.5em;
+}
+
+.editResFooter{
+	border-top : solid 1px #ccc;
+	padding: 0.6em 0.3em;
+}
+
+.editResFooter > sc-btn {
+	margin: 0 0.3em;
+}
+
+sc-imageview {
+	overflow: auto;
+	position: relative;
+}
+
+sc-imageview > img {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	top: 0;
+	margin: auto;
+	max-width: 100%;
+	max-height: 100%;
+	background-color: white;
+	border: solid 1px black;
+	box-sizing: border-box;
+}
+
+sc-imageview > img[dimensions=shrinkToFit] {
+	cursor: all-scroll;
+	cursor: -webkit-zoom-in;
+	cursor: zoom-in;
+}
+sc-imageview > img[dimensions=overflowing] {
+	cursor: all-scroll;
+	cursor: -webkit-zoom-out;
+	cursor: zoom-out;
+	max-width: none;
+	max-height: none;
+	margin: 0 auto;
+}
+
+.importResTb, .importResBk > sc-toolbar {
+	margin: 1em;
+	align-items: center;
+	-moz-box-align: center;
+}
+.importResBk > sc-toolbar > sc-btn{
+	margin: 1em;
+}
+
+.importResBks {
+	max-width: 60em;
+	margin: 0 auto;
+}
+
+</style>

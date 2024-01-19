@@ -1,0 +1,392 @@
+<!--
+component sc-uploadres  : Processus d'import d'une ressource.
+En fonction du contexte, le processus peut enchainer trois étapes :
+ 1 - sélection du processing (si non imposé dans le contexte),
+ 2 - sélection du path (si non imposé dans le contexte),
+ 3 - édition des metadonnées correspondant au processing avec récupération des metadonnées
+ 				précédentes si surcharge d'un path existant.
+
+Doit être initialisé via  initUploadRes(pCtx) avec pCtx :
+ - storeProv
+ - uploadFolder si true, l'upload s'effectue sur un folder.
+ - file [object html5 File] et/ou fileName [string] : source à importer
+ - processing : [objet store.Processing] [optional] impose un processing, si null l'interface de sélection du processing est présentée.
+ - nodeInfos [optional] si non null, exploitera le path de ce nodeInfos qui ne sera alors pas modifiable par l'utilisateur.
+		Si pas de nodeInfos présent :
+ 			- currentFolderPath : [optional] path du dossier courant, si null l'interface de sélection d'un chemin cible est présenté.
+
+Evènements produits :
+"SCSubmit" avec en "detail" de l'event  le context pCtx enrichi des champs "newPath" et "newMetas".
+"SCCancel" abandon par l'utilisateur ou echec à l'upload.
+
+Si le blob à uploader (ie pCtx.file) n'est pas présent dans le contexte, l'upload n'est pas réalisé, "newPath" et "newMetas"
+sont simplement retournés (cas pour un upload CID).
+
+ -->
+<script>
+	xtag.register('sc-uploadres', {
+		mixins: ['vbox', 'flex'],
+		lifecycle: {
+			'created:mixins(before)': function() {}
+		},
+
+		methods: {
+
+			initUploadRes: function (pContext, pEditFieldsOptions) {
+				this.fOriginalCtx = pContext;
+				this.fContext = js.create(pContext);
+				this.fEditFieldsOptions =  js.create(pEditFieldsOptions || null);
+
+				var vBd = dom.newBd(this).outTree();
+				this.fStack = this;
+				var vSelf = this;
+
+				//Processing
+				if(!pContext.processing) {
+					//Pas de processing imposé => écran de sel du processing
+					this.fSelPrcView = vBd.elt('sc-view').att('hidden', 'true').att('flex', '1')
+							.listen("SCViewShown", function(){vSelf.fSelPrc.initSelPrc(vSelf.fContext)})
+							.elt('h3').elt('span').text("Sélection du type de traitement").up().currentUp();
+					this.fSelPrc = vBd.elt('sc-selprocessing').att('flex', '1').currentUp();
+
+					vBd.elt('sc-hbox', 'btns').att('pack', 'end');
+					vBd.elt('sc-btn', 'cancel').att('label', "Annuler").listen("click", function(){vSelf.cancel()}).currentUp();
+					vBd.elt('sc-btn', 'next').att('label', "Suivant").listen("click", function(){
+						vSelf.fContext.processing = vSelf.fSelPrc.value;
+						vSelf.nextView();
+					}).currentUp();
+					vBd.up();
+
+					vBd.up(); //sc-view
+				}
+
+				//Path
+				if(!pContext.nodeInfos && !pContext.currentFolderPath) {
+					//Pas de folder prédéfini => écran de sélection du path.
+					this.fSelPathView = vBd.elt('sc-view').att('hidden', 'true').att('flex', '1')
+							.elt('h3', 'noSep').elt('span').text("Sélection du dossier ou de la ressource à remplacer").up().up()
+							.currentUp();
+
+					var vAsynchBd = dom.newBd(this.fSelPathView);
+					vAsynchBd.elt("sc-viewtabs").att("id", "tabs").att("orient", "horizontal").att("flex", "1").outTree();
+					areas.loadAndApplyLayout(function(pErrors){
+						if(pErrors) {console.log("loads failed : "+pErrors); alert("Accès au serveur en erreur. Recommencez ultérieurement."); vSelf.cancel(); return;}
+						vAsynchBd.up();//sc-viewtabs
+						vAsynchBd.elt('sc-hbox', 'btns noSep').att('pack', 'end');
+						vAsynchBd.elt('sc-btn', 'cancel').att('label', "Annuler").listen("click", function(){vSelf.cancel()}).currentUp();
+						if(vSelf.fSelPathView.previousElementSibling) vAsynchBd.elt('sc-btn', 'previous').att('label', "Précédent").listen("click", function(){vSelf.previousView()}).currentUp();
+						var vBtnNext = vAsynchBd.elt('sc-btn', 'next').att("disabled", "").listen("click", function(){vSelf.nextView();}).currentUp();
+						if(pContext.uploadFolder) {
+							//Upload sur un dossier
+							var vBtnNextAdd = vAsynchBd.elt('sc-btn', 'next').att('label', "Ajouter un dossier").att("disabled", "").listen("click", function(){
+								delete vSelf.fEditFieldsOptions.pathName;
+								delete vSelf.fEditFieldsOptions.pathFolder;
+								vSelf.fContext.nodeInfos = null;
+								vSelf.fContext.currentFolderPath = vSelf.fContext.currentFolderPathForAdd;
+								vSelf.nextView();
+							}).currentUp();
+							vSelf.fSelPathView.addEventListener("SCResShown", function(pEvt){
+								var vPrc = store.getProcessingFromNodeInfos(pEvt.detail.nodeInfos);
+								if(vPrc) {
+									vSelf.fContext.nodeInfos = pEvt.detail.nodeInfos;
+									vSelf.fContext.currentFolderPath = null;
+									vSelf.fContext.currentFolderPathForAdd = vSelf.fContext.nodeInfos.permaPath || vSelf.fContext.nodeInfos.path || "/";
+									vSelf.fEditFieldsOptions.pathName = "readonly";
+									vSelf.fEditFieldsOptions.pathFolder = "readonly";
+									if(vPrc.isFolder()) {
+										vBtnNext.setAttribute("label", "Remplacer l'accueil de ce dossier");
+										vBtnNextAdd.disabled = false;
+									} else {
+										vBtnNext.setAttribute("label", "Remplacer cette ressource par un dossier");
+										vBtnNextAdd.disabled = true;
+									}
+									vBtnNext.disabled = false;
+								} else {
+									vBtnNext.disabled = true;
+									vBtnNextAdd.disabled = true;
+								}
+								if(!scSecurityCtx.hasPerm(security.getGPerm("action.depotUploadRes#add.folder.customHome"), pEvt.detail.nodeInfos.roles)) vBtnNextAdd.disabled = true;
+								if(!scSecurityCtx.hasPerm(security.getGPerm("action.depotUploadRes#replace.customHome"), pEvt.detail.nodeInfos.roles)) vBtnNext.disabled = true;
+							}, false);
+						} else {
+							//Upload sur une ressource.
+							vSelf.fSelPathView.addEventListener("SCResShown", function(pEvt){
+								var vPrc = store.getProcessingFromNodeInfos(pEvt.detail.nodeInfos);
+								var vHasPerm;
+								if(vPrc) {
+									if(vPrc.isFolder()) {
+										vHasPerm = scSecurityCtx.hasPerm(security.getGPerm("action.depotUploadRes#add.resource"), pEvt.detail.nodeInfos.roles);
+										vSelf.fContext.nodeInfos = null;
+										vSelf.fContext.currentFolderPath = pEvt.detail.nodeInfos.permaPath || pEvt.detail.nodeInfos.path || "/";
+										vBtnNext.setAttribute("label", "Ajouter");
+										delete vSelf.fEditFieldsOptions.pathName;
+										delete vSelf.fEditFieldsOptions.pathFolder;
+									} else {
+										vHasPerm = scSecurityCtx.hasPerm(security.getGPerm("action.depotUploadRes#replace.resource"), pEvt.detail.nodeInfos.roles);
+										vSelf.fContext.nodeInfos = pEvt.detail.nodeInfos;
+										vBtnNext.setAttribute("label", "Remplacer");
+										vSelf.fEditFieldsOptions.pathName = "readonly";
+										vSelf.fEditFieldsOptions.pathFolder = "readonly";
+									}
+									vBtnNext.disabled = ! vHasPerm;
+								} else {
+									vBtnNext.disabled = true;
+								}
+							}, false);
+						}
+						vAsynchBd.up().inTree();
+					}, window, vAsynchBd, extPoints.getList("store:navigateViews"), window);
+				}
+
+				//Metas
+				this.fEditFieldsView = vBd.elt('sc-view').att('hidden', 'true').att('flex', '1').listen("SCViewShown", function(){
+					if( !vSelf.fContext.uploadFolder && vSelf.fContext.nodeInfos) {
+						var vProcessing = store.getProcessingFromNodeInfos(vSelf.fContext.nodeInfos);
+						if(vProcessing && vProcessing.isFolder()) {
+							alert("Vous ne pouvez pas remplacer un dossier existant par une ressource. Supprimez d'abord ce dossier et tout son contenu.");
+							if(vSelf.fEditFieldsView.previousElementSibling) vSelf.previousView(); else vSelf.cancel();
+							return;
+						}
+					}
+					if(vSelf.fEditFields) vSelf.fEditFields.initEditFields(vSelf.fContext.processing ? vSelf.fContext : vSelf.fOriginalCtx, vSelf.fEditFieldsOptions);
+					else vSelf.fEditFieldsView._waiting = true;
+				}).current();
+				vBd.elt('h3').elt('span').text("Édition des métadonnées").up().up();
+				page.loadTags({"res-editfields": "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/store/widgets/resFields.html"}, function(pErrors){
+					if(pErrors) { alert("Chargement en erreur. Recommencez ultérieurement."); this.cancel(); return;}
+					var vAsynchBd = dom.newBd( this.fEditFieldsView);
+					this.fEditFields = vAsynchBd.elt('res-editfields').att('flex', '1').currentUp();
+					vAsynchBd.elt('sc-hbox', 'btns').att('pack', 'end');
+					vAsynchBd.elt('sc-btn', 'cancel').att('label', "Annuler").listen("click", function(){vSelf.cancel()}).currentUp();
+					if(this.fEditFieldsView.previousElementSibling) vAsynchBd.elt('sc-btn', 'previous').att('label', "Précédent").listen("click", function(){vSelf.previousView()}).currentUp();
+					vAsynchBd.elt('sc-btn', 'next').att('label', "Envoyer").listen("click", function(){vSelf.submit()});
+					if(this.fEditFieldsView._waiting) this.fEditFields.initEditFields(js.create(vSelf.fContext), vSelf.fEditFieldsOptions);
+				}, this);
+				vBd.up(); //sc-view Metas
+				vBd.inTree();
+
+				this.fCurrentView = this.fStack.firstElementChild;
+				this.fCurrentView.show();
+			},
+
+			nextView: function() {
+				if(!this.fCurrentView.nextElementSibling) return;
+				this.fCurrentView.hide();
+				this.fCurrentView = this.fCurrentView.nextElementSibling;
+				this.fCurrentView.show();
+			},
+
+			previousView: function() {
+				if(!this.fCurrentView.previousElementSibling) return;
+				this.fCurrentView.hide();
+				this.fCurrentView = this.fCurrentView.previousElementSibling;
+				this.fCurrentView.show();
+			},
+
+			submit: function() {
+				if(! this.fEditFields.checkValidity()) {
+					alert("Des propriétés sont incorrectes.");
+					return;
+				}
+				var vNewProps = this.fEditFields.getNewProps(true);
+				//console.log("vNewProps:::::"+log.listProps(vNewProps));
+
+				function sendDatas() {
+					//Affectation du résultat
+					this.fOriginalCtx.newPath = vNewProps.path;
+					this.fOriginalCtx.newMetas = vNewProps;
+
+					if(!this.fContext.file && !this.fContext.noContent) {
+						//pas de fichier à uploader
+						dom.createAndDispatchEvent(this, 'SCSubmit',  this.fOriginalCtx);
+					} else {
+						//upload du file
+						var vFormData = new FormData();
+						for(var vKey in vNewProps) {
+							var vVal = vNewProps[vKey];
+							if(vVal!=null) {
+								if((typeof vVal!=="object") || (vVal instanceof Blob)) vFormData.append(vKey,  vVal);
+								else vFormData.append(vKey,  JSON.stringify(vVal));
+							}
+						}
+						if(this.fContext.file) vFormData.append("cidContent",  this.fContext.file);
+						else vFormData.append("scContent",  "none");
+
+						var vBd = dom.newBd(document.body);
+						var vDialog = vBd.elt('sc-dialog').current();
+						vBd.elt("div", "thinBorder cidProgressBox");
+						vBd.elt('h3').elt('span').text("État du déploiement").up().up();
+						page.loadTags({"cid-progress": "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/store/widgets/cidProgress.html"}, function showCidProgress(pErrors) {
+							if(pErrors) {alert("Chargement en erreur. Recommencez ultérieurement."); vDialog.removeDialog(); return;}
+							var vProgressNode = vBd.elt('cid-progress').currentUp();
+							var vThis = this;
+							vProgressNode.setOnTaskEnded(function(pResult) {
+								if(pResult.status=="ok") {
+									vDialog.removeDialog();
+									dom.createAndDispatchEvent(vThis, 'SCSubmit',  vThis.fOriginalCtx);
+								} else {
+									//vDialog.removeDialog(); non on garde le dialog du cid-progress pour que l'utilisateur puisse consulter l'anomalie.
+									vThis.cancel();
+								}
+							});
+							vBd.elt('sc-hbox', 'btns').att('pack', 'end')
+									.elt('sc-btn', 'close').att('label', "Fermer").prop("onclick", function() {
+								vDialog.removeDialog();
+								dom.createAndDispatchEvent(vThis, 'SCSubmit',  vThis.fOriginalCtx);
+							});
+							vProgressNode.sendDatas(this.fContext.storeProv, vFormData, null /*["path", "publicUrl"]*/);
+						}, this);
+					}
+				}
+
+				if(this.fEditFieldsOptions.pathName!="readonly" && this.fEditFieldsOptions.pathName!="none") {
+					//Cible non construite automatiquement, vérification de la cible et demande de confirmation éventuelle.
+					this.fContext.storeProv.dialogAdminUrlTree(vNewProps.path, "nodeInfos&props=path*trashed&persistMetas=&historyProps=", io.jsonXhrCb(function(pJson, pError){
+						try {
+							//console.log("nodeInfosTarget:::::\n"+JSON.stringify(pJson));
+							if (pJson && pJson.path == vNewProps.path) {
+								//la res existe
+								if (pJson.trashed) {
+									if (!confirm("Une ressource avec le même nom est déjà en corbeille, elle va être remplacée. Voulez-vous continuer ?")) {
+										this.cancel();
+										return;
+									}
+								} else {
+									if (!confirm("Souhaitez-vous vraiment remplacer la ressource : " + vNewProps.path)) {
+										this.cancel();
+										return;
+									}
+								}
+							}
+							sendDatas.call(this);
+						}catch(e){
+							alert("Accès au serveur impossible. Recommencez ultérieurement.");
+							throw e;
+						}
+					}, this));
+				} else {
+					sendDatas.call(this);
+				}
+			},
+
+			cancel: function() {
+				dom.createAndDispatchEvent(this, 'SCCancel');
+			}
+		}
+	});
+
+	xtag.register('sc-selprocessing', {
+		mixins: [ 'vbox', 'flex' ],
+
+		lifecycle: {
+			'created:mixins(before)': function() {
+			}
+		},
+
+		methods: {
+			initSelPrc: function (pContext) {
+				var vBd = dom.newBd(this).clear().outTree();
+				this.fProcessings = extPoints.mergeLists(['uploadRes:prcs', 'store:prcs']);
+				this.fInputs = [];
+				var vSelectFolders = !!pContext.uploadFolder;
+				//console.log("vSelectFolders:::::"+vSelectFolders);
+				vBd.elt('div', 'vbox align-center').elt('div', 'prcs vbox');
+				for (var i =0; i<this.fProcessings.length; i++) {
+					var vPrc = this.fProcessings[i];
+					var vId = 'prcs_' + vPrc.getCode();
+					//console.log("vSelectFolders:::::"+vPrc.isFolder()+"  - "+ (vSelectFolders == vPrc.isFolder()));
+					if(vSelectFolders == vPrc.isFolder()) {
+						vBd.elt('div', 'prcs hbox').att('title', vPrc.getDescription());
+						this.fInputs.push(vBd.elt('input').att('type', 'radio').att('id', vId).att('name', 'processing').att('value', vPrc.getCode()).prop('processing', vPrc).currentUp());
+						vBd.elt('label', 'hbox align-center').att('for', vId).elt('img').att('src', vPrc.getIcon()).up().text(vPrc.getLabel()).up()
+								.up();
+					}
+				}
+				vBd.inTree();
+				if(pContext.processing) {
+					this.value = pContext.processing;
+				} else {
+					var vFileName = pContext.fileName || (pContext.file ? pContext.file.name : "");
+					var vPointIdx = vFileName.lastIndexOf(".");
+					var vExt = vPointIdx>=0 ? vFileName.substring(vPointIdx+1).toLowerCase() : null;
+					if (!vExt)
+						vExt = "_noExt_"; // pour fonctionnement du matcher *
+					for (var i =0; i<this.fProcessings.length; i++) {
+						var vPrc = this.fProcessings[i];
+						if (vPrc.handleExt(vExt)) {
+							if(vSelectFolders == vPrc.isFolder()) {
+								this.value = vPrc;
+								break;
+							}
+						}
+					}
+				}
+			}
+		},
+
+		accessors: {
+			value: {
+				get: function() {
+					for (var i=0; i<this.fInputs.length; i++) {
+						var vInput = this.fInputs[i];
+						if (vInput.checked) return vInput.processing;
+					}
+				},
+				set: function(pPrc) {
+					for (var i=0; i<this.fInputs.length; i++) {
+						var vInput = this.fInputs[i];
+						if (vInput.value == pPrc.getCode()) {
+							vInput.checked = true;
+							break;
+						}
+					}
+					return pPrc;
+				}
+			}
+		}
+	});
+</script>
+
+<style>
+	sc-uploadres  > sc-view {
+		margin: 0.5ex;
+	}
+
+	sc-uploadres  > sc-view > sc-hbox.btns {
+		border-top: solid 1px silver;
+		margin: 0.5ex 2ex 0 2ex;
+	}
+	sc-uploadres  > sc-view > sc-hbox.btns.noSep{
+		border-top: none;
+	}
+
+	sc-uploadres  > sc-view > sc-hbox.btns > sc-btn {
+		margin: 0.5ex 0.5ex;
+	}
+
+	sc-uploadres > sc-view > h3 {
+		font-size: 1em;
+		margin: 1.5ex 2ex 1ex 2ex;
+		padding-bottom: 0.5ex;
+		border-bottom: solid 1px silver;
+	}
+	sc-uploadres > sc-view > h3.noSep {
+		border-bottom: none;
+	}
+
+	sc-uploadres > sc-view > h3 > span {
+		font-size: 1.2em;
+	}
+
+	sc-selprocessing{
+		margin: 2ex;
+	}
+
+	sc-selprocessing div.prcs > div {
+		margin: 1ex 0;
+	}
+
+	sc-selprocessing div.prcs > div > label > img {
+		margin-right: 0.8ex;
+	}
+</style>

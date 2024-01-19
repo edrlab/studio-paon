@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<!--
+Paramètres en QueryString : 
+- prcRegExp : [optional] regExp sur les processing autorisés.
+- path ou publicUrl : [optional] ressource à afficher initialement.
+-->
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta charset="UTF-8" />
+<title>Import - Sélection d&apos;une ressource</title>
+
+
+<!-- Librairies -->
+
+					<script>
+						CustomElements = { flags: { register: true } }
+					</script>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/x-tag.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/commons.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/areas.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/extPoints.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/security.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/root_Perms.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/actions.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/enums.js"/>
+				
+<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/authProv/defaultAuthProv.js"/>
+
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/desk/desk_Perms.js"/>
+					<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/desk/utils/deskUtils.js"/>
+				
+
+<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/store/store_Perms.js"/>
+<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/store/store.js"/>
+<script src="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/store/facets.js"/>
+				
+<!-- Components -->
+<link rel="import" href="https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/desk/widgets.html" />
+
+<!-- Config -->
+<script id="cidAuthCanal">window.basicAuthCanal="httpHeader";</script>
+<script src="../config.js"></script>
+<script id="showVersionField">extPoints.setPref("store:showRes:showVersionField", 11, false);</script>
+
+<script><![CDATA[//
+	
+	var msgToPost;
+	
+	function cidAbort(){
+		window.parent.postMessage({cidInteraction : "aborted"}, '*');
+	}
+	
+	function cidSelect(){
+		if(msgToPost) window.parent.postMessage(msgToPost, '*');
+	}
+	
+	deskUtils.createDesk(window);
+	deskUtils.addFeatureCanCloseDesk(window);
+	deskUtils.addFeatureUserMgr(window, false, security.getGPerm("ui.depotDesk"));
+	extPoints.addToList("event:load:cidSelectPath", "initNavigateViews", 1, function() {
+		var vLaunchCtx = desk.getLaunchContext();
+		//Transformation publicUrl en path
+		if(vLaunchCtx.permaPath) vLaunchCtx.path = vLaunchCtx.permaPath;
+		if(vLaunchCtx.path==null && vLaunchCtx.publicUrl) vLaunchCtx.path = storeProv.extractPathFromUrl(vLaunchCtx.publicUrl);
+		
+		var vPrcRegExp= vLaunchCtx.prcRegExp ? new RegExp(vLaunchCtx.prcRegExp) : null;
+		var vPathRegExp= vLaunchCtx.pathRegExp ? new RegExp(vLaunchCtx.pathRegExp) : null;
+		window.addEventListener("SCResShown", function(pEvt){
+			//console.log("Selected:::::"+JSON.stringify(pEvt.detail.nodeInfos));
+			var vPrc = store.getProcessingFromNodeInfos(pEvt.detail.nodeInfos);
+			var vPath = pEvt.detail.nodeInfos.path;
+			if((vPrc && (!vPrcRegExp || vPrcRegExp.test(vPrc.getCode()))) && (vPath && (!vPathRegExp || vPathRegExp.test(vPath)))) {
+				msgToPost = {
+					cidInteraction : "ended",
+					path : vPath,
+					permaPath : pEvt.detail.nodeInfos.permaPath,
+					publicUrl : pEvt.detail.nodeInfos.publicUrl,
+				}
+				if(vLaunchCtx.returnMeta) msgToPost[vLaunchCtx.returnMeta] = pEvt.detail.nodeInfos[vLaunchCtx.returnMeta] || pEvt.detail.nodeInfos[vLaunchCtx.returnMetas];
+			} else {
+				msgToPost = null;
+			} 
+			sc$("cidPathSelected").textContent = msgToPost ? msgToPost.permaPath : "";
+			sc$("cidButtonSelect").disabled = msgToPost==null;
+		}, false);
+		
+		var vBd = dom.newBd(sc$("tabs")).outTree();
+		areas.loadAndApplyLayout(function(pErrors){
+				if(pErrors) {console.log("loads failed : "+pErrors); alert("Accès au serveur en erreur. Recommencez ultérieurement."); return;}
+				vBd.inTree();
+			}, window, vBd, extPoints.getList("store:navigateViews"), window);
+	}, 10);
+//]]></script>
+
+<style>
+	#cidButtonsBar {
+		background: rgba(0, 0, 0, 0) none repeat scroll 0 0;
+		border-top: 1px solid #e6e6e6;
+		box-shadow: none;
+		height: auto;
+		padding: 0.5em 1em 0.3em 24px;
+	}
+	#cidButtonsBar > sc-btn {
+		margin: 0 0.5em;
+	}
+	#cidPathLabel{
+		color: #555;
+		margin: 0.5em;
+	}
+	#cidPathSelected{
+		padding: 3px;
+	}
+</style>
+</head>
+
+<body is="sc-desk" orient="vertical" >
+	<sc-hbox align="center">
+		<sc-hbox flex="1" pack="center">Import</sc-hbox>
+	</sc-hbox>
+	<sc-viewtabs id="tabs" orient="horizontal" flex="1" style="margin:3px;"/>
+	<sc-hbox id="cidButtonsBar" align="center">
+		<sc-hbox id="cidPathLabel">Sélection :</sc-hbox>
+		<sc-hbox id="cidPathSelected" class="hbox flex selectable" flex="1"/>
+		<sc-btn label="Annuler" onclick="cidAbort()"/>
+		<sc-btn id="cidButtonSelect" label="Sélectionner" onclick="cidSelect()" disabled="disabled"/>
+	</sc-hbox>
+</body>
+<script>deskUtils.launchDesk(window);</script>
+
+<!-- Skin -->
+
+
+</html>

@@ -1,0 +1,262 @@
+<!-- tag : res-editaccess
+Panneau d'édition des attributions de roles.
+
+Doit être initialisé via  initEditFields(pCtx, pOptions) avec pCtx :
+ - storeProv
+ - nodeInfos
+ - svcUserUrl [optionel si url custom] (pour l'init de l'input d'autocomplete)
+ 
+ Note : respecte la même api que res-editfields
+ -->
+<script>
+xtag.register('res-editaccess', {
+	mixins: [ 'vbox', 'flex' ],
+	
+	lifecycle: {
+		'created:mixins(before)': function() {}
+	},
+	
+	methods: {
+		initEditFields: function (pContext, pOptions) {
+			this.fContext = pContext;
+			//Actions et fields
+			this.xInitDefaultActions();
+
+			//Colonnes
+			extPoints.getSvcLazy("grid", function (grid, pErrors) {
+				if (pErrors) {
+					this.xInitAdminUsersView(pErrors);
+				} else {
+					this.grid = grid;
+					extPoints.addToList("adminRoles:columns", "account", 1,
+						new grid.ColumnDef("account").setLabel("Utilisateur / Groupe").setFlex("10em", 1, 1).setCellBuilderFactory(function () {return new grid.CellBuilderString(this, "account")})
+						, 10);
+					extPoints.addToList("adminRoles:columns", "allowedRolesLabel", 1,
+						new grid.ColumnDef("allowedRolesLabel").setLabel("Rôles autorisés").setFlex("10em", 1, 1).setCellBuilderFactory(function () {return new grid.CellBuilderString(this, "allowedRolesLabel")})
+						, 20);
+
+					page.loadTags({
+						"sc-grid": "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/commons/widgets/grid.html"
+					},this.initGrid, this);
+				}
+			}, this, "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wlb/6.1.10.202401191026/commons/svcs/grid.js");
+		},
+		checkValidity : function(){
+			return true;
+		},
+
+		getNewProps : function(){
+			var vResult = JSON.parse(this.fTextArea.value);
+			//console.log("getNewProps this.fContext.nodeInfos::::::::::"+JSON.stringify( this.fContext.nodeInfos));
+			vResult.path = this.fContext.nodeInfos.path;
+			vResult.olderResId =  this.fContext.nodeInfos.resId;
+			return vResult;
+		},
+
+		initGrid : function(){
+
+			var vBd = dom.newBd(this).att("orient","horizontal").style("margin", "1em");
+			this.fGrid = vBd.elt("sc-grid", "roles").att("flex", "1").currentUp();
+			this.fDatasHandler = new this.grid.GridDataHandlerJsonArray();
+			this.fGrid
+				.initColumDefs(extPoints.getList("adminRoles:columns"))
+				.initGridDataHandler(this.fDatasHandler);
+			vBd.elt("div").att("orient", "vertical");
+			vBd.elt("sc-toolbar", "tbLite rolesTbTop").att("orient", "vertical").att("icononly", "").prop("actionContext", this).prop("actionsLists", "adminRoles:toolbar:top").up();
+			vBd.elt("sc-toolbar", "tbLite rolesTbBottom flex").att("orient", "vertical").att("pack", "end").att("icononly", "").prop("actionContext", this).prop("actionsLists", "adminRoles:toolbar:bottom").up();
+			this.reloadDatas();
+		},
+
+		reloadDatas : function(pAccountToSel){
+			var vSelf = this;
+			this.fContext.storeProv.dialogAdminUrlTree(this.fContext.nodeInfos.path, "userRolesMap", function(pEvt){
+				if (pEvt.target.status == 200) {
+					vSelf.fLastUserRolesMap = JSON.parse(pEvt.target.responseText).userRolesMap;
+					var vDatas = [];
+					var vIdx=-1,vSelRow = -1
+					for(var vKey in vSelf.fLastUserRolesMap){
+						vIdx++;
+						var vRoleArray = vSelf.fLastUserRolesMap[vKey].allowedRoles;
+						vDatas.push({"account":vKey,"allowedRoles":vRoleArray, "allowedRolesLabel":vSelf.xBuildLabelsFromRolesArray(vRoleArray)});
+						if(pAccountToSel == vKey) vSelRow = vIdx;
+					}
+					vSelf.fDatasHandler.setGridDatas(vDatas);
+					vSelf.fGrid.setSelectedRows(vSelRow);
+					
+				} else {
+					alert("Chargement en erreur. Recommencez ultérieurement.");
+					console.log("request failed::"+pEvt.target.status);
+				}
+			});
+		},
+		xBuildLabelsFromRolesArray : function(pAllowedRoles){
+			var vLabels = [];
+			pAllowedRoles.forEach(function(pRole){
+				vLabels.push(extPoints.getRoleProperty(pRole, "title"));
+			});
+			return vLabels.join(", ");
+		},
+
+
+		xInitDefaultActions: function() {
+			function initButtonNode_SelDependant(pButtonNode, pContext) {
+				pButtonNode.refreshState = function () {
+					var vRoleData = pContext.fDatasHandler.getGridDatas()[pContext.fGrid.getSelectedRow()];
+					if (vRoleData) {
+						this.removeAttribute("disabled");
+					} else {
+						this.setAttribute("disabled", "true");
+					}
+				}
+				pContext.addEventListener("gridSelect", function (pEvt) {
+					pButtonNode.refreshState();
+				}, false);
+				pButtonNode.refreshState();
+			}
+
+			//Ajout d'une association user/role
+			extPoints.addToList("adminRoles:toolbar:top", "addRoleConf", 1, new actions.Action("addRoleConf")
+				.setDescription("Ajouter un rôle à un utilisateur")
+				.override("execute", function (pEvent, pContext) {
+					var vThis = pContext;
+					page.loadTags({"sc-updateroleconf": "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/store/dialogs/updateRoleConf.html"}, function (pErrors) {
+						if (pErrors) {
+							console.log(pErrors);
+							return;
+						}
+						var vBd = dom.newBd(document.body);
+						var vDialog = vBd.elt('sc-dialog').current();
+						var vUpdtRoleConf = vBd.elt('sc-updateroleconf', 'thinBorder').currentUp();
+						var vCtx = {
+							window: window,
+							storeProv:vThis.fContext.storeProv,
+							nodeInfos:vThis.fContext.nodeInfos,
+							svcUserUrl:vThis.fContext.svcUserUrl,
+							userRolesMap:vThis.fLastUserRolesMap,
+							defaultProps:vThis.fContext.defaultProps,
+							updateRoleConfCb: function (pAccount) {
+								vDialog.removeDialog();
+								if (pAccount) this.reloadDatas(pAccount);
+							},
+							updateRoleConfCbThis:vThis
+
+						}
+						vUpdtRoleConf.initRolesConf(vCtx,
+							{fields: extPoints.mergeLists(["adminRolesConfig:fields:create", "adminRolesConfig:fields"])}
+						);
+					});
+				}), 10);
+
+			//Modif une conf.
+			extPoints.addToList("adminRoles:toolbar:bottom", "updateRoleConf", 1, new actions.Action("updateRoleConf")
+				.setDescription("Modifier cette configuration de rôle")
+				.override("initButtonNode", initButtonNode_SelDependant)
+				.override("execute", function (pEvent, pContext) {
+					var vThis = pContext;
+					page.loadTags({"sc-updateuser": "https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wbk/6.1.10.202401191026/store/dialogs/updateRoleConf.html"}, function (pErrors) {
+						if (pErrors) {
+							console.log(pErrors);
+							return;
+						}
+						var vBd = dom.newBd(document.body);
+						var vDialog = vBd.elt('sc-dialog').current();
+						var vUpdtRoleConf = vBd.elt('sc-updateroleconf', 'thinBorder').currentUp();
+						var vCtx = {
+							window: window,
+							storeProv:vThis.fContext.storeProv,
+							nodeInfos:vThis.fContext.nodeInfos,
+							svcUserUrl:vThis.fContext.svcUserUrl,
+							userRolesMap:vThis.fLastUserRolesMap,
+							defaultProps:vThis.fContext.defaultProps,
+							roleConfig : vThis.fDatasHandler.getGridDatas()[vThis.fGrid.getSelectedRow()],
+							updateRoleConfCb: function (pAccount) {
+								vDialog.removeDialog();
+								if (pAccount) this.reloadDatas(pAccount);
+							},
+							updateRoleConfCbThis:vThis
+						};
+						vUpdtRoleConf.initRolesConf(vCtx,
+							{fields: extPoints.mergeLists(["adminRolesConfig:fields:update", "adminRolesConfig:fields"])}
+						);
+					});
+				}), 1);
+
+
+
+			//Bouton de suppr d'un user.
+			extPoints.addToList("adminRoles:toolbar:bottom", "deleteRoleConf", 1, new actions.Action("deleteRoleConf")
+				.setDescription("Supprimer cette configuration de rôle")
+				.override("initButtonNode", initButtonNode_SelDependant)
+				.override("execute", function (pEvent, pContext) {
+					var vSelf = pContext;
+					var vRoles = vSelf.fDatasHandler.getGridDatas()[vSelf.fGrid.getSelectedRow()];
+					if (!vRoles) return;
+					if (!confirm("Souhaitez-vous supprimer la configuration de rôle pour cet utilisateur ?")) return;
+
+					delete vSelf.fLastUserRolesMap[vRoles.account];
+
+					var vFormData = new FormData();
+					if (vSelf.fContext.defaultProps){
+						for (var vKey in vSelf.fContext.defaultProps) {
+							var vVal = vSelf.fContext.defaultProps[vKey];
+							if (vVal != null) {
+								if ((typeof vVal !== "object") || (vVal instanceof Blob)) vFormData.append(vKey, vVal);
+								else vFormData.append(vKey, JSON.stringify(vVal));
+							}
+						}
+					} else if (vSelf.fContext.nodeInfos.resId)  vFormData.append("olderResId",vSelf.fContext.nodeInfos.resId);
+					vFormData.append("userRolesMap", JSON.stringify(vSelf.fLastUserRolesMap));
+					vSelf.fContext.storeProv.dialogCid("?synch=true&scContent=none&createMetas=true", vFormData, function(pEvent){
+						var vSt = pEvent.target.status;
+						if(vSt >=400) {
+							if(vSt==500) alert("Cette modification est impossible.");
+							else alert("Accès au serveur impossible. Recommencez ultérieurement.");
+							return;
+						}
+						vSelf.reloadDatas();
+
+					});
+					//TODO;
+				}), 10);
+
+		}
+		
+	}
+});
+
+</script>
+
+<style>
+	@font-face {
+		font-family: 'fontello';
+		src: url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.eot');
+		src: url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.eot') format('embedded-opentype'),
+		url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.woff') format('woff'),
+		url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.ttf') format('truetype'),
+		url('https://studio-paon.edrlab.org/~~static/scCore/fr-FR/webfrm/-wsk/6.1.10.202401191026/commons/font/fontello.svg') format('svg');
+		font-weight: normal;
+		font-style: normal;
+	}
+
+	sc-btn[data-action="addRoleConf"]::before{
+		font-family:"fontello";
+		content:"\f234";
+		font-size:20px;
+		width:20px;
+	}
+
+	sc-btn[data-action="deleteRoleConf"]::before{
+		font-family:"fontello";
+		content:"\f235";
+		font-size:20px;
+		width:20px;
+	}
+
+	sc-btn[data-action="updateRoleConf"]::before{
+		font-family:"fontello";
+		content:"\e80d";
+		font-size:20px;
+		width:20px;
+	}
+
+</style>
